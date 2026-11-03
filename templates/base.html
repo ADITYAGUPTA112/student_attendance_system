@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}CloudAttend{% endblock %} — Academic Attendance & Analytics</title>
+    <title>{% block title %}AttendX{% endblock %} — Intelligent Attendance & Academic Analytics Platform</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/icon.png') }}">
     <!-- Google Fonts: Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,10 +23,8 @@
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
         <div class="container main-container">
             <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('index') }}">
-                <span class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-3 p-1.5 shadow-sm">
-                    <i class="bi bi-mortarboard-fill fs-5 text-white"></i>
-                </span>
-                <span>CloudAttend</span>
+                <img src="{{ url_for('static', filename='img/icon.png') }}" alt="AttendX Logo" height="34" class="rounded-2 shadow-sm bg-white p-0.5">
+                <span class="fw-bold tracking-tight">Attend<span style="color: #FF7628;">X</span></span>
                 <span class="badge-portal ms-1 d-none d-sm-inline-block">Academic Portal</span>
             </a>
             
@@ -146,9 +146,15 @@
     </main>
 
     <!-- Footer -->
-    <footer class="py-3 mt-auto bg-white border-top text-center text-muted small">
+    <footer class="py-3 mt-auto bg-white border-top text-muted small">
         <div class="container main-container">
-            CloudAttend &bull; ENSP401 Capstone Platform &bull; Python Flask + SQLite + Pandas + Chart.js + Docker
+            <div class="d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <img src="{{ url_for('static', filename='img/icon.png') }}" alt="AttendX" height="20">
+                    <span><strong>AttendX</strong> &bull; Intelligent Attendance & Academic Analytics Platform</span>
+                </div>
+                <div>ENSP401 Capstone Platform &bull; Python Flask + SQLite + Pandas + Chart.js + Docker</div>
+            </div>
         </div>
     </footer>
 

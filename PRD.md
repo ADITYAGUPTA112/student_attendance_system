@@ -1,7 +1,7 @@
-# Product Requirements Document (PRD) — CloudAttend
+# Product Requirements Document (PRD) — AttendX
 
 ## 1. Document Control & Overview
-- **Product Name**: CloudAttend — Intelligent Student Attendance & Analytics Platform
+- **Product Name**: AttendX — Intelligent Attendance & Academic Analytics Platform
 - **Document Version**: 1.0
 - **Academic Context**: ENSP401 – Cloud Computing Capstone Project
 - **Product Stage**: Academic MVP / Prototype

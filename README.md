@@ -1,4 +1,4 @@
-# CloudAttend — Intelligent Student Attendance & Analytics Platform
+# AttendX — Intelligent Attendance & Academic Analytics Platform
 
 **ENSP401 – Cloud Computing Capstone Project**  
 *Role-Based Academic Attendance Management, Statistical Reporting & Privacy-Enforced Self-Service*
@@ -11,7 +11,7 @@
 ---
 
 ## 1. Project Overview & Vision
-**CloudAttend** is a role-governed web application built for academic institutions to eliminate manual paper registers and fragmented spreadsheets. It delivers:
+**AttendX** is a role-governed web application built for academic institutions to eliminate manual paper registers and fragmented spreadsheets. It delivers:
 - **Administrators**: Centralized student profile creation, course catalogue administration, student-course enrollment rosters, immutable audit logging, and point-in-time database snapshots.
 - **Faculty**: Streamlined, fast attendance marking per course and session date, featuring atomic database transactions and real-time class summaries.
 - **Students**: Self-service dashboards strictly enforcing row-level ownership isolation (`WHERE student_id = ?`) allowing learners to monitor attendance percentages, attended/missed counts, and class history.
