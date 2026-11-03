@@ -5,6 +5,12 @@
 {% block content %}
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
     <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small text-muted mb-1">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}" class="text-decoration-none text-muted">Portal</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Executive Overview</li>
+            </ol>
+        </nav>
         <h1 class="h3 fw-bold mb-1">
             {% if g.user.role == 'admin' %}
                 Administrator Overview
@@ -12,67 +18,87 @@
                 Faculty Portal
             {% endif %}
         </h1>
-        <p class="text-muted small mb-0">Welcome back, <strong>{{ g.user.username }}</strong> &bull; Role: <span class="text-capitalize">{{ g.user.role }}</span></p>
+        <p class="text-muted small mb-0">Logged in as <strong>{{ g.user.username }}</strong> &bull; Access Level: <span class="badge bg-light text-primary border text-capitalize">{{ g.user.role }}</span></p>
     </div>
     <div class="d-flex gap-2">
         {% if g.user.role == 'faculty' %}
-            <a href="{{ url_for('attendance') }}" class="btn btn-primary-navy d-flex align-items-center gap-1.5">
-                <i class="bi bi-check2-square"></i> Take Attendance
+            <a href="{{ url_for('attendance') }}" class="btn btn-primary-navy d-flex align-items-center gap-1.5 shadow-sm">
+                <i class="bi bi-calendar-check-fill"></i> Take Attendance
             </a>
             <a href="{{ url_for('analytics') }}" class="btn btn-outline-secondary d-flex align-items-center gap-1.5">
-                <i class="bi bi-bar-chart"></i> View Analytics
+                <i class="bi bi-bar-chart-fill"></i> Analytics
             </a>
         {% elif g.user.role == 'admin' %}
-            <a href="{{ url_for('students') }}" class="btn btn-primary-navy d-flex align-items-center gap-1.5">
-                <i class="bi bi-person-plus"></i> Manage Students
+            <a href="{{ url_for('students') }}" class="btn btn-primary-navy d-flex align-items-center gap-1.5 shadow-sm">
+                <i class="bi bi-person-plus-fill"></i> Manage Students
             </a>
             <a href="{{ url_for('backup') }}" class="btn btn-outline-secondary d-flex align-items-center gap-1.5">
-                <i class="bi bi-database-down"></i> System Backup
+                <i class="bi bi-database-fill-down"></i> Database Backup
             </a>
         {% endif %}
     </div>
 </div>
 
-<!-- KPI Summary Cards Row -->
+<!-- Modern KPI Summary 4-Grid Cards (Stitch Design Pattern) -->
 <div class="row g-3 mb-4">
-    <div class="col-sm-6 col-lg-3">
-        <div class="card card-custom kpi-card p-3">
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card navy shadow-sm">
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="text-muted small fw-semibold">TOTAL STUDENTS</span>
-                <i class="bi bi-people text-primary fs-4"></i>
+                <span class="text-muted small fw-bold text-uppercase tracking-wider">Total Students</span>
+                <span class="student-avatar" style="width: 32px; height: 32px; font-size: 0.75rem;">
+                    <i class="bi bi-people-fill"></i>
+                </span>
             </div>
-            <div class="h2 fw-bold mb-0">{{ stats.student_count | default(0) }}</div>
-            <span class="text-muted small">Registered learners</span>
+            <div class="kpi-value">{{ stats.student_count | default(0) }}</div>
+            <div class="d-flex align-items-center gap-1 mt-2 text-muted small">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace">Enrolled</span>
+                <span>Active learners</span>
+            </div>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card card-custom kpi-card teal p-3">
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card blue shadow-sm">
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="text-muted small fw-semibold">COURSES OFFERED</span>
-                <i class="bi bi-journal-code text-info fs-4"></i>
+                <span class="text-muted small fw-bold text-uppercase tracking-wider">Courses Offered</span>
+                <span class="student-avatar" style="width: 32px; height: 32px; font-size: 0.75rem; background: #EEF2FF; color: #4F46E5;">
+                    <i class="bi bi-journal-code"></i>
+                </span>
             </div>
-            <div class="h2 fw-bold mb-0">{{ stats.course_count | default(0) }}</div>
-            <span class="text-muted small">Active academic modules</span>
+            <div class="kpi-value">{{ stats.course_count | default(0) }}</div>
+            <div class="d-flex align-items-center gap-1 mt-2 text-muted small">
+                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle font-monospace">Curriculum</span>
+                <span>Active offerings</span>
+            </div>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card card-custom kpi-card success p-3">
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card emerald shadow-sm">
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="text-muted small fw-semibold">ATTENDANCE EVENTS</span>
-                <i class="bi bi-calendar-check text-success fs-4"></i>
+                <span class="text-muted small fw-bold text-uppercase tracking-wider">Attendance Entries</span>
+                <span class="student-avatar" style="width: 32px; height: 32px; font-size: 0.75rem; background: #ECFDF5; color: #10B981;">
+                    <i class="bi bi-check-circle-fill"></i>
+                </span>
             </div>
-            <div class="h2 fw-bold mb-0">{{ stats.attendance_count | default(0) }}</div>
-            <span class="text-muted small">Recorded entries to date</span>
+            <div class="kpi-value text-success">{{ stats.attendance_count | default(0) }}</div>
+            <div class="d-flex align-items-center gap-1 mt-2 text-muted small">
+                <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace">Verified</span>
+                <span>Recorded sessions</span>
+            </div>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card card-custom kpi-card warning p-3">
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card rose shadow-sm">
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="text-muted small fw-semibold">SYSTEM AUDIT ROWS</span>
-                <i class="bi bi-shield-check text-warning fs-4"></i>
+                <span class="text-muted small fw-bold text-uppercase tracking-wider">Audit Trail Events</span>
+                <span class="student-avatar" style="width: 32px; height: 32px; font-size: 0.75rem; background: #FEF2F2; color: #EF4444;">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </span>
             </div>
-            <div class="h2 fw-bold mb-0">{{ stats.audit_count | default(0) }}</div>
-            <span class="text-muted small">Traceability log entries</span>
+            <div class="kpi-value">{{ stats.audit_count | default(0) }}</div>
+            <div class="d-flex align-items-center gap-1 mt-2 text-muted small">
+                <span class="badge bg-light text-secondary border font-monospace">Immutable</span>
+                <span>Traceability logs</span>
+            </div>
         </div>
     </div>
 </div>
@@ -83,30 +109,37 @@
     <div class="col-lg-7">
         <div class="card card-custom p-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2 class="h5 fw-bold mb-0">Course Directory</h2>
-                <a href="{{ url_for('courses') }}" class="text-decoration-none small fw-semibold text-primary">
-                    View All <i class="bi bi-arrow-right"></i>
+                <div>
+                    <h2 class="h5 fw-bold mb-0">Course Curriculum Roster</h2>
+                    <span class="text-muted small">Active academic modules and sections</span>
+                </div>
+                <a href="{{ url_for('courses') }}" class="btn btn-sm btn-outline-secondary">
+                    View Catalogue <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
             {% if courses %}
                 <div class="table-responsive">
-                    <table class="table table-custom mb-0">
+                    <table class="table table-custom align-middle mb-0">
                         <thead>
                             <tr>
                                 <th>Code</th>
                                 <th>Course Title</th>
-                                <th class="text-end">Actions</th>
+                                <th class="text-end">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for c in courses %}
                                 <tr>
-                                    <td><span class="badge bg-light text-dark border">{{ c.code }}</span></td>
-                                    <td class="fw-medium">{{ c.name }}</td>
+                                    <td>
+                                        <span class="badge bg-light text-primary border font-monospace fw-bold">{{ c.code }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark">{{ c.name }}</div>
+                                    </td>
                                     <td class="text-end">
                                         {% if g.user.role in ['faculty', 'admin'] %}
-                                            <a href="{{ url_for('attendance') }}?course_id={{ c.id }}" class="btn btn-sm btn-outline-primary py-1 px-2.5">
-                                                <i class="bi bi-pencil-square"></i> Mark
+                                            <a href="{{ url_for('attendance') }}?course_id={{ c.id }}" class="btn btn-sm btn-outline-primary py-1 px-2.5 rounded-3">
+                                                <i class="bi bi-calendar-check me-1"></i> Mark
                                             </a>
                                         {% endif %}
                                     </td>
@@ -128,10 +161,13 @@
     <div class="col-lg-5">
         <div class="card card-custom p-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2 class="h5 fw-bold mb-0">Recent System Activity</h2>
+                <div>
+                    <h2 class="h5 fw-bold mb-0">Recent System Activity</h2>
+                    <span class="text-muted small">Security & operational trail</span>
+                </div>
                 {% if g.user.role == 'admin' %}
-                    <a href="{{ url_for('audit') }}" class="text-decoration-none small fw-semibold text-primary">
-                        Audit Log <i class="bi bi-arrow-right"></i>
+                    <a href="{{ url_for('audit') }}" class="btn btn-sm btn-outline-secondary">
+                        Full Log <i class="bi bi-arrow-right"></i>
                     </a>
                 {% endif %}
             </div>
@@ -140,16 +176,16 @@
                     {% for item in recent_activity %}
                         <li class="list-group-item px-0 py-2.5 d-flex justify-content-between align-items-start border-bottom">
                             <div>
-                                <span class="badge bg-light text-secondary border me-1">{{ item.action }}</span>
-                                <span class="text-dark">{{ item.detail }}</span>
+                                <span class="badge bg-light text-primary border me-1 font-monospace" style="font-size: 0.68rem;">{{ item.action }}</span>
+                                <span class="text-dark fw-medium">{{ item.detail }}</span>
                             </div>
-                                <span class="text-muted ms-2 text-nowrap" style="font-size: 0.75rem;">
-                                    {% if item.created_at.strftime is defined %}
-                                        {{ item.created_at.strftime('%Y-%m-%d %H:%M') }}
-                                    {% else %}
-                                        {{ item.created_at }}
-                                    {% endif %}
-                                </span>
+                            <span class="text-muted ms-2 text-nowrap" style="font-size: 0.75rem;">
+                                {% if item.created_at.strftime is defined %}
+                                    {{ item.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                {% else %}
+                                    {{ item.created_at }}
+                                {% endif %}
+                            </span>
                         </li>
                     {% endfor %}
                 </ul>

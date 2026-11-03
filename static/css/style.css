@@ -1,52 +1,78 @@
-/* CloudAttend Custom Design System */
+/* CloudAttend — Refined Academic Attendance Design System (Generated via Stitch) */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 :root {
+    /* Foundation Colors */
     --primary-navy: #17365D;
-    --primary-navy-hover: #0f243f;
-    --primary-blue: #2874C8;
-    --accent-teal: #159A9C;
-    --bg-main: #F5F7FA;
+    --primary-navy-hover: #1E4576;
+    --secondary-blue: #2563EB;
+    --secondary-blue-hover: #1D4ED8;
+    --accent-emerald: #10B981;
+    --accent-amber: #F59E0B;
+    --accent-rose: #EF4444;
+
+    /* Surface & Background */
+    --bg-main: #F8F9FF;
     --surface-card: #FFFFFF;
-    --text-primary: #202A35;
-    --text-muted: #667085;
-    --border-color: #D9E0E8;
-    --color-success: #198754;
-    --color-warning: #D98E04;
-    --color-error: #C0392B;
+    --surface-low: #EFF4FF;
+    --surface-hover: #F8FAFC;
+    
+    /* Typography Colors */
+    --text-primary: #0B1C30;
+    --text-muted: #64748B;
+    --border-color: #E2E8F0;
+    --border-light: #EEF2F6;
+
+    /* Semantic Status Accents */
+    --present-bg: #ECFDF5;
+    --present-text: #065F46;
+    --present-border: #A7F3D0;
+
+    --absent-bg: #FEF2F2;
+    --absent-text: #991B1B;
+    --absent-border: #FECACA;
+
+    --warning-bg: #FFFBEB;
+    --warning-text: #92400E;
+    --warning-border: #FDE68A;
 }
 
 body {
     background-color: var(--bg-main);
     color: var(--text-primary);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    letter-spacing: -0.01em;
 }
 
 .main-container {
-    max-width: 1200px;
+    max-width: 1440px;
 }
 
-/* Header & Navbar */
+/* Header & Top Navigation */
 .navbar-custom {
     background-color: var(--primary-navy);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 2px 8px rgba(11, 28, 48, 0.15);
 }
 
 .navbar-custom .navbar-brand {
     color: #FFFFFF;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    font-size: 1.25rem;
+    font-weight: 800;
+    font-size: 1.3rem;
+    letter-spacing: -0.03em;
 }
 
 .navbar-custom .nav-link {
-    color: #E2E8F0;
-    font-size: 0.95rem;
-    font-weight: 500;
+    color: #CBD5E1;
+    font-size: 0.9rem;
+    font-weight: 600;
     padding: 0.5rem 0.85rem;
-    border-radius: 6px;
-    transition: all 0.2s ease;
+    border-radius: 8px;
+    transition: all 0.15s ease-in-out;
 }
 
 .navbar-custom .nav-link:hover,
@@ -55,12 +81,39 @@ body {
     background-color: rgba(255, 255, 255, 0.12);
 }
 
+/* Academic Badges & Chips */
+.badge-portal {
+    background: rgba(255, 255, 255, 0.15);
+    color: #E2E8F0;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+}
+
+.user-pill {
+    background: rgba(255, 255, 255, 0.1);
+    color: #FFFFFF;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+}
+
 /* Cards & Surfaces */
 .card-custom {
     background-color: var(--surface-card);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(23, 54, 93, 0.04), 0 1px 2px rgba(23, 54, 93, 0.02);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card-custom:hover {
+    box-shadow: 0 4px 12px rgba(23, 54, 93, 0.06);
 }
 
 /* Buttons */
@@ -71,7 +124,7 @@ body {
     font-weight: 600;
     padding: 0.5rem 1.25rem;
     border-radius: 8px;
-    transition: all 0.2s;
+    transition: all 0.15s ease-in-out;
 }
 
 .btn-primary-navy:hover,
@@ -79,84 +132,130 @@ body {
     background-color: var(--primary-navy-hover);
     border-color: var(--primary-navy-hover);
     color: #FFFFFF;
+    box-shadow: 0 4px 10px rgba(23, 54, 93, 0.2);
 }
 
-.btn-primary-blue {
-    background-color: var(--primary-blue);
-    border-color: var(--primary-blue);
+.btn-secondary-blue {
+    background-color: var(--secondary-blue);
+    border-color: var(--secondary-blue);
     color: #FFFFFF;
     font-weight: 600;
     border-radius: 8px;
+    transition: all 0.15s;
 }
 
-.btn-primary-blue:hover {
-    background-color: #1e5ba3;
+.btn-secondary-blue:hover {
+    background-color: var(--secondary-blue-hover);
     color: #FFFFFF;
 }
 
-/* Focus indicator */
+/* Input Focus Glow */
 input:focus, select:focus, textarea:focus, button:focus {
     outline: none !important;
-    box-shadow: 0 0 0 3px rgba(40, 116, 200, 0.25) !important;
-    border-color: var(--primary-blue) !important;
+    border-color: var(--secondary-blue) !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18) !important;
 }
 
 /* Status Badges */
 .badge-present {
-    background-color: #e8f5e9;
-    color: var(--color-success);
-    border: 1px solid #c8e6c9;
-    font-weight: 600;
-    padding: 0.35rem 0.65rem;
-    border-radius: 6px;
+    background-color: var(--present-bg);
+    color: var(--present-text);
+    border: 1px solid var(--present-border);
+    font-weight: 700;
+    font-size: 0.78rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.badge-present::before {
+    content: "";
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: var(--accent-emerald);
 }
 
 .badge-absent {
-    background-color: #ffebee;
-    color: var(--color-error);
-    border: 1px solid #ffcdd2;
-    font-weight: 600;
-    padding: 0.35rem 0.65rem;
-    border-radius: 6px;
+    background-color: var(--absent-bg);
+    color: var(--absent-text);
+    border: 1px solid var(--absent-border);
+    font-weight: 700;
+    font-size: 0.78rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.badge-absent::before {
+    content: "";
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: var(--accent-rose);
 }
 
 /* KPI Summary Cards */
 .kpi-card {
-    border-left: 4px solid var(--primary-navy);
     background: #FFFFFF;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    position: relative;
+    overflow: hidden;
 }
 
-.kpi-card.teal {
-    border-left-color: var(--accent-teal);
+.kpi-card.emerald {
+    border-top: 4px solid var(--accent-emerald);
 }
 
-.kpi-card.success {
-    border-left-color: var(--color-success);
+.kpi-card.navy {
+    border-top: 4px solid var(--primary-navy);
 }
 
-.kpi-card.warning {
-    border-left-color: var(--color-warning);
+.kpi-card.blue {
+    border-top: 4px solid var(--secondary-blue);
 }
 
-/* Tables */
+.kpi-card.rose {
+    border-top: 4px solid var(--accent-rose);
+}
+
+.kpi-value {
+    font-size: 1.85rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+/* Data Tables */
 .table-custom {
     border-collapse: separate;
     border-spacing: 0;
+    width: 100%;
 }
 
 .table-custom thead th {
     background-color: #F8FAFC;
-    color: var(--text-primary);
-    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-size: 0.72rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border-bottom: 2px solid var(--border-color);
-    padding: 0.75rem 1rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.85rem 1rem;
 }
 
 .table-custom tbody td {
     padding: 0.85rem 1rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-light);
     vertical-align: middle;
 }
 
@@ -164,16 +263,64 @@ input:focus, select:focus, textarea:focus, button:focus {
     background-color: #F8FAFC;
 }
 
+/* Student Avatar Initial Circle */
+.student-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #EFF6FF;
+    color: var(--secondary-blue);
+    font-weight: 700;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #DBEAFE;
+    flex-shrink: 0;
+}
+
+/* Segmented Attendance Status Toggle Control */
+.segmented-status {
+    display: inline-flex;
+    background: #F1F5F9;
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid #E2E8F0;
+}
+
+.segmented-status .btn-status {
+    padding: 0.3rem 0.9rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.segmented-status input[type="radio"]:checked + label.btn-present {
+    background: #10B981;
+    color: #FFFFFF;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.3);
+}
+
+.segmented-status input[type="radio"]:checked + label.btn-absent {
+    background: #EF4444;
+    color: #FFFFFF;
+    box-shadow: 0 1px 3px rgba(239, 68, 68, 0.3);
+}
+
 /* Empty States */
 .empty-state {
-    padding: 3rem 1.5rem;
+    padding: 3.5rem 1.5rem;
     text-align: center;
     color: var(--text-muted);
 }
 
 .empty-state i {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
-    color: #A0AEC0;
+    font-size: 2.75rem;
+    margin-bottom: 0.75rem;
+    color: #94A3B8;
 }
-

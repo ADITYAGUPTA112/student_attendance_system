@@ -5,12 +5,18 @@
 {% block content %}
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
     <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small text-muted mb-1">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}" class="text-decoration-none text-muted">Academics</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Daily Session Log</li>
+            </ol>
+        </nav>
         <h1 class="h3 fw-bold mb-1">Class Attendance Entry</h1>
-        <p class="text-muted small mb-0">Record, update, and verify student attendance sessions.</p>
+        <p class="text-muted small mb-0">Record, update, and verify student attendance with atomic database writes.</p>
     </div>
     {% if selected_course %}
-        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 fs-6">
-            Course: <strong>{{ selected_course.code }}</strong> &bull; {{ selected_course.name }}
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 fs-6 rounded-3">
+            <i class="bi bi-journal-code me-1"></i> Course: <strong>{{ selected_course.code }}</strong> &bull; {{ selected_course.name }}
         </span>
     {% endif %}
 </div>
@@ -19,8 +25,8 @@
 <div class="card card-custom p-4 mb-4">
     <form method="GET" action="{{ url_for('attendance') }}" class="row g-3 align-items-end">
         <div class="col-md-5">
-            <label for="course_id" class="form-label fw-semibold small">Select Course</label>
-            <select class="form-select" id="course_id" name="course_id" onchange="this.form.submit()">
+            <label for="course_id" class="form-label fw-bold small text-muted text-uppercase tracking-wider">Course Selection</label>
+            <select class="form-select rounded-3 py-2" id="course_id" name="course_id" onchange="this.form.submit()">
                 {% for c in courses %}
                     <option value="{{ c.id }}" {% if selected_course and selected_course.id == c.id %}selected{% endif %}>
                         {{ c.code }} — {{ c.name }}
@@ -29,11 +35,11 @@
             </select>
         </div>
         <div class="col-md-4">
-            <label for="date" class="form-label fw-semibold small">Session Date</label>
-            <input type="date" class="form-control" id="date" name="date" value="{{ selected_date }}" onchange="this.form.submit()" required>
+            <label for="date" class="form-label fw-bold small text-muted text-uppercase tracking-wider">Session Date</label>
+            <input type="date" class="form-control rounded-3 py-2" id="date" name="date" value="{{ selected_date }}" onchange="this.form.submit()" required>
         </div>
         <div class="col-md-3">
-            <button type="submit" class="btn btn-outline-secondary w-100">
+            <button type="submit" class="btn btn-outline-secondary w-100 py-2 rounded-3">
                 <i class="bi bi-arrow-repeat me-1"></i> Refresh Roster
             </button>
         </div>
@@ -43,70 +49,88 @@
 <!-- Attendance Entry Form Card -->
 {% if selected_course %}
     <div class="card card-custom p-4">
-        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-3 gap-2">
-            <div>
-                <h2 class="h5 fw-bold mb-0">
-                    Roster for {{ selected_date }}
-                    {% if is_existing %}
-                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle ms-2">
-                            <i class="bi bi-pencil-fill me-1"></i> Editing Existing Records
-                        </span>
-                    {% endif %}
-                </h2>
-                <span class="text-muted small">{{ roster|length }} students enrolled in this course</span>
+        <!-- Live Batch & Metric Bar (from Stitch layout) -->
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-3 pb-3 border-bottom gap-3">
+            <div class="d-flex items-center gap-2 flex-wrap">
+                <button type="button" class="btn btn-sm btn-success fw-semibold px-3 py-1.5 rounded-3" onclick="bulkMark('Present')">
+                    <i class="bi bi-check2-all me-1"></i> Mark All Present
+                </button>
+                <button type="button" class="btn btn-sm btn-danger fw-semibold px-3 py-1.5 rounded-3" onclick="bulkMark('Absent')">
+                    <i class="bi bi-x-lg me-1"></i> Mark All Absent
+                </button>
             </div>
-            
-            {% if roster %}
-                <div class="btn-group btn-group-sm" role="group">
-                    <button type="button" class="btn btn-outline-success" onclick="markAll('Present')">
-                        <i class="bi bi-check-all"></i> Mark All Present
-                    </button>
-                    <button type="button" class="btn btn-outline-danger" onclick="markAll('Absent')">
-                        <i class="bi bi-x"></i> Mark All Absent
-                    </button>
+
+            <!-- Live Status Counters & Search Filter -->
+            <div class="d-flex flex-column flex-sm-row items-center gap-3 w-100 w-lg-auto justify-content-end">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill font-monospace" id="livePresentCount">
+                        0 Present
+                    </span>
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1.5 rounded-pill font-monospace" id="liveAbsentCount">
+                        0 Absent
+                    </span>
+                    <span class="badge bg-light text-muted border px-2.5 py-1.5 rounded-pill font-monospace">
+                        Total: {{ roster|length }}
+                    </span>
                 </div>
-            {% endif %}
+                <div class="input-group input-group-sm" style="max-width: 240px;">
+                    <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control border-start-0" id="rosterSearchInput" placeholder="Filter by name or roll..." onkeyup="filterRoster()">
+                </div>
+            </div>
         </div>
 
         {% if roster %}
-            <form method="POST" action="{{ url_for('attendance') }}">
+            <form method="POST" action="{{ url_for('attendance') }}" id="attendanceForm">
                 <input type="hidden" name="course_id" value="{{ selected_course.id }}">
                 <input type="hidden" name="date" value="{{ selected_date }}">
 
                 <div class="table-responsive mb-4">
-                    <table class="table table-custom align-middle mb-0">
+                    <table class="table table-custom align-middle mb-0" id="rosterTable">
                         <thead>
                             <tr>
-                                <th style="width: 20%;">Roll Number</th>
-                                <th style="width: 45%;">Student Name</th>
-                                <th style="width: 35%;" class="text-end">Attendance Status</th>
+                                <th style="width: 15%;">Roll Number</th>
+                                <th style="width: 50%;">Student Profile</th>
+                                <th style="width: 35%;" class="text-end">Live Status Toggle</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for s in roster %}
-                                <tr>
+                                <tr class="roster-row">
                                     <td>
-                                        <span class="badge bg-light text-dark border font-monospace fw-bold">{{ s.roll_no }}</span>
+                                        <span class="badge bg-light text-primary border font-monospace fw-bold px-2 py-1">
+                                            {{ s.roll_no }}
+                                        </span>
                                     </td>
                                     <td>
-                                        <div class="fw-semibold text-dark">{{ s.name }}</div>
+                                        <div class="d-flex align-items-center gap-2.5">
+                                            <div class="student-avatar">
+                                                {{ s.name[:2]|upper }}
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-dark student-name">{{ s.name }}</div>
+                                                <div class="text-muted small">Student ID #{{ s.id }}</div>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td class="text-end">
-                                        <div class="btn-group" role="group" aria-label="Status for {{ s.roll_no }}">
+                                        <div class="segmented-status" role="group">
                                             <input type="radio" class="btn-check status-radio-present" 
                                                    name="status_{{ s.id }}" id="present_{{ s.id }}" 
                                                    value="Present" 
+                                                   onchange="updateLiveCounters()"
                                                    {% if s.current_status == 'Present' or not s.current_status %}checked{% endif %}>
-                                            <label class="btn btn-outline-success btn-sm px-3" for="present_{{ s.id }}">
-                                                <i class="bi bi-check-lg me-1"></i> Present
+                                            <label class="btn-status btn-present" for="present_{{ s.id }}">
+                                                <i class="bi bi-check-lg me-1"></i>Present
                                             </label>
 
                                             <input type="radio" class="btn-check status-radio-absent" 
                                                    name="status_{{ s.id }}" id="absent_{{ s.id }}" 
                                                    value="Absent" 
+                                                   onchange="updateLiveCounters()"
                                                    {% if s.current_status == 'Absent' %}checked{% endif %}>
-                                            <label class="btn btn-outline-danger btn-sm px-3" for="absent_{{ s.id }}">
-                                                <i class="bi bi-x-lg me-1"></i> Absent
+                                            <label class="btn-status btn-absent" for="absent_{{ s.id }}">
+                                                <i class="bi bi-x-lg me-1"></i>Absent
                                             </label>
                                         </div>
                                     </td>
@@ -116,19 +140,19 @@
                     </table>
                 </div>
 
-                <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pt-3 border-top gap-3">
                     <span class="text-muted small">
-                        <i class="bi bi-info-circle me-1"></i> Changes will be saved atomically in a single database transaction.
+                        <i class="bi bi-shield-check text-success me-1"></i> Changes will be saved atomically in a single SQLite transaction.
                     </span>
-                    <button type="submit" class="btn btn-primary-navy px-4 py-2 fw-semibold">
-                        <i class="bi bi-save me-1"></i> Save Attendance
+                    <button type="submit" class="btn btn-primary-navy px-4 py-2.5 fw-bold rounded-3 shadow-sm">
+                        <i class="bi bi-save2-fill me-1"></i> Save Attendance
                     </button>
                 </div>
             </form>
         {% else %}
             <div class="empty-state py-5">
                 <i class="bi bi-person-x"></i>
-                <p class="h6 text-muted mb-1">No students are enrolled in this course.</p>
+                <p class="h6 text-muted mb-1">No students are currently enrolled in this course.</p>
                 <p class="small text-muted mb-0">Please enroll students via the Course Catalogue before recording attendance.</p>
             </div>
         {% endif %}
@@ -136,13 +160,40 @@
 {% endif %}
 
 <script>
-function markAll(status) {
+function updateLiveCounters() {
+    const presentCount = document.querySelectorAll('.status-radio-present:checked').length;
+    const absentCount = document.querySelectorAll('.status-radio-absent:checked').length;
+
+    const presEl = document.getElementById('livePresentCount');
+    const absEl = document.getElementById('liveAbsentCount');
+
+    if (presEl) presEl.textContent = `${presentCount} Present`;
+    if (absEl) absEl.textContent = `${absentCount} Absent`;
+}
+
+function bulkMark(status) {
     if (status === 'Present') {
         document.querySelectorAll('.status-radio-present').forEach(el => el.checked = true);
     } else {
         document.querySelectorAll('.status-radio-absent').forEach(el => el.checked = true);
     }
+    updateLiveCounters();
 }
+
+function filterRoster() {
+    const filter = document.getElementById('rosterSearchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('.roster-row');
+
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(filter)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', updateLiveCounters);
 </script>
 {% endblock %}
-
