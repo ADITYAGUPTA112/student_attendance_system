@@ -37,37 +37,120 @@
     </div>
 </div>
 
-<!-- KPI Summary 4-Grid Cards -->
-<div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3">
-        <div class="kpi-card {% if overall_pct >= 75.0 %}emerald{% else %}rose{% endif %} shadow-sm">
-            <div class="text-muted small fw-bold text-uppercase tracking-wider">Attendance Rate</div>
-            <div class="kpi-value mt-1 {% if overall_pct >= 75.0 %}text-success{% else %}text-danger{% endif %}">
-                {{ "%.1f"|format(overall_pct) }}%
+<!-- KPI Summary 4-Grid Cards with Radial Progress Gauge -->
+<div class="row g-3 mb-4 align-items-stretch">
+    <!-- Radial Gauge Hero Card -->
+    <div class="col-12 col-md-4">
+        <div class="card card-custom p-3 h-100 d-flex flex-row align-items-center justify-content-around shadow-sm">
+            <div class="radial-progress-container">
+                <svg class="radial-progress-svg" viewBox="0 0 120 120">
+                    <circle class="radial-track" cx="60" cy="60" r="50"></circle>
+                    <circle id="studentRadialIndicator" class="radial-indicator {% if overall_pct >= 75.0 %}emerald{% elif overall_pct >= 65.0 %}amber{% else %}rose{% endif %}" 
+                            cx="60" cy="60" r="50"
+                            stroke-dasharray="314.159"
+                            stroke-dashoffset="{{ 314.159 * (1.0 - (overall_pct / 100.0)) }}">
+                    </circle>
+                </svg>
+                <div class="radial-inner-label">
+                    <span class="radial-pct-value {% if overall_pct >= 75.0 %}text-success{% else %}text-danger{% endif %}">
+                        {{ "%.1f"|format(overall_pct) }}%
+                    </span>
+                    <span class="radial-pct-sub">Overall</span>
+                </div>
             </div>
-            <div class="text-muted small mt-1">Benchmark: &ge; 75.0% required</div>
+            <div>
+                <div class="text-muted small fw-bold text-uppercase">Academic Standing</div>
+                <div class="fw-bold fs-5 mt-1 {% if overall_pct >= 75.0 %}text-success{% else %}text-danger{% endif %}">
+                    {% if overall_pct >= 75.0 %}Eligible{% else %}Warning{% endif %}
+                </div>
+                <div class="text-muted small">Target: &ge; 75.0%</div>
+            </div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="kpi-card emerald shadow-sm">
-            <div class="text-muted small fw-bold text-uppercase tracking-wider">Classes Attended</div>
+
+    <!-- Quick Stat Metrics -->
+    <div class="col-sm-4 col-md-2.6 col-xl-2.6 col-md-3">
+        <div class="kpi-card emerald shadow-sm h-100 d-flex flex-column justify-content-center">
+            <div class="text-muted small fw-bold text-uppercase tracking-wider">Present</div>
             <div class="kpi-value text-success mt-1">{{ present_count }}</div>
-            <div class="text-muted small mt-1">Sessions marked present</div>
+            <div class="text-muted small mt-1">Attended sessions</div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="kpi-card rose shadow-sm">
-            <div class="text-muted small fw-bold text-uppercase tracking-wider">Classes Missed</div>
+
+    <div class="col-sm-4 col-md-2.6 col-xl-2.6 col-md-2">
+        <div class="kpi-card rose shadow-sm h-100 d-flex flex-column justify-content-center">
+            <div class="text-muted small fw-bold text-uppercase tracking-wider">Absent</div>
             <div class="kpi-value text-danger mt-1">{{ absent_count }}</div>
-            <div class="text-muted small mt-1">Sessions marked absent</div>
+            <div class="text-muted small mt-1">Missed sessions</div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="kpi-card navy shadow-sm">
-            <div class="text-muted small fw-bold text-uppercase tracking-wider">Total Class Meetings</div>
+
+    <div class="col-sm-4 col-md-2.8 col-xl-2.8 col-md-3">
+        <div class="kpi-card navy shadow-sm h-100 d-flex flex-column justify-content-center">
+            <div class="text-muted small fw-bold text-uppercase tracking-wider">Total Lectures</div>
             <div class="kpi-value mt-1">{{ total_sessions }}</div>
-            <div class="text-muted small mt-1">Total conducted lectures</div>
+            <div class="text-muted small mt-1">Conducted to date</div>
         </div>
+    </div>
+</div>
+
+<!-- Innovation 1: Interactive Attendance Safety & Exam Eligibility Calculator -->
+<div class="safety-calc-card p-4 mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-3">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="d-inline-flex p-1.5 rounded-3 bg-primary-subtle text-primary">
+                    <i class="bi bi-calculator-fill fs-5"></i>
+                </span>
+                <h2 class="h5 fw-bold mb-0">Attendance Safety & Exam Eligibility Calculator</h2>
+            </div>
+            <p class="text-muted small mb-0 mt-1">Simulate upcoming class scenarios in real time to verify your minimum 75% examination threshold.</p>
+        </div>
+        <div id="safetyVerdictBadge" class="safety-badge-status safety-badge-safe">
+            <i class="bi bi-shield-check"></i>
+            <span>Calculating...</span>
+        </div>
+    </div>
+
+    <div class="row g-3 align-items-center pt-2 border-top">
+        <div class="col-md-6">
+            <label for="simulationRange" class="form-label small fw-bold text-muted d-flex justify-content-between">
+                <span>Simulate Upcoming Lectures</span>
+                <span id="sliderValueLabel" class="text-primary fw-bold font-monospace">+0 Lectures</span>
+            </label>
+            <input type="range" class="form-range slider-custom" id="simulationRange" min="0" max="25" value="0">
+            <div class="d-flex justify-content-between text-muted" style="font-size: 0.72rem;">
+                <span>Today (0)</span>
+                <span>+5</span>
+                <span>+10</span>
+                <span>+15</span>
+                <span>+20</span>
+                <span>+25</span>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label small fw-bold text-muted">Attendance Assumption</label>
+            <select id="simulationMode" class="form-select form-select-sm">
+                <option value="attend" selected>Attend All (+100%)</option>
+                <option value="miss">Miss All (0%)</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <div class="p-2.5 rounded-3 bg-light border text-center">
+                <div class="text-muted small" style="font-size: 0.75rem;">Simulated Projected Rate</div>
+                <div id="projectedPctDisplay" class="fw-bold fs-5 text-primary font-monospace mt-0.5">
+                    {{ "%.1f"|format(overall_pct) }}%
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Smart Guidance Message -->
+    <div id="safetyAdviceAlert" class="mt-3 p-2.5 rounded-3 bg-light border-0 small d-flex align-items-center gap-2 text-muted">
+        <i class="bi bi-info-circle-fill text-primary"></i>
+        <span id="safetyAdviceText">Loading smart recommendation...</span>
     </div>
 </div>
 
@@ -166,4 +249,76 @@
         </div>
     </div>
 </div>
+
+{% block scripts %}
+<script>
+(function() {
+    const basePresent = {{ present_count }};
+    const baseTotal = {{ total_sessions }};
+    const slider = document.getElementById('simulationRange');
+    const modeSelect = document.getElementById('simulationMode');
+    const sliderLabel = document.getElementById('sliderValueLabel');
+    const projectedDisplay = document.getElementById('projectedPctDisplay');
+    const verdictBadge = document.getElementById('safetyVerdictBadge');
+    const adviceText = document.getElementById('safetyAdviceText');
+    const radialIndicator = document.getElementById('studentRadialIndicator');
+
+    function updateSimulation() {
+        if (!slider || !modeSelect) return;
+        const extraLectures = parseInt(slider.value, 10);
+        const mode = modeSelect.value;
+        sliderLabel.textContent = '+' + extraLectures + ' Lectures';
+
+        let simPresent = basePresent;
+        let simTotal = baseTotal + extraLectures;
+
+        if (mode === 'attend') {
+            simPresent += extraLectures;
+        }
+
+        const simPct = simTotal > 0 ? (simPresent / simTotal) * 100 : 0;
+        projectedDisplay.textContent = simPct.toFixed(1) + '%';
+
+        // Update verdict badge styling
+        if (simPct >= 75.0) {
+            verdictBadge.className = 'safety-badge-status safety-badge-safe';
+            verdictBadge.innerHTML = '<i class="bi bi-shield-check"></i> <span>Eligible for Exams (' + simPct.toFixed(1) + '%)</span>';
+            projectedDisplay.className = 'fw-bold fs-5 text-success font-monospace mt-0.5';
+        } else if (simPct >= 65.0) {
+            verdictBadge.className = 'safety-badge-status safety-badge-warning';
+            verdictBadge.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> <span>Borderline Risk (' + simPct.toFixed(1) + '%)</span>';
+            projectedDisplay.className = 'fw-bold fs-5 text-warning font-monospace mt-0.5';
+        } else {
+            verdictBadge.className = 'safety-badge-status safety-badge-danger';
+            verdictBadge.innerHTML = '<i class="bi bi-x-circle-fill"></i> <span>Debarment Warning (' + simPct.toFixed(1) + '%)</span>';
+            projectedDisplay.className = 'fw-bold fs-5 text-danger font-monospace mt-0.5';
+        }
+
+        // Smart Guidance Message
+        if (baseTotal === 0) {
+            adviceText.textContent = 'No attendance recorded yet. Attend your scheduled lectures to maintain 100% standing.';
+        } else {
+            const currentPct = (basePresent / baseTotal) * 100;
+            if (currentPct >= 75.0) {
+                const safeMisses = Math.floor((basePresent - 0.75 * baseTotal) / 0.75);
+                if (safeMisses > 0) {
+                    adviceText.innerHTML = '<strong>Safety Margin:</strong> You can safely miss up to <strong>' + safeMisses + '</strong> upcoming lecture(s) and still maintain the required 75% threshold.';
+                } else {
+                    adviceText.innerHTML = '<strong>Caution:</strong> You are currently at the 75% boundary. Missing even 1 additional class will trigger an attendance warning.';
+                }
+            } else {
+                const needed = Math.max(1, Math.ceil(3 * baseTotal - 4 * basePresent));
+                adviceText.innerHTML = '<strong>Recovery Plan:</strong> You need to attend the next <strong>' + needed + '</strong> consecutive lecture(s) without absence to restore your standing to &ge; 75%.';
+            }
+        }
+    }
+
+    if (slider && modeSelect) {
+        slider.addEventListener('input', updateSimulation);
+        modeSelect.addEventListener('change', updateSimulation);
+        updateSimulation();
+    }
+})();
+</script>
+{% endblock %}
 {% endblock %}

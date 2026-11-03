@@ -324,3 +324,205 @@ input:focus, select:focus, textarea:focus, button:focus {
     margin-bottom: 0.75rem;
     color: #94A3B8;
 }
+
+/* ==========================================================================
+   UI Innovation Suite: Radial Rings, Safety Calculator & Speed Actions
+   ========================================================================== */
+
+/* 1. Animated Radial Progress Ring */
+.radial-progress-container {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.radial-progress-svg {
+    transform: rotate(-90deg);
+    width: 140px;
+    height: 140px;
+}
+
+.radial-track {
+    fill: none;
+    stroke: #E2E8F0;
+    stroke-width: 10;
+}
+
+.radial-indicator {
+    fill: none;
+    stroke-width: 10;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.3s ease;
+}
+
+.radial-indicator.emerald { stroke: #10B981; }
+.radial-indicator.amber { stroke: #F59E0B; }
+.radial-indicator.rose { stroke: #EF4444; }
+
+.radial-inner-label {
+    position: absolute;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.radial-pct-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+}
+
+.radial-pct-sub {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 4px;
+}
+
+/* 2. Interactive Attendance Safety Calculator */
+.safety-calc-card {
+    background: linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%);
+    border: 1px solid #E2E8F0;
+    border-radius: 14px;
+    box-shadow: 0 4px 16px rgba(11, 28, 48, 0.05);
+    position: relative;
+    overflow: hidden;
+}
+
+.safety-calc-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #2563EB, #10B981);
+}
+
+.safety-badge-status {
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.safety-badge-safe {
+    background: #ECFDF5;
+    color: #065F46;
+    border: 1px solid #A7F3D0;
+}
+
+.safety-badge-warning {
+    background: #FFFBEB;
+    color: #92400E;
+    border: 1px solid #FDE68A;
+}
+
+.safety-badge-danger {
+    background: #FEF2F2;
+    color: #991B1B;
+    border: 1px solid #FECACA;
+}
+
+.slider-custom {
+    accent-color: #2563EB;
+    cursor: pointer;
+}
+
+/* 3. Floating Sticky Glass Action Bar for Attendance Entry */
+.floating-roster-bar {
+    position: sticky;
+    bottom: 20px;
+    z-index: 1020;
+    background: rgba(23, 54, 93, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 14px;
+    padding: 0.75rem 1.25rem;
+    color: #FFFFFF;
+    box-shadow: 0 10px 30px rgba(11, 28, 48, 0.25);
+    transition: all 0.25s ease;
+}
+
+/* 4. Student Roster Avatar Halos */
+.avatar-halo-safe {
+    box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px #10B981;
+}
+
+.avatar-halo-warning {
+    box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px #F59E0B;
+}
+
+.avatar-halo-danger {
+    box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px #EF4444;
+}
+
+/* 5. Dark Mode Theme Overrides */
+body.dark-mode {
+    --bg-main: #0B1120;
+    --surface-card: #131E36;
+    --surface-low: #1B294B;
+    --surface-hover: #1A284A;
+    --text-primary: #F1F5F9;
+    --text-muted: #94A3B8;
+    --border-color: #2A3B60;
+    --border-light: #223253;
+}
+
+body.dark-mode .card-custom,
+body.dark-mode .safety-calc-card,
+body.dark-mode .kpi-card {
+    background: #131E36;
+    border-color: #2A3B60;
+    color: #F1F5F9;
+}
+
+body.dark-mode .table-custom thead th {
+    background-color: #1A284A;
+    border-color: #2A3B60;
+    color: #CBD5E1;
+}
+
+body.dark-mode .table-custom tbody td {
+    border-color: #223253;
+    color: #E2E8F0;
+}
+
+body.dark-mode .table-custom tbody tr:hover {
+    background-color: #1A284A;
+}
+
+body.dark-mode .segmented-status {
+    background: #1B294B;
+    border-color: #2A3B60;
+}
+
+body.dark-mode .form-control,
+body.dark-mode .form-select {
+    background-color: #131E36;
+    border-color: #2A3B60;
+    color: #F1F5F9;
+}
+
+body.dark-mode .form-control:focus,
+body.dark-mode .form-select:focus {
+    background-color: #1A284A;
+    color: #FFFFFF;
+}
+
+body.dark-mode .radial-track {
+    stroke: #223253;
+}
+

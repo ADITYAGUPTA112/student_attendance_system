@@ -177,3 +177,4 @@ curl -i http://localhost:5000/health
 # 4. View automated database initialization
 python -c "import db; print('Foreign keys pragma:', db.get_db().execute('PRAGMA foreign_keys;').fetchone()[0])"
 ```
+

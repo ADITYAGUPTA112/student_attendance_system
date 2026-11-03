@@ -44,33 +44,58 @@
     </form>
 </div>
 
-<!-- KPI Summary Cards -->
-<div class="row g-3 mb-4">
-    <div class="col-sm-6 col-lg-3">
-        <div class="card card-custom kpi-card {% if metrics.overall_percentage >= 75.0 %}success{% else %}warning{% endif %} p-3">
-            <span class="text-muted small fw-semibold">OVERALL ATTENDANCE</span>
-            <div class="h2 fw-bold mb-0 mt-1">{{ "%.1f"|format(metrics.overall_percentage) }}%</div>
-            <span class="text-muted small">Target benchmark: &ge; 75.0%</span>
+<!-- KPI Summary & Radial Gauge Row -->
+<div class="row g-3 mb-4 align-items-stretch">
+    <!-- Apple-Style Radial Progress Ring Hero Card -->
+    <div class="col-12 col-md-5 col-xl-4">
+        <div class="card card-custom p-3 h-100 d-flex flex-row align-items-center justify-content-around shadow-sm">
+            <div class="radial-progress-container">
+                <svg class="radial-progress-svg" viewBox="0 0 120 120">
+                    <circle class="radial-track" cx="60" cy="60" r="50"></circle>
+                    <circle class="radial-indicator {% if metrics.overall_percentage >= 75.0 %}emerald{% elif metrics.overall_percentage >= 65.0 %}amber{% else %}rose{% endif %}" 
+                            cx="60" cy="60" r="50"
+                            stroke-dasharray="314.159"
+                            stroke-dashoffset="{{ 314.159 * (1.0 - (metrics.overall_percentage / 100.0)) }}">
+                    </circle>
+                </svg>
+                <div class="radial-inner-label">
+                    <span class="radial-pct-value {% if metrics.overall_percentage >= 75.0 %}text-success{% else %}text-danger{% endif %}">
+                        {{ "%.1f"|format(metrics.overall_percentage) }}%
+                    </span>
+                    <span class="radial-pct-sub">Turnout</span>
+                </div>
+            </div>
+            <div class="ps-2">
+                <span class="badge {% if metrics.overall_percentage >= 75.0 %}bg-success-subtle text-success border-success-subtle{% else %}bg-danger-subtle text-danger border-danger-subtle{% endif %} border px-2.5 py-1 rounded-pill small fw-bold">
+                    {% if metrics.overall_percentage >= 75.0 %}Optimal Range{% else %}Below Target{% endif %}
+                </span>
+                <div class="h5 fw-bold mb-0 mt-2">Campus Average</div>
+                <p class="text-muted small mb-0">Benchmark: &ge; 75.0%</p>
+            </div>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card card-custom kpi-card teal p-3">
-            <span class="text-muted small fw-semibold">SESSION DATES</span>
-            <div class="h2 fw-bold mb-0 mt-1">{{ metrics.total_sessions }}</div>
-            <span class="text-muted small">Distinct class dates</span>
+
+    <!-- Quick Numerical KPIs -->
+    <div class="col-sm-4 col-md-2.3 col-xl-2.6 col-md-2">
+        <div class="kpi-card teal shadow-sm h-100 d-flex flex-column justify-content-center p-3">
+            <span class="text-muted small fw-bold text-uppercase tracking-wider">Sessions</span>
+            <div class="kpi-value mt-1">{{ metrics.total_sessions }}</div>
+            <span class="text-muted small">Distinct dates</span>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card card-custom kpi-card p-3">
-            <span class="text-muted small fw-semibold">TOTAL RECORDS</span>
-            <div class="h2 fw-bold mb-0 mt-1">{{ metrics.total_records }}</div>
-            <span class="text-muted small">Cumulative student entries</span>
+
+    <div class="col-sm-4 col-md-2.3 col-xl-2.6 col-md-3">
+        <div class="kpi-card navy shadow-sm h-100 d-flex flex-column justify-content-center p-3">
+            <span class="text-muted small fw-bold text-uppercase tracking-wider">Total Records</span>
+            <div class="kpi-value mt-1">{{ metrics.total_records }}</div>
+            <span class="text-muted small">Logged entries</span>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card card-custom kpi-card {% if metrics.at_risk_count > 0 %}warning{% else %}success{% endif %} p-3">
-            <span class="text-muted small fw-semibold">AT-RISK LEARNERS</span>
-            <div class="h2 fw-bold mb-0 mt-1 {% if metrics.at_risk_count > 0 %}text-danger{% else %}text-success{% endif %}">
+
+    <div class="col-sm-4 col-md-2.4 col-xl-2.8 col-md-3">
+        <div class="kpi-card {% if metrics.at_risk_count > 0 %}rose{% else %}emerald{% endif %} shadow-sm h-100 d-flex flex-column justify-content-center p-3">
+            <span class="text-muted small fw-bold text-uppercase tracking-wider">At-Risk Learners</span>
+            <div class="kpi-value {% if metrics.at_risk_count > 0 %}text-danger{% else %}text-success{% endif %} mt-1">
                 {{ metrics.at_risk_count }}
             </div>
             <span class="text-muted small">&lt; 75% attendance threshold</span>

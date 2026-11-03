@@ -81,6 +81,17 @@
         </div>
 
         {% if roster %}
+            <!-- Keyboard Shortcut & Speed Helper Banner -->
+            <div class="alert alert-light border d-flex align-items-center justify-content-between py-2 px-3 mb-3 small text-muted rounded-3">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-secondary-subtle text-secondary font-monospace"><i class="bi bi-keyboard"></i> Hotkeys</span>
+                    <span>Click any row, then press <kbd>P</kbd> for <strong>Present</strong>, <kbd>A</kbd> for <strong>Absent</strong>, or <kbd>&uarr;</kbd> <kbd>&darr;</kbd> to navigate.</span>
+                </div>
+                <span class="d-none d-md-inline text-muted" style="font-size: 0.78rem;">
+                    Autosync enabled
+                </span>
+            </div>
+
             <form method="POST" action="{{ url_for('attendance') }}" id="attendanceForm">
                 <input type="hidden" name="course_id" value="{{ selected_course.id }}">
                 <input type="hidden" name="date" value="{{ selected_date }}">
@@ -96,7 +107,7 @@
                         </thead>
                         <tbody>
                             {% for s in roster %}
-                                <tr class="roster-row">
+                                <tr class="roster-row" tabindex="0" data-student-id="{{ s.id }}">
                                     <td>
                                         <span class="badge bg-light text-primary border font-monospace fw-bold px-2 py-1">
                                             {{ s.roll_no }}
@@ -104,7 +115,7 @@
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-2.5">
-                                            <div class="student-avatar">
+                                            <div class="student-avatar" id="avatar_{{ s.id }}">
                                                 {{ s.name[:2]|upper }}
                                             </div>
                                             <div>
@@ -140,13 +151,21 @@
                     </table>
                 </div>
 
-                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pt-3 border-top gap-3">
-                    <span class="text-muted small">
-                        <i class="bi bi-shield-check text-success me-1"></i> Changes will be saved atomically in a single SQLite transaction.
-                    </span>
-                    <button type="submit" class="btn btn-primary-navy px-4 py-2.5 fw-bold rounded-3 shadow-sm">
-                        <i class="bi bi-save2-fill me-1"></i> Save Attendance
-                    </button>
+                <!-- Floating Sticky Glass Action Bar -->
+                <div class="floating-roster-bar d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="badge bg-success px-3 py-2 font-monospace" id="floatingPresentBadge">0 Present</span>
+                        <span class="badge bg-danger px-3 py-2 font-monospace" id="floatingAbsentBadge">0 Absent</span>
+                        <span class="badge bg-light text-dark px-3 py-2 font-monospace" id="floatingRateBadge">0.0% Rate</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-white-50 small d-none d-lg-inline">
+                            <i class="bi bi-shield-check text-success me-1"></i> Atomic SQLite Write
+                        </span>
+                        <button type="submit" class="btn btn-primary px-4 py-2 fw-bold rounded-pill shadow">
+                            <i class="bi bi-check2-circle me-1"></i> Submit Attendance
+                        </button>
+                    </div>
                 </div>
             </form>
         {% else %}
@@ -163,12 +182,21 @@
 function updateLiveCounters() {
     const presentCount = document.querySelectorAll('.status-radio-present:checked').length;
     const absentCount = document.querySelectorAll('.status-radio-absent:checked').length;
+    const totalCount = presentCount + absentCount;
+    const rate = totalCount > 0 ? ((presentCount / totalCount) * 100).toFixed(1) : '0.0';
 
     const presEl = document.getElementById('livePresentCount');
     const absEl = document.getElementById('liveAbsentCount');
+    const floatPres = document.getElementById('floatingPresentBadge');
+    const floatAbs = document.getElementById('floatingAbsentBadge');
+    const floatRate = document.getElementById('floatingRateBadge');
 
     if (presEl) presEl.textContent = `${presentCount} Present`;
     if (absEl) absEl.textContent = `${absentCount} Absent`;
+
+    if (floatPres) floatPres.textContent = `${presentCount} Present`;
+    if (floatAbs) floatAbs.textContent = `${absentCount} Absent`;
+    if (floatRate) floatRate.textContent = `${rate}% Rate`;
 }
 
 function bulkMark(status) {
@@ -192,6 +220,66 @@ function filterRoster() {
             row.style.display = 'none';
         }
     });
+}
+
+// Rapid-Entry Keyboard Shortcuts (P, A, Arrow Navigation)
+document.addEventListener('keydown', function(e) {
+    // Ignore keystrokes inside search input or form fields
+    if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+
+    const focusedRow = document.activeElement && document.activeElement.classList.contains('roster-row') 
+        ? document.activeElement 
+        : document.querySelector('.roster-row:focus-within');
+
+    if (!focusedRow) return;
+
+    const studentId = focusedRow.dataset.studentId;
+    if (!studentId) return;
+
+    const key = e.key.toUpperCase();
+    if (key === 'P') {
+        e.preventDefault();
+        const pRadio = document.getElementById('present_' + studentId);
+        if (pRadio) {
+            pRadio.checked = true;
+            updateLiveCounters();
+            moveToNextRow(focusedRow);
+        }
+    } else if (key === 'A') {
+        e.preventDefault();
+        const aRadio = document.getElementById('absent_' + studentId);
+        if (aRadio) {
+            aRadio.checked = true;
+            updateLiveCounters();
+            moveToNextRow(focusedRow);
+        }
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        moveToNextRow(focusedRow);
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        moveToPrevRow(focusedRow);
+    }
+});
+
+function moveToNextRow(currentRow) {
+    let next = currentRow.nextElementSibling;
+    while (next && next.style.display === 'none') {
+        next = next.nextElementSibling;
+    }
+    if (next && next.classList.contains('roster-row')) {
+        next.focus();
+    }
+}
+
+function moveToPrevRow(currentRow) {
+    let prev = currentRow.previousElementSibling;
+    while (prev && prev.style.display === 'none') {
+        prev = prev.previousElementSibling;
+    }
+    if (prev && prev.classList.contains('roster-row')) {
+        prev.focus();
+    }
 }
 
 document.addEventListener('DOMContentLoaded', updateLiveCounters);
