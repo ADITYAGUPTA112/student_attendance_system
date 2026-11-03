@@ -12,7 +12,7 @@
 ## 2. Step-by-Step Execution Matrix
 
 ### Phase 1: Foundation & Authentication
-- [ ] **Step 1.1 (CA-01)**: Project Scaffolding & Environment Setup (`requirements.txt`, `.gitignore`, `.env.example`, skeleton `app.py`, test runner)
+- [x] **Step 1.1 (CA-01)**: Project Scaffolding & Environment Setup (`requirements.txt`, `.gitignore`, `.env.example`, skeleton `app.py`, test runner)
 - [ ] **Step 1.2 (CA-02)**: SQLite Schema & Synthetic Seed Data (`users`, `students`, `courses`, `enrollments`, `attendance`, `audit_logs`, FK enforcement)
 - [ ] **Step 1.3 (CA-03)**: Authentication & Session Lifecycle (`/login`, `/logout`, `check_password_hash`, generic errors)
 - [ ] **Step 1.4 (CA-04)**: Server-Side RBAC Helpers & Decorators (`@login_required`, `@role_required`, 403 error page)
@@ -54,6 +54,5 @@
 ---
 
 ## 4. Current Work Log
-- **Documentation & Plan Complete**: Created `PRD.md`, `Architecture.md`, `Rules.md`, `Phases.md`, `Design.md`, and initialized `Memory.md`.
-- **Roadmap Structure**: Separated into 5 distinct phases across 20 sequential steps.
-- **Immediate Next Action**: Implement **Step 1.1 (CA-01)**.
+- **Phase 1, Step 1.1 Complete**: Scaffolding, pinned dependencies, environment configs, base Flask app with `/health`, and test runner initialized. Tests passing 2/2. Pushed to GitHub.
+- **Immediate Next Action**: Implement **Step 1.2 (CA-02)**: SQLite Schema & Synthetic Seed Data (`users`, `students`, `courses`, `enrollments`, `attendance`, `audit_logs`).
