@@ -49,6 +49,12 @@ def create_app(test_config=None):
     # Register database handlers and CLI commands
     db.init_app(app)
 
+    # Automatically initialize and seed database on first startup if file does not exist
+    if not os.path.exists(app.config["DATABASE"]):
+        with app.app_context():
+            db.init_db()
+            db.seed_db()
+
     # Register Auth blueprint
     app.register_blueprint(auth.bp)
 
