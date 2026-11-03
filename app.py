@@ -3,6 +3,7 @@ ENSP401 - Cloud Computing Capstone Project
 """
 
 import os
+import sqlite3
 from flask import (
     Flask,
     jsonify,
@@ -13,9 +14,10 @@ from flask import (
     request,
     flash,
 )
+from werkzeug.security import generate_password_hash
 import db
 import auth
-from auth import login_required, role_required
+from auth import login_required, role_required, log_audit
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DEFAULT_DB_PATH = os.path.join(BASE_DIR, "instance", "cloudattend.db")
@@ -72,7 +74,7 @@ def create_app(test_config=None):
         """Administrator and Faculty operational dashboard."""
         database = db.get_db()
 
-        # Query summary KPIs
+        # Summary KPIs
         student_count = database.execute("SELECT COUNT(*) AS c FROM students").fetchone()["c"]
         course_count = database.execute("SELECT COUNT(*) AS c FROM courses").fetchone()["c"]
         attendance_count = database.execute("SELECT COUNT(*) AS c FROM attendance").fetchone()["c"]
@@ -173,7 +175,7 @@ def create_app(test_config=None):
                 "percentage": pct,
             })
 
-        # 3. Date-stamped Attendance Session Log
+        # 3. Attendance Session History
         history = database.execute(
             """
             SELECT a.attendance_date, a.status, c.code AS course_code, c.name AS course_name
@@ -198,20 +200,230 @@ def create_app(test_config=None):
         )
 
     # -------------------------------------------------------------------------
-    # Route Placeholders (To prevent template build errors before tickets CA-06+)
+    # Phase 2: Academic Record Management Routes (CA-06, CA-07, CA-08)
     # -------------------------------------------------------------------------
 
     @app.route("/students", methods=["GET", "POST"])
     @login_required
     @role_required("admin")
     def students():
-        return render_template("dashboard.html", stats={}, courses=[], recent_activity=[])
+        """List and manage student profiles (Admin only)."""
+        database = db.get_db()
+
+        if request.method == "POST":
+            roll_no = request.form.get("roll_no", "").strip().upper()
+            name = request.form.get("name", "").strip()
+            email = request.form.get("email", "").strip() or None
+            create_login = bool(request.form.get("create_login"))
+
+            if not roll_no or not name:
+                flash("Roll number and Student Name are required.", "danger")
+            else:
+                # Check for duplicate roll_no
+                existing = database.execute(
+                    "SELECT id FROM students WHERE roll_no = ?", (roll_no,)
+                ).fetchone()
+
+                if existing:
+                    flash(f"A student with roll number '{roll_no}' already exists.", "danger")
+                else:
+                    try:
+                        cur = database.execute(
+                            "INSERT INTO students (roll_no, name, email) VALUES (?, ?, ?)",
+                            (roll_no, name, email),
+                        )
+                        student_id = cur.lastrowid
+
+                        # Create user login account if selected
+                        if create_login:
+                            username = roll_no.lower().replace(" ", "").replace("-", "")
+                            default_pass = generate_password_hash("student123")
+                            database.execute(
+                                """
+                                INSERT OR IGNORE INTO users 
+                                (username, password_hash, role, student_id)
+                                VALUES (?, ?, 'student', ?)
+                                """,
+                                (username, default_pass, student_id),
+                            )
+
+                        log_audit(
+                            g.user["id"],
+                            "CREATE_STUDENT",
+                            f"Added student '{name}' ({roll_no}).",
+                        )
+                        database.commit()
+                        flash(f"Student '{name}' ({roll_no}) registered successfully.", "success")
+                        return redirect(url_for("students"))
+                    except sqlite3.IntegrityError:
+                        database.rollback()
+                        flash("A database constraint violation occurred while registering the student.", "danger")
+
+        # GET request: search and list students
+        query = request.args.get("q", "").strip()
+        if query:
+            search_param = f"%{query}%"
+            student_rows = database.execute(
+                """
+                SELECT s.*, COUNT(e.course_id) AS enrolled_count
+                FROM students s
+                LEFT JOIN enrollments e ON e.student_id = s.id
+                WHERE s.name LIKE ? OR s.roll_no LIKE ?
+                GROUP BY s.id
+                ORDER BY s.roll_no ASC
+                """,
+                (search_param, search_param),
+            ).fetchall()
+        else:
+            student_rows = database.execute(
+                """
+                SELECT s.*, COUNT(e.course_id) AS enrolled_count
+                FROM students s
+                LEFT JOIN enrollments e ON e.student_id = s.id
+                GROUP BY s.id
+                ORDER BY s.roll_no ASC
+                """
+            ).fetchall()
+
+        return render_template("students.html", students=student_rows, query=query)
 
     @app.route("/courses", methods=["GET", "POST"])
     @login_required
     @role_required("admin", "faculty")
     def courses():
-        return render_template("dashboard.html", stats={}, courses=[], recent_activity=[])
+        """List course catalogue and create new courses (Admin creates, Faculty views)."""
+        database = db.get_db()
+
+        if request.method == "POST":
+            # Only admin can add new courses
+            if g.user["role"] != "admin":
+                flash("Only administrators are authorized to add new courses.", "danger")
+                return redirect(url_for("courses"))
+
+            code = request.form.get("code", "").strip().upper()
+            name = request.form.get("name", "").strip()
+
+            if not code or not name:
+                flash("Course Code and Title are required.", "danger")
+            else:
+                existing = database.execute(
+                    "SELECT id FROM courses WHERE code = ?", (code,)
+                ).fetchone()
+
+                if existing:
+                    flash(f"Course code '{code}' already exists.", "danger")
+                else:
+                    try:
+                        database.execute(
+                            "INSERT INTO courses (code, name) VALUES (?, ?)",
+                            (code, name),
+                        )
+                        log_audit(
+                            g.user["id"],
+                            "CREATE_COURSE",
+                            f"Created new course '{name}' ({code}).",
+                        )
+                        database.commit()
+                        flash(f"Course '{code} — {name}' added successfully.", "success")
+                        return redirect(url_for("courses"))
+                    except sqlite3.IntegrityError:
+                        database.rollback()
+                        flash("A database constraint violation occurred while creating the course.", "danger")
+
+        # GET request: fetch courses with enrollment count & roster
+        course_rows = database.execute(
+            """
+            SELECT c.*, COUNT(e.student_id) AS enrolled_count
+            FROM courses c
+            LEFT JOIN enrollments e ON e.course_id = c.id
+            GROUP BY c.id
+            ORDER BY c.code ASC
+            """
+        ).fetchall()
+
+        # Build list of courses with rosters for the enrollment modal
+        courses_data = []
+        for c in course_rows:
+            roster = database.execute(
+                """
+                SELECT s.id, s.roll_no, s.name
+                FROM students s
+                JOIN enrollments e ON e.student_id = s.id
+                WHERE e.course_id = ?
+                ORDER BY s.roll_no ASC
+                """,
+                (c["id"],),
+            ).fetchall()
+
+            courses_data.append({
+                "id": c["id"],
+                "code": c["code"],
+                "name": c["name"],
+                "created_at": c["created_at"],
+                "enrolled_count": c["enrolled_count"],
+                "roster": roster,
+            })
+
+        all_students = database.execute(
+            "SELECT id, roll_no, name FROM students ORDER BY roll_no ASC"
+        ).fetchall()
+
+        return render_template(
+            "courses.html",
+            courses=courses_data,
+            all_students=all_students,
+        )
+
+    @app.route("/courses/<int:course_id>/enroll", methods=["POST"])
+    @login_required
+    @role_required("admin")
+    def enroll_student(course_id):
+        """Enroll a student into a course (CA-08)."""
+        database = db.get_db()
+        student_id = request.form.get("student_id")
+
+        if not student_id:
+            flash("Please select a student to enroll.", "warning")
+            return redirect(url_for("courses"))
+
+        try:
+            database.execute(
+                "INSERT INTO enrollments (student_id, course_id) VALUES (?, ?)",
+                (student_id, course_id),
+            )
+            course = database.execute("SELECT code FROM courses WHERE id = ?", (course_id,)).fetchone()
+            student = database.execute("SELECT roll_no, name FROM students WHERE id = ?", (student_id,)).fetchone()
+
+            log_audit(
+                g.user["id"],
+                "ENROLL_STUDENT",
+                f"Enrolled {student['name']} ({student['roll_no']}) into {course['code']}.",
+            )
+            database.commit()
+            flash(f"Student {student['roll_no']} successfully enrolled in {course['code']}.", "success")
+        except sqlite3.IntegrityError:
+            database.rollback()
+            flash("This student is already enrolled in this course.", "info")
+
+        return redirect(url_for("courses"))
+
+    @app.route("/courses/<int:course_id>/unenroll/<int:student_id>", methods=["POST"])
+    @login_required
+    @role_required("admin")
+    def unenroll_student(course_id, student_id):
+        """Remove student enrollment from a course (CA-08)."""
+        database = db.get_db()
+        database.execute(
+            "DELETE FROM enrollments WHERE student_id = ? AND course_id = ?",
+            (student_id, course_id),
+        )
+        database.commit()
+        flash("Student enrollment removed successfully.", "info")
+        return redirect(url_for("courses"))
+
+    # -------------------------------------------------------------------------
+    # Route Placeholders (Phase 3 & Phase 4)
+    # -------------------------------------------------------------------------
 
     @app.route("/attendance", methods=["GET", "POST"])
     @login_required

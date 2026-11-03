@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Course Catalogue — CloudAttend{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Course Catalogue</h1>
+        <p class="text-muted small mb-0">Academic courses, enrollment rosters, and curriculum identifiers.</p>
+    </div>
+    {% if g.user.role == 'admin' %}
+        <div>
+            <button type="button" class="btn btn-primary-navy d-flex align-items-center gap-1.5" data-bs-toggle="modal" data-bs-target="#addCourseModal">
+                <i class="bi bi-journal-plus"></i> Add New Course
+            </button>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Courses Grid / Table -->
+<div class="row g-4">
+    {% if courses %}
+        {% for c in courses %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card card-custom h-100 p-4 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace fs-6 px-2.5 py-1">
+                                {{ c.code }}
+                            </span>
+                            <span class="badge bg-light text-secondary border">
+                                <i class="bi bi-people-fill me-1"></i>{{ c.enrolled_count or 0 }} Enrolled
+                            </span>
+                        </div>
+                        <h2 class="h5 fw-bold mb-2 text-dark">{{ c.name }}</h2>
+                        <p class="text-muted small mb-3">
+                            Added: 
+                            {% if c.created_at.strftime is defined %}
+                                {{ c.created_at.strftime('%Y-%m-%d') }}
+                            {% else %}
+                                {{ c.created_at[:10] if c.created_at else 'N/A' }}
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="d-flex gap-2 pt-3 border-top mt-2">
+                        {% if g.user.role in ['faculty', 'admin'] %}
+                            <a href="{{ url_for('attendance') }}?course_id={{ c.id }}" class="btn btn-sm btn-primary-navy flex-grow-1">
+                                <i class="bi bi-calendar-check me-1"></i> Mark Attendance
+                            </a>
+                        {% endif %}
+                        {% if g.user.role == 'admin' %}
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#enrollModal{{ c.id }}" title="Manage Roster">
+                                <i class="bi bi-person-check"></i> Roster
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Modal: Manage Course Roster (CA-08) -->
+                {% if g.user.role == 'admin' %}
+                    <div class="modal fade" id="enrollModal{{ c.id }}" tabindex="-1" aria-labelledby="enrollModalLabel{{ c.id }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title fw-bold" id="enrollModalLabel{{ c.id }}">
+                                        {{ c.code }} — Manage Enrollment Roster
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form method="POST" action="{{ url_for('enroll_student', course_id=c.id) }}" class="mb-4">
+                                        <label for="student_id{{ c.id }}" class="form-label fw-semibold small">Enroll Student to Course</label>
+                                        <div class="input-group">
+                                            <select class="form-select" id="student_id{{ c.id }}" name="student_id" required>
+                                                <option value="" disabled selected>Select an unenrolled student...</option>
+                                                {% for s in all_students %}
+                                                    <option value="{{ s.id }}">{{ s.roll_no }} — {{ s.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <button type="submit" class="btn btn-primary-navy">Enroll</button>
+                                        </div>
+                                    </form>
+
+                                    <h6 class="fw-bold small text-muted text-uppercase mb-2">Currently Enrolled Students</h6>
+                                    <div class="border rounded p-2 bg-light" style="max-height: 200px; overflow-y: auto;">
+                                        {% if c.roster %}
+                                            <ul class="list-group list-group-flush small">
+                                                {% for enr in c.roster %}
+                                                    <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-2 py-1.5">
+                                                        <span><strong>{{ enr.roll_no }}</strong> &bull; {{ enr.name }}</span>
+                                                        <form method="POST" action="{{ url_for('unenroll_student', course_id=c.id, student_id=enr.id) }}" onsubmit="return confirm('Remove this student from {{ c.code }}?');">
+                                                            <button type="submit" class="btn btn-link text-danger p-0 border-0" title="Remove enrollment">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% else %}
+                                            <div class="text-center text-muted small py-3">No students are currently enrolled in this course.</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="card card-custom p-5">
+                <div class="empty-state">
+                    <i class="bi bi-journal-x"></i>
+                    <p class="h6 text-muted mb-1">No courses are available.</p>
+                    {% if g.user.role == 'admin' %}
+                        <p class="small text-muted mb-3">Create your first course in the catalogue to begin scheduling classes.</p>
+                        <button type="button" class="btn btn-sm btn-primary-navy" data-bs-toggle="modal" data-bs-target="#addCourseModal">
+                            <i class="bi bi-plus-lg me-1"></i> Add Course
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal: Add New Course -->
+{% if g.user.role == 'admin' %}
+    <div class="modal fade" id="addCourseModal" tabindex="-1" aria-labelledby="addCourseModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{{ url_for('courses') }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="addCourseModalLabel">Add New Course</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="code" class="form-label fw-semibold small">Course Code <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control font-monospace" id="code" name="code" placeholder="e.g. CS401" required>
+                            <div class="form-text">Must be a unique code (e.g. CS101, MATH201).</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="name" class="form-label fw-semibold small">Course Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" placeholder="e.g. Cloud Computing & Distributed Systems" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-navy">Create Course</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+

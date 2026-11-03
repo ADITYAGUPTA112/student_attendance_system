@@ -19,9 +19,9 @@
 - [x] **Step 1.5 (CA-05)**: Role-Aware Dashboards & Navigation (Dynamic navbar, Admin/Faculty/Student landing views)
 
 ### Phase 2: Academic Record Management
-- [ ] **Step 2.1 (CA-06)**: Student Record Management (Admin list/add students, roll number uniqueness)
-- [ ] **Step 2.2 (CA-07)**: Course Catalogue Management (Admin/Faculty course view, course code uniqueness)
-- [ ] **Step 2.3 (CA-08)**: Student-Course Enrollment Mapping (Composite PK, course rosters)
+- [x] **Step 2.1 (CA-06)**: Student Record Management (Admin list/add students, roll number uniqueness)
+- [x] **Step 2.2 (CA-07)**: Course Catalogue Management (Admin/Faculty course view, course code uniqueness)
+- [x] **Step 2.3 (CA-08)**: Student-Course Enrollment Mapping (Composite PK, course rosters)
 
 ### Phase 3: Attendance Engine & Analytics
 - [ ] **Step 3.1 (CA-09)**: Attendance Entry UI & Backend (Faculty course/date marking, atomic transactions)
@@ -61,4 +61,9 @@
   - Server-side RBAC decorators (`@login_required`, `@role_required`) protecting routes with HTTP 403 Forbidden.
   - Accessible role-aware UI dashboards for Admin, Faculty, and Student with row-level ownership isolation and custom styling (`style.css`).
   - Comprehensive Pytest test suite passing 17/17 tests.
-- **Immediate Next Action**: Implement **Phase 2, Step 2.1 (CA-06)**: Student Record Management (`/students` list, search, and validation).
+- **Phase 2 Complete (Steps 2.1 through 2.3)**:
+  - Student record management (`/students`) with search, roll number uniqueness validation, and optional user account provisioning.
+  - Course catalogue management (`/courses`) with course code uniqueness and role-restricted creation (Admin only).
+  - Student-course enrollment mapping (`/courses/<course_id>/enroll`) enforcing roster relationships.
+  - Test suite expanded to 24 tests, all passing.
+- **Immediate Next Action**: Implement **Phase 3 (Steps 3.1 through 3.4)**: Attendance Entry UI & Backend (`/attendance`), Pandas Analytics aggregation service, and Chart.js dashboard (`/analytics`).
