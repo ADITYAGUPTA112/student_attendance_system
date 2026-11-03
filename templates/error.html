@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Error {{ code }} — CloudAttend{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-7 col-lg-6 text-center">
+        <div class="card card-custom p-5 shadow-sm">
+            <div class="mb-3">
+                <i class="bi bi-shield-x text-danger" style="font-size: 3.5rem;"></i>
+            </div>
+            <h1 class="h3 fw-bold mb-2">{{ error_title | default("Access Denied") }}</h1>
+            <p class="text-muted mb-4">{{ error_message | default("You do not have permission to view this page.") }}</p>
+            <div class="d-flex justify-content-center gap-2">
+                <a href="{{ url_for('index') }}" class="btn btn-primary-navy">
+                    <i class="bi bi-house-door me-1"></i> Return to Dashboard
+                </a>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-box-arrow-right me-1"></i> Switch Account
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

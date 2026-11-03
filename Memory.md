@@ -14,9 +14,9 @@
 ### Phase 1: Foundation & Authentication
 - [x] **Step 1.1 (CA-01)**: Project Scaffolding & Environment Setup (`requirements.txt`, `.gitignore`, `.env.example`, skeleton `app.py`, test runner)
 - [x] **Step 1.2 (CA-02)**: SQLite Schema & Synthetic Seed Data (`users`, `students`, `courses`, `enrollments`, `attendance`, `audit_logs`, FK enforcement)
-- [ ] **Step 1.3 (CA-03)**: Authentication & Session Lifecycle (`/login`, `/logout`, `check_password_hash`, generic errors)
-- [ ] **Step 1.4 (CA-04)**: Server-Side RBAC Helpers & Decorators (`@login_required`, `@role_required`, 403 error page)
-- [ ] **Step 1.5 (CA-05)**: Role-Aware Dashboards & Navigation (Dynamic navbar, Admin/Faculty/Student landing views)
+- [x] **Step 1.3 (CA-03)**: Authentication & Session Lifecycle (`/login`, `/logout`, `check_password_hash`, generic errors)
+- [x] **Step 1.4 (CA-04)**: Server-Side RBAC Helpers & Decorators (`@login_required`, `@role_required`, 403 error page)
+- [x] **Step 1.5 (CA-05)**: Role-Aware Dashboards & Navigation (Dynamic navbar, Admin/Faculty/Student landing views)
 
 ### Phase 2: Academic Record Management
 - [ ] **Step 2.1 (CA-06)**: Student Record Management (Admin list/add students, roll number uniqueness)
@@ -54,6 +54,11 @@
 ---
 
 ## 4. Current Work Log
-- **Phase 1, Step 1.1 Complete**: Scaffolding, pinned dependencies, environment configs, base Flask app with `/health`, and test runner initialized. Tests passing 2/2. Pushed to GitHub.
-- **Phase 1, Step 1.2 Complete**: SQLite schema (`schema.sql`) and lifecycle/seed module (`db.py`) implemented with FK enforcement, uniqueness constraints, deterministic synthetic users/courses/attendance seed, and `flask init-db` CLI command. Tests passing 7/7.
-- **Immediate Next Action**: Implement **Step 1.3 (CA-03)**: Authentication & Session Lifecycle (`/login`, `/logout`, `check_password_hash`, session state, templates/login.html).
+- **Phase 1 Complete (Steps 1.1 through 1.5)**:
+  - Scaffolding, pinned dependencies, environment configs, health endpoint.
+  - SQLite schema (`schema.sql`) and lifecycle/seed module (`db.py`) with FK enforcement and synthetic data.
+  - Authentication blueprint (`auth.py`) with secure PBKDF2/scrypt password hashing and session fixation mitigation.
+  - Server-side RBAC decorators (`@login_required`, `@role_required`) protecting routes with HTTP 403 Forbidden.
+  - Accessible role-aware UI dashboards for Admin, Faculty, and Student with row-level ownership isolation and custom styling (`style.css`).
+  - Comprehensive Pytest test suite passing 17/17 tests.
+- **Immediate Next Action**: Implement **Phase 2, Step 2.1 (CA-06)**: Student Record Management (`/students` list, search, and validation).

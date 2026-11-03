@@ -82,3 +82,4 @@ def test_init_db_command(runner):
     assert result.exit_code == 0
     assert "Initialized the database tables." in result.output
     assert "Seeded synthetic demo data." in result.output
+

@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — CloudAttend{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
+    <div>
+        <h1 class="h3 fw-bold mb-1">
+            {% if g.user.role == 'admin' %}
+                Administrator Overview
+            {% else %}
+                Faculty Portal
+            {% endif %}
+        </h1>
+        <p class="text-muted small mb-0">Welcome back, <strong>{{ g.user.username }}</strong> &bull; Role: <span class="text-capitalize">{{ g.user.role }}</span></p>
+    </div>
+    <div class="d-flex gap-2">
+        {% if g.user.role == 'faculty' %}
+            <a href="{{ url_for('attendance') }}" class="btn btn-primary-navy d-flex align-items-center gap-1.5">
+                <i class="bi bi-check2-square"></i> Take Attendance
+            </a>
+            <a href="{{ url_for('analytics') }}" class="btn btn-outline-secondary d-flex align-items-center gap-1.5">
+                <i class="bi bi-bar-chart"></i> View Analytics
+            </a>
+        {% elif g.user.role == 'admin' %}
+            <a href="{{ url_for('students') }}" class="btn btn-primary-navy d-flex align-items-center gap-1.5">
+                <i class="bi bi-person-plus"></i> Manage Students
+            </a>
+            <a href="{{ url_for('backup') }}" class="btn btn-outline-secondary d-flex align-items-center gap-1.5">
+                <i class="bi bi-database-down"></i> System Backup
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- KPI Summary Cards Row -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-custom kpi-card p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-semibold">TOTAL STUDENTS</span>
+                <i class="bi bi-people text-primary fs-4"></i>
+            </div>
+            <div class="h2 fw-bold mb-0">{{ stats.student_count | default(0) }}</div>
+            <span class="text-muted small">Registered learners</span>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-custom kpi-card teal p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-semibold">COURSES OFFERED</span>
+                <i class="bi bi-journal-code text-info fs-4"></i>
+            </div>
+            <div class="h2 fw-bold mb-0">{{ stats.course_count | default(0) }}</div>
+            <span class="text-muted small">Active academic modules</span>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-custom kpi-card success p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-semibold">ATTENDANCE EVENTS</span>
+                <i class="bi bi-calendar-check text-success fs-4"></i>
+            </div>
+            <div class="h2 fw-bold mb-0">{{ stats.attendance_count | default(0) }}</div>
+            <span class="text-muted small">Recorded entries to date</span>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-custom kpi-card warning p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-semibold">SYSTEM AUDIT ROWS</span>
+                <i class="bi bi-shield-check text-warning fs-4"></i>
+            </div>
+            <div class="h2 fw-bold mb-0">{{ stats.audit_count | default(0) }}</div>
+            <span class="text-muted small">Traceability log entries</span>
+        </div>
+    </div>
+</div>
+
+<!-- Action Shortcuts & Overview Tables -->
+<div class="row g-4">
+    <!-- Left Column: Courses -->
+    <div class="col-lg-7">
+        <div class="card card-custom p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h5 fw-bold mb-0">Course Directory</h2>
+                <a href="{{ url_for('courses') }}" class="text-decoration-none small fw-semibold text-primary">
+                    View All <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            {% if courses %}
+                <div class="table-responsive">
+                    <table class="table table-custom mb-0">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Course Title</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in courses %}
+                                <tr>
+                                    <td><span class="badge bg-light text-dark border">{{ c.code }}</span></td>
+                                    <td class="fw-medium">{{ c.name }}</td>
+                                    <td class="text-end">
+                                        {% if g.user.role in ['faculty', 'admin'] %}
+                                            <a href="{{ url_for('attendance') }}?course_id={{ c.id }}" class="btn btn-sm btn-outline-primary py-1 px-2.5">
+                                                <i class="bi bi-pencil-square"></i> Mark
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state py-4">
+                    <i class="bi bi-journal-x"></i>
+                    <p class="mb-0">No courses are available.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Column: Recent Activity / Audit Log Snapshot -->
+    <div class="col-lg-5">
+        <div class="card card-custom p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h5 fw-bold mb-0">Recent System Activity</h2>
+                {% if g.user.role == 'admin' %}
+                    <a href="{{ url_for('audit') }}" class="text-decoration-none small fw-semibold text-primary">
+                        Audit Log <i class="bi bi-arrow-right"></i>
+                    </a>
+                {% endif %}
+            </div>
+            {% if recent_activity %}
+                <ul class="list-group list-group-flush small">
+                    {% for item in recent_activity %}
+                        <li class="list-group-item px-0 py-2.5 d-flex justify-content-between align-items-start border-bottom">
+                            <div>
+                                <span class="badge bg-light text-secondary border me-1">{{ item.action }}</span>
+                                <span class="text-dark">{{ item.detail }}</span>
+                            </div>
+                                <span class="text-muted ms-2 text-nowrap" style="font-size: 0.75rem;">
+                                    {% if item.created_at.strftime is defined %}
+                                        {{ item.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                    {% else %}
+                                        {{ item.created_at }}
+                                    {% endif %}
+                                </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="empty-state py-4">
+                    <i class="bi bi-clock-history"></i>
+                    <p class="mb-0">No recent activity logged.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
