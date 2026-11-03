@@ -13,7 +13,7 @@
 
 ### Phase 1: Foundation & Authentication
 - [x] **Step 1.1 (CA-01)**: Project Scaffolding & Environment Setup (`requirements.txt`, `.gitignore`, `.env.example`, skeleton `app.py`, test runner)
-- [ ] **Step 1.2 (CA-02)**: SQLite Schema & Synthetic Seed Data (`users`, `students`, `courses`, `enrollments`, `attendance`, `audit_logs`, FK enforcement)
+- [x] **Step 1.2 (CA-02)**: SQLite Schema & Synthetic Seed Data (`users`, `students`, `courses`, `enrollments`, `attendance`, `audit_logs`, FK enforcement)
 - [ ] **Step 1.3 (CA-03)**: Authentication & Session Lifecycle (`/login`, `/logout`, `check_password_hash`, generic errors)
 - [ ] **Step 1.4 (CA-04)**: Server-Side RBAC Helpers & Decorators (`@login_required`, `@role_required`, 403 error page)
 - [ ] **Step 1.5 (CA-05)**: Role-Aware Dashboards & Navigation (Dynamic navbar, Admin/Faculty/Student landing views)
@@ -55,4 +55,5 @@
 
 ## 4. Current Work Log
 - **Phase 1, Step 1.1 Complete**: Scaffolding, pinned dependencies, environment configs, base Flask app with `/health`, and test runner initialized. Tests passing 2/2. Pushed to GitHub.
-- **Immediate Next Action**: Implement **Step 1.2 (CA-02)**: SQLite Schema & Synthetic Seed Data (`users`, `students`, `courses`, `enrollments`, `attendance`, `audit_logs`).
+- **Phase 1, Step 1.2 Complete**: SQLite schema (`schema.sql`) and lifecycle/seed module (`db.py`) implemented with FK enforcement, uniqueness constraints, deterministic synthetic users/courses/attendance seed, and `flask init-db` CLI command. Tests passing 7/7.
+- **Immediate Next Action**: Implement **Step 1.3 (CA-03)**: Authentication & Session Lifecycle (`/login`, `/logout`, `check_password_hash`, session state, templates/login.html).
