@@ -24,13 +24,13 @@
 - [x] **Step 2.3 (CA-08)**: Student-Course Enrollment Mapping (Composite PK, course rosters)
 
 ### Phase 3: Attendance Engine & Analytics
-- [ ] **Step 3.1 (CA-09)**: Attendance Entry UI & Backend (Faculty course/date marking, atomic transactions)
-- [ ] **Step 3.2 (CA-10)**: Student Personal Attendance View & Privacy (Row-level isolation, zero cross-student leakage)
-- [ ] **Step 3.3 (CA-11)**: Attendance Aggregation Service with Pandas (Summary stats, percentages, zero-handling)
-- [ ] **Step 3.4 (CA-12)**: Visual Analytics Dashboard with Chart.js (KPI cards, bar/line charts, accessible tables)
+- [x] **Step 3.1 (CA-09)**: Attendance Entry UI & Backend (Faculty course/date marking, atomic transactions)
+- [x] **Step 3.2 (CA-10)**: Student Personal Attendance View & Privacy (Row-level isolation, zero cross-student leakage)
+- [x] **Step 3.3 (CA-11)**: Attendance Aggregation Service with Pandas (Summary stats, percentages, zero-handling)
+- [x] **Step 3.4 (CA-12)**: Visual Analytics Dashboard with Chart.js (KPI cards, bar/line charts, accessible tables)
 
 ### Phase 4: Operations, Security & Persistence
-- [ ] **Step 4.1 (CA-13)**: Scoped CSV Report Export (`/export/csv`, RFC 4180 escaping)
+- [x] **Step 4.1 (CA-13)**: Scoped CSV Report Export (`/export/csv`, RFC 4180 escaping)
 - [ ] **Step 4.2 (CA-14)**: System Audit Logging (`audit_logs` tracking, `/audit` admin view)
 - [ ] **Step 4.3 (CA-15)**: Database Backup & Snapshot Download (`/backup` using `conn.backup()`)
 - [ ] **Step 4.4 (CA-17)**: Dockerfile & Container Volume Persistence (Gunicorn + Compose named volume)
@@ -66,4 +66,11 @@
   - Course catalogue management (`/courses`) with course code uniqueness and role-restricted creation (Admin only).
   - Student-course enrollment mapping (`/courses/<course_id>/enroll`) enforcing roster relationships.
   - Test suite expanded to 24 tests, all passing.
-- **Immediate Next Action**: Implement **Phase 3 (Steps 3.1 through 3.4)**: Attendance Entry UI & Backend (`/attendance`), Pandas Analytics aggregation service, and Chart.js dashboard (`/analytics`).
+- **Phase 3 Complete (Steps 3.1 through 3.4 & Step 4.1)**:
+  - Daily attendance marking interface (`/attendance`) with single-transaction atomic multi-row updates and allow-list validation.
+  - Student personal attendance view (`/student/dashboard`) with strict IDOR isolation.
+  - Pandas aggregation engine (`analytics_service.py`) computing class rates, student rankings, timeline trends, and at-risk students ($< 75\%$).
+  - Analytics visual dashboard (`/analytics`) with interactive Chart.js bar and line charts.
+  - CSV report export stream (`/export/csv`) with standard RFC 4180 headers.
+  - Test suite expanded to 31 tests, all passing.
+- **Immediate Next Action**: Implement **Phase 4 (Steps 4.2 through 4.4)**: System Audit Log viewer (`/audit`), SQLite snapshot backup & restore (`/backup`), and `Dockerfile` + `docker-compose.yml` persistent containerization.

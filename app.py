@@ -3,9 +3,13 @@ ENSP401 - Cloud Computing Capstone Project
 """
 
 import os
+import io
+import csv
 import sqlite3
+from datetime import date
 from flask import (
     Flask,
+    Response,
     jsonify,
     render_template,
     redirect,
@@ -18,6 +22,7 @@ from werkzeug.security import generate_password_hash
 import db
 import auth
 from auth import login_required, role_required, log_audit
+import analytics_service
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DEFAULT_DB_PATH = os.path.join(BASE_DIR, "instance", "cloudattend.db")
@@ -106,7 +111,7 @@ def create_app(test_config=None):
     @login_required
     @role_required("student")
     def student_dashboard():
-        """Student self-service dashboard with strict row-level ownership isolation."""
+        """Student self-service dashboard with strict row-level ownership isolation (CA-10)."""
         database = db.get_db()
         student_id = g.user["student_id"]
 
@@ -219,7 +224,6 @@ def create_app(test_config=None):
             if not roll_no or not name:
                 flash("Roll number and Student Name are required.", "danger")
             else:
-                # Check for duplicate roll_no
                 existing = database.execute(
                     "SELECT id FROM students WHERE roll_no = ?", (roll_no,)
                 ).fetchone()
@@ -234,7 +238,6 @@ def create_app(test_config=None):
                         )
                         student_id = cur.lastrowid
 
-                        # Create user login account if selected
                         if create_login:
                             username = roll_no.lower().replace(" ", "").replace("-", "")
                             default_pass = generate_password_hash("student123")
@@ -295,7 +298,6 @@ def create_app(test_config=None):
         database = db.get_db()
 
         if request.method == "POST":
-            # Only admin can add new courses
             if g.user["role"] != "admin":
                 flash("Only administrators are authorized to add new courses.", "danger")
                 return redirect(url_for("courses"))
@@ -341,7 +343,6 @@ def create_app(test_config=None):
             """
         ).fetchall()
 
-        # Build list of courses with rosters for the enrollment modal
         courses_data = []
         for c in course_rows:
             roster = database.execute(
@@ -422,19 +423,221 @@ def create_app(test_config=None):
         return redirect(url_for("courses"))
 
     # -------------------------------------------------------------------------
-    # Route Placeholders (Phase 3 & Phase 4)
+    # Phase 3: Attendance Engine & Analytics Routes (CA-09, CA-11, CA-12)
     # -------------------------------------------------------------------------
 
     @app.route("/attendance", methods=["GET", "POST"])
     @login_required
     @role_required("admin", "faculty")
     def attendance():
-        return render_template("dashboard.html", stats={}, courses=[], recent_activity=[])
+        """Take or update daily attendance for a selected course and date (CA-09)."""
+        database = db.get_db()
+
+        if request.method == "POST":
+            course_id = request.form.get("course_id")
+            att_date = request.form.get("date", "").strip()
+
+            if not course_id or not att_date:
+                flash("Course and Date are required.", "danger")
+                return redirect(url_for("attendance"))
+
+            # Validate date format (YYYY-MM-DD)
+            try:
+                date.fromisoformat(att_date)
+            except ValueError:
+                flash("Invalid date format provided. Must be YYYY-MM-DD.", "danger")
+                return redirect(url_for("attendance", course_id=course_id, date=att_date))
+
+            # Fetch enrolled students
+            roster = database.execute(
+                "SELECT student_id FROM enrollments WHERE course_id = ?", (course_id,)
+            ).fetchall()
+
+            if not roster:
+                flash("Cannot record attendance: No students are enrolled in this course.", "warning")
+                return redirect(url_for("attendance", course_id=course_id, date=att_date))
+
+            # Atomic multi-row write transaction
+            try:
+                count_saved = 0
+                for r in roster:
+                    s_id = r["student_id"]
+                    status = request.form.get(f"status_{s_id}", "Present").strip()
+                    # CRITICAL: Allow-list validation
+                    if status not in ("Present", "Absent"):
+                        status = "Present"
+
+                    database.execute(
+                        """
+                        INSERT INTO attendance (student_id, course_id, attendance_date, status, marked_by)
+                        VALUES (?, ?, ?, ?, ?)
+                        ON CONFLICT(student_id, course_id, attendance_date) 
+                        DO UPDATE SET status = excluded.status, marked_by = excluded.marked_by, recorded_at = CURRENT_TIMESTAMP
+                        """,
+                        (s_id, course_id, att_date, status, g.user["id"]),
+                    )
+                    count_saved += 1
+
+                course_info = database.execute("SELECT code FROM courses WHERE id = ?", (course_id,)).fetchone()
+                log_audit(
+                    g.user["id"],
+                    "MARK_ATTENDANCE",
+                    f"Recorded attendance for {course_info['code']} on {att_date} ({count_saved} students).",
+                )
+                database.commit()
+                flash(f"Attendance for {course_info['code']} on {att_date} saved successfully ({count_saved} records).", "success")
+                return redirect(url_for("attendance", course_id=course_id, date=att_date))
+            except Exception as ex:
+                database.rollback()
+                flash(f"Error saving attendance: {str(ex)}", "danger")
+                return redirect(url_for("attendance", course_id=course_id, date=att_date))
+
+        # GET request: load courses and roster
+        courses = database.execute("SELECT id, code, name FROM courses ORDER BY code ASC").fetchall()
+
+        selected_course_id = request.args.get("course_id", type=int)
+        if not selected_course_id and courses:
+            selected_course_id = courses[0]["id"]
+
+        selected_date = request.args.get("date", "").strip()
+        if not selected_date:
+            selected_date = date.today().isoformat()
+
+        selected_course = None
+        roster_data = []
+        is_existing = False
+
+        if selected_course_id:
+            selected_course = database.execute(
+                "SELECT id, code, name FROM courses WHERE id = ?", (selected_course_id,)
+            ).fetchone()
+
+            if selected_course:
+                # Query enrolled students along with any existing attendance status for this date
+                enrolled = database.execute(
+                    """
+                    SELECT s.id, s.roll_no, s.name, a.status AS current_status
+                    FROM students s
+                    JOIN enrollments e ON e.student_id = s.id
+                    LEFT JOIN attendance a ON a.student_id = s.id 
+                                         AND a.course_id = e.course_id 
+                                         AND a.attendance_date = ?
+                    WHERE e.course_id = ?
+                    ORDER BY s.roll_no ASC
+                    """,
+                    (selected_date, selected_course_id),
+                ).fetchall()
+
+                for st in enrolled:
+                    if st["current_status"]:
+                        is_existing = True
+                    roster_data.append({
+                        "id": st["id"],
+                        "roll_no": st["roll_no"],
+                        "name": st["name"],
+                        "current_status": st["current_status"],
+                    })
+
+        return render_template(
+            "attendance.html",
+            courses=courses,
+            selected_course=selected_course,
+            selected_date=selected_date,
+            roster=roster_data,
+            is_existing=is_existing,
+        )
 
     @app.route("/analytics", methods=["GET"])
     @login_required
     def analytics():
-        return render_template("dashboard.html", stats={}, courses=[], recent_activity=[])
+        """Visual analytics and KPI dashboard powered by Pandas & Chart.js (CA-11, CA-12)."""
+        database = db.get_db()
+        courses = database.execute("SELECT id, code, name FROM courses ORDER BY code ASC").fetchall()
+
+        course_id = request.args.get("course_id", type=int)
+
+        # Compute Pandas metrics
+        metrics = analytics_service.compute_attendance_analytics(database, course_id=course_id)
+
+        return render_template(
+            "analytics.html",
+            courses=courses,
+            selected_course_id=course_id,
+            metrics=metrics,
+        )
+
+    @app.route("/export/csv", methods=["GET"])
+    @login_required
+    @role_required("admin", "faculty")
+    def export_csv():
+        """Export attendance reports in CSV format (CA-13)."""
+        database = db.get_db()
+        course_id = request.args.get("course_id", type=int)
+
+        query = """
+            SELECT 
+                s.roll_no,
+                s.name AS student_name,
+                c.code AS course_code,
+                c.name AS course_name,
+                a.attendance_date,
+                a.status,
+                u.username AS marked_by_user
+            FROM attendance a
+            JOIN students s ON s.id = a.student_id
+            JOIN courses c ON c.id = a.course_id
+            JOIN users u ON u.id = a.marked_by
+        """
+        params = ()
+        if course_id:
+            query += " WHERE a.course_id = ?"
+            params = (course_id,)
+        query += " ORDER BY a.attendance_date DESC, c.code ASC, s.roll_no ASC"
+
+        records = database.execute(query, params).fetchall()
+
+        output = io.StringIO()
+        writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
+
+        # Write CSV header
+        writer.writerow([
+            "Roll Number",
+            "Student Name",
+            "Course Code",
+            "Course Title",
+            "Attendance Date",
+            "Status",
+            "Marked By",
+        ])
+
+        for r in records:
+            writer.writerow([
+                r["roll_no"],
+                r["student_name"],
+                r["course_code"],
+                r["course_name"],
+                r["attendance_date"],
+                r["status"],
+                r["marked_by_user"],
+            ])
+
+        log_audit(g.user["id"], "EXPORT_CSV", f"Exported attendance CSV report ({len(records)} records).")
+
+        filename = "attendance_report.csv"
+        if course_id:
+            c = database.execute("SELECT code FROM courses WHERE id = ?", (course_id,)).fetchone()
+            if c:
+                filename = f"attendance_report_{c['code']}.csv"
+
+        return Response(
+            output.getvalue(),
+            mimetype="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
+
+    # -------------------------------------------------------------------------
+    # Route Placeholders (Phase 4: Audit & Backup)
+    # -------------------------------------------------------------------------
 
     @app.route("/audit", methods=["GET"])
     @login_required

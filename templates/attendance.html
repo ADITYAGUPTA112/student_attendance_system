@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Record Attendance — CloudAttend{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Class Attendance Entry</h1>
+        <p class="text-muted small mb-0">Record, update, and verify student attendance sessions.</p>
+    </div>
+    {% if selected_course %}
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 fs-6">
+            Course: <strong>{{ selected_course.code }}</strong> &bull; {{ selected_course.name }}
+        </span>
+    {% endif %}
+</div>
+
+<!-- Selection Controls Card -->
+<div class="card card-custom p-4 mb-4">
+    <form method="GET" action="{{ url_for('attendance') }}" class="row g-3 align-items-end">
+        <div class="col-md-5">
+            <label for="course_id" class="form-label fw-semibold small">Select Course</label>
+            <select class="form-select" id="course_id" name="course_id" onchange="this.form.submit()">
+                {% for c in courses %}
+                    <option value="{{ c.id }}" {% if selected_course and selected_course.id == c.id %}selected{% endif %}>
+                        {{ c.code }} — {{ c.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="date" class="form-label fw-semibold small">Session Date</label>
+            <input type="date" class="form-control" id="date" name="date" value="{{ selected_date }}" onchange="this.form.submit()" required>
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-outline-secondary w-100">
+                <i class="bi bi-arrow-repeat me-1"></i> Refresh Roster
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Attendance Entry Form Card -->
+{% if selected_course %}
+    <div class="card card-custom p-4">
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-3 gap-2">
+            <div>
+                <h2 class="h5 fw-bold mb-0">
+                    Roster for {{ selected_date }}
+                    {% if is_existing %}
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle ms-2">
+                            <i class="bi bi-pencil-fill me-1"></i> Editing Existing Records
+                        </span>
+                    {% endif %}
+                </h2>
+                <span class="text-muted small">{{ roster|length }} students enrolled in this course</span>
+            </div>
+            
+            {% if roster %}
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-success" onclick="markAll('Present')">
+                        <i class="bi bi-check-all"></i> Mark All Present
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" onclick="markAll('Absent')">
+                        <i class="bi bi-x"></i> Mark All Absent
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+
+        {% if roster %}
+            <form method="POST" action="{{ url_for('attendance') }}">
+                <input type="hidden" name="course_id" value="{{ selected_course.id }}">
+                <input type="hidden" name="date" value="{{ selected_date }}">
+
+                <div class="table-responsive mb-4">
+                    <table class="table table-custom align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 20%;">Roll Number</th>
+                                <th style="width: 45%;">Student Name</th>
+                                <th style="width: 35%;" class="text-end">Attendance Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in roster %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-light text-dark border font-monospace fw-bold">{{ s.roll_no }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-dark">{{ s.name }}</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group" role="group" aria-label="Status for {{ s.roll_no }}">
+                                            <input type="radio" class="btn-check status-radio-present" 
+                                                   name="status_{{ s.id }}" id="present_{{ s.id }}" 
+                                                   value="Present" 
+                                                   {% if s.current_status == 'Present' or not s.current_status %}checked{% endif %}>
+                                            <label class="btn btn-outline-success btn-sm px-3" for="present_{{ s.id }}">
+                                                <i class="bi bi-check-lg me-1"></i> Present
+                                            </label>
+
+                                            <input type="radio" class="btn-check status-radio-absent" 
+                                                   name="status_{{ s.id }}" id="absent_{{ s.id }}" 
+                                                   value="Absent" 
+                                                   {% if s.current_status == 'Absent' %}checked{% endif %}>
+                                            <label class="btn btn-outline-danger btn-sm px-3" for="absent_{{ s.id }}">
+                                                <i class="bi bi-x-lg me-1"></i> Absent
+                                            </label>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                    <span class="text-muted small">
+                        <i class="bi bi-info-circle me-1"></i> Changes will be saved atomically in a single database transaction.
+                    </span>
+                    <button type="submit" class="btn btn-primary-navy px-4 py-2 fw-semibold">
+                        <i class="bi bi-save me-1"></i> Save Attendance
+                    </button>
+                </div>
+            </form>
+        {% else %}
+            <div class="empty-state py-5">
+                <i class="bi bi-person-x"></i>
+                <p class="h6 text-muted mb-1">No students are enrolled in this course.</p>
+                <p class="small text-muted mb-0">Please enroll students via the Course Catalogue before recording attendance.</p>
+            </div>
+        {% endif %}
+    </div>
+{% endif %}
+
+<script>
+function markAll(status) {
+    if (status === 'Present') {
+        document.querySelectorAll('.status-radio-present').forEach(el => el.checked = true);
+    } else {
+        document.querySelectorAll('.status-radio-absent').forEach(el => el.checked = true);
+    }
+}
+</script>
+{% endblock %}
+
