@@ -5,8 +5,9 @@ ENSP401 - Cloud Computing Capstone Project
 import os
 import io
 import csv
+import tempfile
 import sqlite3
-from datetime import date
+from datetime import datetime, date
 from flask import (
     Flask,
     Response,
@@ -17,6 +18,7 @@ from flask import (
     g,
     request,
     flash,
+    send_file,
 )
 from werkzeug.security import generate_password_hash
 import db
@@ -441,14 +443,12 @@ def create_app(test_config=None):
                 flash("Course and Date are required.", "danger")
                 return redirect(url_for("attendance"))
 
-            # Validate date format (YYYY-MM-DD)
             try:
                 date.fromisoformat(att_date)
             except ValueError:
                 flash("Invalid date format provided. Must be YYYY-MM-DD.", "danger")
                 return redirect(url_for("attendance", course_id=course_id, date=att_date))
 
-            # Fetch enrolled students
             roster = database.execute(
                 "SELECT student_id FROM enrollments WHERE course_id = ?", (course_id,)
             ).fetchall()
@@ -463,7 +463,6 @@ def create_app(test_config=None):
                 for r in roster:
                     s_id = r["student_id"]
                     status = request.form.get(f"status_{s_id}", "Present").strip()
-                    # CRITICAL: Allow-list validation
                     if status not in ("Present", "Absent"):
                         status = "Present"
 
@@ -513,7 +512,6 @@ def create_app(test_config=None):
             ).fetchone()
 
             if selected_course:
-                # Query enrolled students along with any existing attendance status for this date
                 enrolled = database.execute(
                     """
                     SELECT s.id, s.roll_no, s.name, a.status AS current_status
@@ -556,7 +554,6 @@ def create_app(test_config=None):
 
         course_id = request.args.get("course_id", type=int)
 
-        # Compute Pandas metrics
         metrics = analytics_service.compute_attendance_analytics(database, course_id=course_id)
 
         return render_template(
@@ -599,7 +596,6 @@ def create_app(test_config=None):
         output = io.StringIO()
         writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
 
-        # Write CSV header
         writer.writerow([
             "Roll Number",
             "Student Name",
@@ -636,20 +632,102 @@ def create_app(test_config=None):
         )
 
     # -------------------------------------------------------------------------
-    # Route Placeholders (Phase 4: Audit & Backup)
+    # Phase 4: Operations & Security Routes (CA-14, CA-15)
     # -------------------------------------------------------------------------
 
     @app.route("/audit", methods=["GET"])
     @login_required
     @role_required("admin")
     def audit():
-        return render_template("dashboard.html", stats={}, courses=[], recent_activity=[])
+        """Review immutable system audit trail (CA-14)."""
+        database = db.get_db()
+        query = request.args.get("q", "").strip()
+
+        if query:
+            search_param = f"%{query}%"
+            logs = database.execute(
+                """
+                SELECT a.*, u.username
+                FROM audit_logs a
+                LEFT JOIN users u ON u.id = a.user_id
+                WHERE a.action LIKE ? OR a.detail LIKE ? OR u.username LIKE ?
+                ORDER BY a.id DESC
+                LIMIT 100
+                """,
+                (search_param, search_param, search_param),
+            ).fetchall()
+        else:
+            logs = database.execute(
+                """
+                SELECT a.*, u.username
+                FROM audit_logs a
+                LEFT JOIN users u ON u.id = a.user_id
+                ORDER BY a.id DESC
+                LIMIT 100
+                """
+            ).fetchall()
+
+        return render_template("audit.html", logs=logs, query=query)
 
     @app.route("/backup", methods=["GET"])
     @login_required
     @role_required("admin")
     def backup():
-        return render_template("dashboard.html", stats={}, courses=[], recent_activity=[])
+        """Display database storage status and disaster recovery options (CA-15)."""
+        database = db.get_db()
+        db_path = app.config["DATABASE"]
+
+        size_kb = 0
+        if os.path.exists(db_path):
+            size_kb = round(os.path.getsize(db_path) / 1024, 2)
+
+        student_count = database.execute("SELECT COUNT(*) AS c FROM students").fetchone()["c"]
+        course_count = database.execute("SELECT COUNT(*) AS c FROM courses").fetchone()["c"]
+        attendance_count = database.execute("SELECT COUNT(*) AS c FROM attendance").fetchone()["c"]
+
+        db_info = {
+            "path": db_path,
+            "size_kb": size_kb,
+            "student_count": student_count,
+            "course_count": course_count,
+            "attendance_count": attendance_count,
+        }
+
+        return render_template("backup.html", db_info=db_info)
+
+    @app.route("/backup/download", methods=["GET"])
+    @login_required
+    @role_required("admin")
+    def download_backup():
+        """Create a consistent online SQLite backup and download snapshot (CA-15)."""
+        source_db = db.get_db()
+
+        # Create temporary file for consistent SQLite online backup
+        temp_fd, temp_path = tempfile.mkstemp(suffix=".db")
+        os.close(temp_fd)
+
+        try:
+            dest_db = sqlite3.connect(temp_path)
+            # Safe non-blocking SQLite online backup API
+            source_db.backup(dest_db)
+            dest_db.close()
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"cloudattend_backup_{timestamp}.db"
+
+            log_audit(g.user["id"], "BACKUP_DATABASE", f"Created database snapshot '{filename}'.")
+
+            return send_file(
+                temp_path,
+                as_attachment=True,
+                download_name=filename,
+                mimetype="application/x-sqlite3",
+            )
+        except Exception as ex:
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+            flash(f"Backup generation failed: {str(ex)}", "danger")
+            return redirect(url_for("backup"))
 
     # -------------------------------------------------------------------------
     # HTTP Error Handlers

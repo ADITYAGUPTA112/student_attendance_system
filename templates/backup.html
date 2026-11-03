@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Database Backup & Disaster Recovery — CloudAttend{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Database Backup & Disaster Recovery</h1>
+        <p class="text-muted small mb-0">Generate consistent point-in-time snapshots of the SQLite database.</p>
+    </div>
+    <div>
+        <a href="{{ url_for('download_backup') }}" class="btn btn-primary-navy d-flex align-items-center gap-1.5">
+            <i class="bi bi-download"></i> Download Database Snapshot (.db)
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Backup Metadata Card -->
+    <div class="col-lg-7">
+        <div class="card card-custom p-4 h-100">
+            <h2 class="h5 fw-bold mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-database-check text-success"></i> Active Storage Status
+            </h2>
+
+            <div class="table-responsive">
+                <table class="table table-custom align-middle mb-4">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted" style="width: 35%;">Engine</td>
+                            <td class="fw-semibold">SQLite 3 (WAL Mode &bull; Foreign Keys Enforced)</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Database Location</td>
+                            <td><code>{{ db_info.path }}</code></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Storage Size</td>
+                            <td><span class="badge bg-light text-dark border">{{ db_info.size_kb }} KB</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Current Table Counts</td>
+                            <td>
+                                <span class="badge bg-light text-dark border me-1">{{ db_info.student_count }} Students</span>
+                                <span class="badge bg-light text-dark border me-1">{{ db_info.course_count }} Courses</span>
+                                <span class="badge bg-light text-dark border">{{ db_info.attendance_count }} Attendance Records</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alert alert-info border-info-subtle d-flex align-items-start gap-2 mb-0" role="alert">
+                <i class="bi bi-info-circle-fill text-info fs-5 mt-0.5"></i>
+                <div class="small">
+                    <strong>Consistency Guarantee:</strong> Backups are created using the online SQLite Backup API (<code>conn.backup()</code>). This creates a consistent snapshot without requiring a server shutdown or blocking concurrent readers.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restore Instructions Card -->
+    <div class="col-lg-5">
+        <div class="card card-custom p-4 h-100">
+            <h2 class="h5 fw-bold mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-arrow-counterclockwise text-primary"></i> Restoration Test Guide
+            </h2>
+            <p class="text-muted small">To restore a downloaded backup into an isolated local or testing environment:</p>
+
+            <ol class="small text-dark ps-3 mb-4">
+                <li class="mb-2">Stop the running application or container.</li>
+                <li class="mb-2">Place the snapshot into the instance directory:<br>
+                    <code>cp backup_cloudattend.db instance/cloudattend.db</code>
+                </li>
+                <li class="mb-2">Verify integrity via the SQLite CLI:<br>
+                    <code>sqlite3 instance/cloudattend.db "PRAGMA integrity_check;"</code>
+                </li>
+                <li>Restart the application or Docker container.</li>
+            </ol>
+
+            <div class="pt-3 border-top mt-auto">
+                <a href="{{ url_for('download_backup') }}" class="btn btn-primary-navy w-100 py-2">
+                    <i class="bi bi-cloud-arrow-down me-1"></i> Generate & Download Now
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

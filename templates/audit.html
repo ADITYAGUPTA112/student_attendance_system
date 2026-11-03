@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}System Audit Log — CloudAttend{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
+    <div>
+        <h1 class="h3 fw-bold mb-1">System Audit & Traceability Log</h1>
+        <p class="text-muted small mb-0">Immutable record of administrative, authentication, and attendance events.</p>
+    </div>
+    <div>
+        <span class="badge bg-light text-secondary border px-3 py-2">
+            <i class="bi bi-shield-lock-fill text-warning me-1"></i> Admin Privileged View
+        </span>
+    </div>
+</div>
+
+<!-- Filter Controls -->
+<div class="card card-custom p-3 mb-4">
+    <form method="GET" action="{{ url_for('audit') }}" class="row g-2 align-items-center">
+        <div class="col-md-9 col-lg-10">
+            <div class="input-group">
+                <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control border-start-0" name="q" value="{{ query or '' }}" placeholder="Filter by action (e.g. LOGIN, CREATE, MARK) or detail...">
+            </div>
+        </div>
+        <div class="col-md-3 col-lg-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary-navy w-100">Filter</button>
+            {% if query %}
+                <a href="{{ url_for('audit') }}" class="btn btn-outline-secondary" title="Clear filter">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Audit Trail Table -->
+<div class="card card-custom p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h5 fw-bold mb-0">
+            Audit Records
+            <span class="badge bg-light text-secondary border ms-1">{{ logs|length }}</span>
+        </h2>
+    </div>
+
+    {% if logs %}
+        <div class="table-responsive">
+            <table class="table table-custom align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 18%;">Timestamp</th>
+                        <th style="width: 15%;">Actor</th>
+                        <th style="width: 20%;">Action Category</th>
+                        <th style="width: 47%;">Event Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in logs %}
+                        <tr>
+                            <td class="text-nowrap small text-muted">
+                                <i class="bi bi-clock me-1"></i>
+                                {% if item.created_at.strftime is defined %}
+                                    {{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                                {% else %}
+                                    {{ item.created_at }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.username %}
+                                    <span class="badge bg-light text-dark border">
+                                        <i class="bi bi-person me-1"></i>{{ item.username }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-light text-muted border">System / Anonymous</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace">
+                                    {{ item.action }}
+                                </span>
+                            </td>
+                            <td class="small text-dark">{{ item.detail }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state py-5">
+            <i class="bi bi-shield-check"></i>
+            <p class="h6 text-muted mb-1">No audit log records found.</p>
+            <p class="small text-muted mb-0">System events will appear here as users interact with CloudAttend.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
