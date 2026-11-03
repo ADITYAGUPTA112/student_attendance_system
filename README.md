@@ -1,4 +1,4 @@
-# AttendX — Intelligent Attendance & Academic Analytics Platform
+# CloudAttend — Intelligent Student Attendance & Analytics Platform
 
 **ENSP401 – Cloud Computing Capstone Project**  
 *Role-Based Academic Attendance Management, Statistical Reporting & Privacy-Enforced Self-Service*
@@ -11,7 +11,7 @@
 ---
 
 ## 1. Project Overview & Vision
-**AttendX** is a role-governed web application built for academic institutions to eliminate manual paper registers and fragmented spreadsheets. It delivers:
+**CloudAttend** is a role-governed web application built for academic institutions to eliminate manual paper registers and fragmented spreadsheets. It delivers:
 - **Administrators**: Centralized student profile creation, course catalogue administration, student-course enrollment rosters, immutable audit logging, and point-in-time database snapshots.
 - **Faculty**: Streamlined, fast attendance marking per course and session date, featuring atomic database transactions and real-time class summaries.
 - **Students**: Self-service dashboards strictly enforcing row-level ownership isolation (`WHERE student_id = ?`) allowing learners to monitor attendance percentages, attended/missed counts, and class history.
@@ -154,3 +154,16 @@ docker compose up -d --build
 pytest -v
 ```
 All **36 tests** covering security, RBAC, schema, privacy, calculations, and benchmarks will execute and pass.
+
+---
+
+## 7. Capstone Engineering Documentation & Viva Guide
+
+Comprehensive documentation artifacts are included in the repository root:
+- **[VIVA_DEFENSE_GUIDE.md](VIVA_DEFENSE_GUIDE.md)**: 5-minute live oral presentation script, defense of architectural choices (SQLite WAL, Pandas vs SQL, cookie sessions, atomic transactions), and threat mitigation matrix.
+- **[PRD.md](PRD.md)**: Product Requirements Document detailing user personas, technical constraints, and acceptance criteria.
+- **[Architecture.md](Architecture.md)**: End-to-end component diagrams, relational data schemas, and security boundaries.
+- **[Rules.md](Rules.md)**: Non-negotiable architectural boundaries and clean coding rules.
+- **[Phases.md](Phases.md)**: Detailed step-wise sprint plan mapping across CA-01 through CA-20.
+- **[Design.md](Design.md)**: Design system tokens, color palettes, typography, and accessibility guidelines.
+- **[Memory.md](Memory.md)**: Living engineering progress tracker and milestone ledger.

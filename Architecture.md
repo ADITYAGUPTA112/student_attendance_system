@@ -1,7 +1,7 @@
-# Technical Architecture Document — AttendX
+# Technical Architecture Document — CloudAttend
 
 ## 1. Architecture Overview
-AttendX follows a classic layered, server-rendered web architecture.
+CloudAttend follows a classic layered, server-rendered web architecture.
 - **Client Tier**: Web browser rendering server-generated HTML5 with Bootstrap 5.x styling and Chart.js 4.x for client-side analytics rendering.
 - **Application Tier**: Python 3.11 with Flask 3.x providing session-based authentication, role-based authorization, route handling, input validation, and business logic.
 - **Analytics Tier**: Pandas 2.x for tabular data processing, aggregation, grouping, and percentage computations.

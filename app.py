@@ -1,4 +1,4 @@
-"""AttendX - Intelligent Attendance & Academic Analytics Platform
+"""CloudAttend - Intelligent Student Attendance & Analytics Platform
 ENSP401 - Cloud Computing Capstone Project
 """
 
@@ -67,7 +67,7 @@ def create_app(test_config=None):
         """Liveness response for monitoring and automated verification."""
         return jsonify({
             "status": "healthy",
-            "service": "AttendX",
+            "service": "CloudAttend",
             "version": "1.0.0"
         }), 200
 

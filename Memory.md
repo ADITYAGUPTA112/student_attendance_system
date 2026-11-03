@@ -1,7 +1,7 @@
-# Project Memory & Progress Tracker — AttendX
+# Project Memory & Progress Tracker — CloudAttend
 
 ## 1. Project Snapshot
-- **Project Name**: AttendX — Intelligent Attendance & Academic Analytics Platform
+- **Project Name**: CloudAttend — Intelligent Student Attendance & Analytics Platform
 - **Course Context**: ENSP401 – Cloud Computing Capstone Project
 - **Architecture Stack**: Python 3.11, Flask 3.x, SQLite 3, Pandas 2.x, Bootstrap 5.3, Chart.js 4.x, Gunicorn, Docker Compose, Pytest
 - **Primary Roles**: `admin`, `faculty`, `student`
@@ -41,8 +41,6 @@
 - [x] **Step 5.1 (CA-16)**: Responsive Design System & Accessibility (WCAG 4.5:1 contrast, 8px grid, mobile responsiveness)
 - [x] **Step 5.2 (CA-20)**: Final README, Architecture Documentation & Viva Demo Evidence
 - [x] **Step 5.3 (Stitch UI)**: Google Stitch MCP Integration & Modern UI Overhaul (Plus Jakarta Sans typography, deep navy header, segmented status controls, real-time roster counter, responsive KPI cards)
-- [x] **Step 5.4 (Stitch Sunset Redesign)**: Premium Sunset Orange + Navy Blue Glassmorphism Login Gateway (`#101D3A`, `#FF9D32`, `#FF7628`, high-fidelity SVG campus architecture silhouette, ambient floating sunset particles, glowing glass login card with eye toggle, 1-click interactive demo accounts auto-fill)
-- [x] **Step 5.5 (Rebranding to AttendX)**: Complete rebranding to **AttendX – Intelligent Attendance & Academic Analytics Platform** including high-resolution logo banner (`logo.png`), square emblem favicon (`icon.png`), updated portal headers, footers, templates, and health service endpoint.
 
 ---
 

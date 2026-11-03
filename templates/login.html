@@ -1,548 +1,69 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In — AttendX — Intelligent Attendance & Academic Analytics Platform</title>
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/icon.png') }}">
-    <!-- Google Fonts: Plus Jakarta Sans -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Bootstrap 5.3 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <!-- Custom Stitch Design System CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body class="portal-login-body">
+{% extends "base.html" %}
 
-    <!-- Atmospheric Background: Sunset Orbs, Floating Particles & Campus Architecture -->
-    <div class="portal-bg-composite">
-        <!-- Radiant Sunset Orbs -->
-        <div class="portal-glow-orb-1"></div>
-        <div class="portal-glow-orb-2"></div>
+{% block title %}Sign In — CloudAttend{% endblock %}
 
-        <!-- Lightweight Dynamic Canvas Particles -->
-        <canvas id="particleCanvas" class="portal-bg-canvas"></canvas>
-
-        <!-- High-Fidelity SVG Academic Campus Architectural Silhouette & Sunset Waves -->
-        <svg class="portal-bg-svg" viewBox="0 0 1440 600" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-            <defs>
-                <!-- Sunset Sky Gradient -->
-                <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#FF9D32" stop-opacity="0.25"/>
-                    <stop offset="45%" stop-color="#FF7628" stop-opacity="0.18"/>
-                    <stop offset="80%" stop-color="#7B2CBF" stop-opacity="0.12"/>
-                    <stop offset="100%" stop-color="#101D3A" stop-opacity="0.0"/>
-                </linearGradient>
-                <!-- Glowing Sunset Wave Gradient -->
-                <linearGradient id="waveGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stop-color="#FF9D32" stop-opacity="0.0"/>
-                    <stop offset="30%" stop-color="#FF9D32" stop-opacity="0.35"/>
-                    <stop offset="70%" stop-color="#FF7628" stop-opacity="0.45"/>
-                    <stop offset="100%" stop-color="#FF9D32" stop-opacity="0.0"/>
-                </linearGradient>
-                <linearGradient id="waveGrad2" x1="100%" y1="0%" x2="0%" y2="0%">
-                    <stop offset="0%" stop-color="#FF7628" stop-opacity="0.0"/>
-                    <stop offset="50%" stop-color="#FFB47A" stop-opacity="0.30"/>
-                    <stop offset="100%" stop-color="#7B2CBF" stop-opacity="0.0"/>
-                </linearGradient>
-                <linearGradient id="buildingGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stop-color="#17294B" stop-opacity="0.95"/>
-                    <stop offset="100%" stop-color="#0A1325" stop-opacity="0.98"/>
-                </linearGradient>
-            </defs>
-
-            <!-- Sunset Horizon Glow -->
-            <rect y="180" width="1440" height="420" fill="url(#skyGrad)"/>
-
-            <!-- Distant Collegiate Skyline (Library Dome, Arches, Academic Halls) -->
-            <path d="M0 600 V430 L45 430 L45 400 L85 400 L85 430 L160 430 L160 380 L180 380 L180 340 L195 340 L195 310 L205 270 L215 310 L215 340 L230 340 L230 380 L250 380 L250 430 L360 430 L360 390 L420 390 L420 350 L445 350 C445 310 495 310 495 350 L520 350 L520 390 L580 390 L580 430 L690 430 L690 330 L710 330 L710 240 L720 220 L730 240 L730 330 L750 330 L750 430 L880 430 L880 370 L960 370 L960 430 L1080 430 L1080 340 L1105 340 C1105 300 1155 300 1155 340 L1180 340 L1180 430 L1290 430 L1290 380 L1340 380 L1340 430 L1440 430 V600 Z" fill="url(#buildingGrad)"/>
-
-            <!-- Clock Tower Details & Illuminated Academic Arches -->
-            <rect x="715" y="260" width="10" height="10" rx="5" fill="#FFB47A" opacity="0.8"/>
-            <rect x="716" y="290" width="8" height="16" rx="4" fill="#FF9D32" opacity="0.6"/>
-            <rect x="198" y="350" width="14" height="24" rx="7" fill="#FFB47A" opacity="0.5"/>
-            <rect x="460" y="365" width="20" height="30" rx="10" fill="#FF9D32" opacity="0.6"/>
-            <rect x="1120" y="355" width="20" height="30" rx="10" fill="#FF9D32" opacity="0.6"/>
-
-            <!-- Silhouetted Trees & Campus Landscape -->
-            <circle cx="120" cy="450" r="38" fill="#0C172E"/>
-            <circle cx="145" cy="440" r="30" fill="#0E1B35"/>
-            <circle cx="630" cy="460" r="42" fill="#0C172E"/>
-            <circle cx="660" cy="450" r="32" fill="#0E1B35"/>
-            <circle cx="1020" cy="455" r="40" fill="#0C172E"/>
-            <circle cx="1380" cy="445" r="44" fill="#0C172E"/>
-
-            <!-- Glowing Sunset Waves Overlay -->
-            <path d="M0 490 Q360 410 720 480 T1440 460 V600 H0 Z" fill="url(#waveGrad1)"/>
-            <path d="M0 530 Q360 470 720 540 T1440 510 V600 H0 Z" fill="url(#waveGrad2)"/>
-        </svg>
-
-        <!-- Deep Multi-Layer Vignette -->
-        <div style="position: absolute; inset: 0; background: radial-gradient(circle at 75% 50%, rgba(16,29,58,0.2) 0%, rgba(10,19,37,0.85) 80%, #0A1325 100%);"></div>
-    </div>
-
-    <!-- Top Navigation Bar -->
-    <header class="portal-nav py-3">
-        <div class="container-fluid px-4 px-lg-5">
-            <div class="d-flex align-items-center justify-content-between">
-                <!-- Brand & Academic Tag -->
-                <div class="d-flex align-items-center gap-3">
-                    <a href="{{ url_for('index') }}" class="text-decoration-none d-flex align-items-center gap-2">
-                        <img src="{{ url_for('static', filename='img/icon.png') }}" alt="AttendX Emblem" height="38" class="rounded-2 shadow-sm bg-white p-0.5">
-                        <span class="fs-4 fw-extrabold tracking-tight text-white">Attend<span class="text-orange-gradient">X</span></span>
-                    </a>
-                    <span class="badge-academic-portal d-none d-sm-inline-flex">
-                        <span class="pulse-dot"></span>
-                        <span>ACADEMIC PORTAL</span>
-                    </span>
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 65vh;">
+    <div class="col-md-6 col-lg-5">
+        <div class="card card-custom p-4 p-md-5">
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle p-3 mb-2 border">
+                    <i class="bi bi-calendar-check text-primary" style="font-size: 2rem;"></i>
                 </div>
-
-                <!-- Navigation Links -->
-                <nav class="d-none d-md-flex align-items-center gap-4">
-                    <a href="{{ url_for('index') }}" class="nav-link active">Home</a>
-                    <a href="#features" class="nav-link">Features</a>
-                    <a href="#about" class="nav-link">About</a>
-                    <a href="{{ url_for('health') }}" target="_blank" class="nav-link d-inline-flex align-items-center gap-1.5" title="Check API Service Health">
-                        <span style="width: 8px; height: 8px; border-radius: 50%; background: #10B981; display: inline-block;"></span>
-                        <span>System Status</span>
-                    </a>
-                </nav>
-
-                <!-- Institutional Sign In Button -->
-                <div>
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-2 text-white" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,157,50,0.4); border-radius: 8px; transition: all 0.2s;">
-                        <i class="bi bi-box-arrow-in-right text-warning"></i>
-                        <span>Sign In</span>
-                    </a>
-                </div>
+                <h2 class="h4 fw-bold mb-1">Welcome to CloudAttend</h2>
+                <p class="text-muted small">Sign in to your academic account to continue</p>
             </div>
-        </div>
-    </header>
 
-    <!-- Main Content Grid -->
-    <main class="container-fluid px-4 px-lg-5 py-4 py-lg-5 my-auto position-relative" style="z-index: 10;">
-        <div class="row align-items-center justify-content-center g-5">
-
-            <!-- LEFT SECTION: Product Introduction & Feature Bento -->
-            <section class="col-lg-7 col-xl-7 pe-xl-5 fade-in-up">
-                <!-- Release Badge -->
-                <div class="d-inline-flex align-items-center gap-2 px-3 py-1.5 rounded-pill mb-3" style="background: rgba(23,41,75,0.8); border: 1px solid rgba(255,157,50,0.35); backdrop-filter: blur(10px);">
-                    <i class="bi bi-cloud-check-fill text-warning fs-6"></i>
-                    <span class="text-uppercase fw-bold text-warning" style="font-size: 0.72rem; letter-spacing: 0.08em;">Cloud-Based Attendance System</span>
-                    <span class="text-white-50" style="font-size: 0.72rem;">&bull; v1.0 Production</span>
-                </div>
-
-                <!-- Primary Headings -->
-                <h1 class="display-4 fw-extrabold text-white mb-2 tracking-tight">
-                    Attend<span class="text-orange-gradient">X</span>
-                </h1>
-                <h2 class="h4 fw-semibold text-warning mb-3">
-                    Intelligent Attendance & Academic Analytics Platform
-                </h2>
-                <p class="lead mb-4" style="color: #D6DCE8; font-size: 1.05rem; line-height: 1.65; max-width: 640px;">
-                    A secure, cloud-ready solution to record, manage and analyze student attendance with real-time insights and role-based access. Designed for modern university faculties and administrative departments.
-                </p>
-
-                <!-- 2x2 Feature Cards Grid -->
-                <div class="row g-3 pt-2 mb-4" id="features">
-                    <!-- Feature 1: Attendance Analytics -->
-                    <div class="col-sm-6">
-                        <div class="feature-bento-card h-100">
-                            <div class="d-flex align-items-start gap-3">
-                                <div class="feature-icon-box">
-                                    <i class="bi bi-graph-up-arrow"></i>
-                                </div>
-                                <div>
-                                    <h3 class="h6 fw-bold text-white mb-1">Attendance Analytics</h3>
-                                    <p class="small mb-0" style="color: #B2BDCD; font-size: 0.84rem; line-height: 1.45;">
-                                        Real-time cohort presence tracking, timeline trendlines, and automated &lt;75% risk flags.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Feature 2: Secure Access -->
-                    <div class="col-sm-6">
-                        <div class="feature-bento-card h-100">
-                            <div class="d-flex align-items-start gap-3">
-                                <div class="feature-icon-box">
-                                    <i class="bi bi-shield-check"></i>
-                                </div>
-                                <div>
-                                    <h3 class="h6 fw-bold text-white mb-1">Secure Access</h3>
-                                    <p class="small mb-0" style="color: #B2BDCD; font-size: 0.84rem; line-height: 1.45;">
-                                        Strict role-based isolation (Admin, Faculty, Student) with row-level data protection.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Feature 3: Cloud Ready -->
-                    <div class="col-sm-6">
-                        <div class="feature-bento-card h-100">
-                            <div class="d-flex align-items-start gap-3">
-                                <div class="feature-icon-box">
-                                    <i class="bi bi-cloud-check"></i>
-                                </div>
-                                <div>
-                                    <h3 class="h6 fw-bold text-white mb-1">Cloud Ready</h3>
-                                    <p class="small mb-0" style="color: #B2BDCD; font-size: 0.84rem; line-height: 1.45;">
-                                        Containerized multi-worker architecture with persistent volume snapshots and zero lock-in.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Feature 4: Reports & Export -->
-                    <div class="col-sm-6">
-                        <div class="feature-bento-card h-100">
-                            <div class="d-flex align-items-start gap-3">
-                                <div class="feature-icon-box">
-                                    <i class="bi bi-file-earmark-arrow-down"></i>
-                                </div>
-                                <div>
-                                    <h3 class="h6 fw-bold text-white mb-1">Reports & Export</h3>
-                                    <p class="small mb-0" style="color: #B2BDCD; font-size: 0.84rem; line-height: 1.45;">
-                                        RFC 4180 compliant CSV exports, immutable audit logging, and instant SQLite backups.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+            <form method="POST" action="{{ url_for('auth.login') }}">
+                <div class="mb-3">
+                    <label for="username" class="form-label fw-semibold small">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person"></i></span>
+                        <input type="text" class="form-control border-start-0" id="username" name="username" placeholder="e.g. admin or alice" required autofocus>
                     </div>
                 </div>
 
-                <!-- Trust Footprint -->
-                <div class="d-flex flex-wrap align-items-center gap-4 pt-3 border-top border-white border-opacity-10 text-white-50 small">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-check-circle-fill text-warning"></i>
-                        <span>99.99% Campus Uptime</span>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-lock-fill text-warning"></i>
-                        <span>FERPA & SOC-2 Compliant</span>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-lightning-charge-fill text-warning"></i>
-                        <span>Sub-millisecond Query Engine</span>
+                <div class="mb-4">
+                    <label for="password" class="form-label fw-semibold small">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-lock"></i></span>
+                        <input type="password" class="form-control border-start-0" id="password" name="password" placeholder="••••••••" required>
                     </div>
                 </div>
-            </section>
 
-            <!-- RIGHT SECTION: Premium Glassmorphism Login Card -->
-            <section class="col-lg-5 col-xl-4">
-                <div class="glass-login-card mx-auto">
-                    <!-- Subtle Corner Ambient Glow -->
-                    <div class="card-top-glow"></div>
+                <button type="submit" class="btn btn-primary-navy w-100 py-2.5 d-flex align-items-center justify-content-center gap-2">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    <span>Sign In</span>
+                </button>
+            </form>
 
-                    <!-- Header with Circular Glowing Badge -->
-                    <div class="text-center mb-4 position-relative" style="z-index: 5;">
-                        <div class="mb-3">
-                            <img src="{{ url_for('static', filename='img/icon.png') }}" alt="AttendX Emblem" height="54" class="rounded-3 shadow-lg bg-white p-1" style="box-shadow: 0 8px 24px rgba(255,118,40,0.35);">
-                        </div>
-                        <h2 class="h4 fw-bold text-white mb-1">Welcome to AttendX</h2>
-                        <p class="small mb-0" style="color: #D6DCE8;">Sign in to your academic account to continue.</p>
-                    </div>
-
-                    <!-- Flash Notification Area -->
-                    {% with messages = get_flashed_messages(with_categories=true) %}
-                        {% if messages %}
-                            {% for category, message in messages %}
-                                <div class="glass-alert {% if category == 'success' %}glass-alert-success{% endif %}" role="alert">
-                                    <i class="bi {% if category == 'success' %}bi-check-circle-fill text-success{% else %}bi-exclamation-triangle-fill text-danger{% endif %} fs-5 flex-shrink-0"></i>
-                                    <div class="flex-grow-1">{{ message }}</div>
-                                </div>
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
-
-                    <!-- Auto-Fill Success Toast -->
-                    <div class="glass-alert glass-alert-success d-none mb-3" id="demoToast" role="status">
-                        <i class="bi bi-check-circle-fill text-success fs-5 flex-shrink-0"></i>
-                        <div class="flex-grow-1 small" id="demoToastMessage">Credentials populated</div>
-                    </div>
-
-                    <!-- Authentication Form -->
-                    <form method="POST" action="{{ url_for('auth.login') }}" id="loginForm" class="position-relative" style="z-index: 5;">
-                        <!-- Username Field -->
-                        <div class="mb-3">
-                            <label for="username" class="form-label text-uppercase fw-bold text-white-50" style="font-size: 0.72rem; letter-spacing: 0.05em;">Username or Academic ID</label>
-                            <div class="glass-input-group">
-                                <span class="input-icon"><i class="bi bi-person-fill"></i></span>
-                                <input type="text" class="glass-control" id="username" name="username" placeholder="e.g. admin or alice" required autofocus>
-                            </div>
-                        </div>
-
-                        <!-- Password Field with Visibility Toggle -->
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <label for="password" class="form-label text-uppercase fw-bold text-white-50 mb-0" style="font-size: 0.72rem; letter-spacing: 0.05em;">Academic Password</label>
-                            </div>
-                            <div class="glass-input-group position-relative">
-                                <span class="input-icon"><i class="bi bi-lock-fill"></i></span>
-                                <input type="password" class="glass-control pe-5" id="password" name="password" placeholder="••••••••" required>
-                                <button type="button" class="btn-eye" id="togglePasswordBtn" title="Toggle password visibility" aria-label="Toggle password visibility">
-                                    <i class="bi bi-eye-fill" id="eyeIcon"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Controls: Remember Me & Forgot Password -->
-                        <div class="d-flex align-items-center justify-content-between mb-4 pt-1">
-                            <div class="form-check">
-                                <input class="form-check-input bg-dark border-secondary cursor-pointer" type="checkbox" id="rememberMe" name="remember_me" checked style="accent-color: #FF7628;">
-                                <label class="form-check-label small cursor-pointer" for="rememberMe" style="color: #D6DCE8;">
-                                    Remember Me
-                                </label>
-                            </div>
-                            <a href="#forgotPasswordModal" data-bs-toggle="modal" class="small text-decoration-none fw-semibold text-warning" style="font-size: 0.84rem;">
-                                Forgot Password?
-                            </a>
-                        </div>
-
-                        <!-- Submit CTA Button -->
-                        <button type="submit" class="btn-sunset-gradient w-100" id="submitBtn">
-                            <span>Sign In to AttendX</span>
-                            <i class="bi bi-arrow-right-short fs-4"></i>
-                        </button>
-                    </form>
-
-                    <!-- DEMO ACCOUNTS QUICK-FILL SECTION -->
-                    <div class="mt-4 pt-3 border-top border-white border-opacity-10 position-relative" style="z-index: 5;">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="text-uppercase fw-bold text-white small" style="font-size: 0.74rem; letter-spacing: 0.06em;">
-                                <i class="bi bi-key-fill text-warning me-1"></i> Demo Accounts
-                            </span>
-                            <span class="badge" style="background: rgba(255,118,40,0.18); border: 1px solid rgba(255,157,50,0.4); color: #FFB47A; font-size: 0.65rem;">
-                                1-CLICK FILL
-                            </span>
-                        </div>
-
-                        <!-- 3 Demo Role Cards -->
-                        <div class="row g-2">
-                            <!-- Admin Preset -->
-                            <div class="col-4">
-                                <button type="button" class="demo-preset-card demo-role-admin" onclick="applyDemo('admin', 'admin123', 'Administrator (Registrar)')">
-                                    <div class="d-flex align-items-center justify-content-between">
-                                        <span class="fw-bold text-white small" style="font-size: 0.78rem;">Admin</span>
-                                        <i class="bi bi-shield-shaded text-warning" style="font-size: 0.8rem;"></i>
-                                    </div>
-                                    <div class="text-white-50" style="font-size: 0.68rem;">Registrar</div>
-                                </button>
-                            </div>
-
-                            <!-- Faculty Preset -->
-                            <div class="col-4">
-                                <button type="button" class="demo-preset-card demo-role-faculty" onclick="applyDemo('prof_smith', 'faculty123', 'Faculty (Prof. Smith)')">
-                                    <div class="d-flex align-items-center justify-content-between">
-                                        <span class="fw-bold text-white small" style="font-size: 0.78rem;">Faculty</span>
-                                        <i class="bi bi-person-workspace text-success" style="font-size: 0.8rem;"></i>
-                                    </div>
-                                    <div class="text-white-50" style="font-size: 0.68rem;">Prof. Smith</div>
-                                </button>
-                            </div>
-
-                            <!-- Student Preset -->
-                            <div class="col-4">
-                                <button type="button" class="demo-preset-card demo-role-student" onclick="applyDemo('alice', 'student123', 'Student (Alice)')">
-                                    <div class="d-flex align-items-center justify-content-between">
-                                        <span class="fw-bold text-white small" style="font-size: 0.78rem;">Student</span>
-                                        <i class="bi bi-backpack-fill text-info" style="font-size: 0.8rem;"></i>
-                                    </div>
-                                    <div class="text-white-50" style="font-size: 0.68rem;">Alice</div>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Security Footnote -->
-                        <div class="text-center mt-3 pt-1" style="font-size: 0.72rem; color: #8F9CAE;">
-                            <i class="bi bi-shield-lock-fill text-warning me-1"></i>
-                            Protected by 256-bit institutional encryption & session hashing
-                        </div>
-                    </div>
+            <!-- Academic Demo Credentials Accordion / Helper -->
+            <div class="mt-4 pt-3 border-top">
+                <div class="d-flex align-items-center justify-content-between text-muted small mb-2">
+                    <span class="fw-semibold"><i class="bi bi-key-fill text-warning me-1"></i> Demo Accounts</span>
+                    <span class="badge bg-light text-secondary border">Academic Prototype</span>
                 </div>
-            </section>
-        </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="py-3 position-relative" style="z-index: 20; background: rgba(10,19,37,0.75); border-top: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(12px);">
-        <div class="container-fluid px-4 px-lg-5">
-            <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-2 small text-white-50">
-                <div class="d-flex align-items-center gap-2">
-                    <img src="{{ url_for('static', filename='img/icon.png') }}" alt="AttendX" height="18">
-                    <span>&copy; 2026 AttendX Academic Systems &bull; ENSP401 Capstone Platform</span>
-                </div>
-                <div class="d-flex flex-wrap align-items-center gap-4">
-                    <a href="#about" class="text-decoration-none text-white-50 hover-text-warning" style="transition: color 0.15s;">Security Architecture</a>
-                    <a href="#about" class="text-decoration-none text-white-50 hover-text-warning" style="transition: color 0.15s;">FERPA Compliance</a>
-                    <a href="#about" class="text-decoration-none text-white-50 hover-text-warning" style="transition: color 0.15s;">Privacy Policy</a>
-                    <a href="#about" class="text-decoration-none text-warning fw-semibold">Contact Registrar</a>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Password Recovery Modal (Academic Helper) -->
-    <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content text-white" style="background: #17294B; border: 1px solid rgba(255,157,50,0.35); border-radius: 18px;">
-                <div class="modal-header border-bottom border-white border-opacity-10">
-                    <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="forgotPasswordModalLabel">
-                        <i class="bi bi-key-fill text-warning"></i> Academic Credential Recovery
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="small text-white-50 mb-3">
-                        In this academic capstone environment, credentials are authenticated using PBKDF2 hashes stored in the local SQLite database.
-                    </p>
-                    <div class="p-3 rounded-3" style="background: rgba(16,29,58,0.75); border: 1px solid rgba(255,255,255,0.1);">
-                        <div class="fw-semibold text-warning small mb-2"><i class="bi bi-info-circle-fill me-1"></i> Pre-Configured Demo Accounts:</div>
-                        <ul class="list-unstyled small text-white-50 mb-0">
-                            <li class="mb-1">&bull; <strong>Administrator:</strong> <code>admin</code> / <code>admin123</code></li>
-                            <li class="mb-1">&bull; <strong>Faculty Lead:</strong> <code>prof_smith</code> / <code>faculty123</code></li>
-                            <li>&bull; <strong>Undergraduate:</strong> <code>alice</code> / <code>student123</code></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="modal-footer border-top border-white border-opacity-10">
-                    <button type="button" class="btn btn-sm btn-light px-3" data-bs-dismiss="modal">Close</button>
+                <div class="table-responsive">
+                    <table class="table table-sm table-borderless small mb-0">
+                        <tbody>
+                            <tr>
+                                <td class="text-muted py-0.5">Admin:</td>
+                                <td class="py-0.5"><code>admin</code> / <code>admin123</code></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted py-0.5">Faculty:</td>
+                                <td class="py-0.5"><code>prof_smith</code> / <code>faculty123</code></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted py-0.5">Student:</td>
+                                <td class="py-0.5"><code>alice</code> / <code>student123</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <!-- Bootstrap 5.3 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Client-Side UX & Particle Canvas Script -->
-    <script>
-        // 1. Password Visibility Toggle
-        const togglePasswordBtn = document.getElementById('togglePasswordBtn');
-        const passwordInput = document.getElementById('password');
-        const eyeIcon = document.getElementById('eyeIcon');
-
-        if (togglePasswordBtn && passwordInput && eyeIcon) {
-            togglePasswordBtn.addEventListener('click', function() {
-                const isPassword = passwordInput.getAttribute('type') === 'password';
-                passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
-                eyeIcon.className = isPassword ? 'bi bi-eye-slash-fill text-warning' : 'bi bi-eye-fill';
-            });
-        }
-
-        // 2. Demo Account Auto-Fill Function
-        function applyDemo(username, password, roleLabel) {
-            const uInput = document.getElementById('username');
-            const pInput = document.getElementById('password');
-            const toast = document.getElementById('demoToast');
-            const toastMsg = document.getElementById('demoToastMessage');
-
-            if (uInput && pInput) {
-                uInput.value = username;
-                pInput.value = password;
-
-                // Focus pulse animation
-                uInput.style.borderColor = '#FF9D32';
-                uInput.style.boxShadow = '0 0 0 3px rgba(255, 157, 50, 0.4)';
-                pInput.style.borderColor = '#FF9D32';
-                pInput.style.boxShadow = '0 0 0 3px rgba(255, 157, 50, 0.4)';
-
-                setTimeout(() => {
-                    uInput.style.borderColor = '';
-                    uInput.style.boxShadow = '';
-                    pInput.style.borderColor = '';
-                    pInput.style.boxShadow = '';
-                }, 800);
-
-                if (toast && toastMsg) {
-                    toastMsg.textContent = 'Selected ' + roleLabel + ' credentials';
-                    toast.classList.remove('d-none');
-                    toast.classList.add('d-flex');
-                    setTimeout(() => {
-                        toast.classList.add('d-none');
-                        toast.classList.remove('d-flex');
-                    }, 3500);
-                }
-            }
-        }
-
-        // 3. Lightweight Ambient Floating Sunset Particles
-        (function initParticles() {
-            const canvas = document.getElementById('particleCanvas');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            let animationFrameId;
-
-            let width = canvas.width = window.innerWidth;
-            let height = canvas.height = window.innerHeight;
-
-            window.addEventListener('resize', () => {
-                width = canvas.width = window.innerWidth;
-                height = canvas.height = window.innerHeight;
-            });
-
-            // 30 gentle particles (sunset amber, peach, and soft gold)
-            const particles = [];
-            const particleCount = Math.min(35, Math.floor(width / 35));
-            const colors = [
-                'rgba(255, 157, 50, 0.45)',
-                'rgba(255, 118, 40, 0.35)',
-                'rgba(255, 180, 122, 0.40)',
-                'rgba(255, 255, 255, 0.30)'
-            ];
-
-            for (let i = 0; i < particleCount; i++) {
-                particles.push({
-                    x: Math.random() * width,
-                    y: Math.random() * height,
-                    radius: Math.random() * 2.2 + 0.8,
-                    speedX: (Math.random() - 0.5) * 0.4,
-                    speedY: -Math.random() * 0.5 - 0.2, // drifting gently upward
-                    color: colors[Math.floor(Math.random() * colors.length)],
-                    opacity: Math.random() * 0.6 + 0.2
-                });
-            }
-
-            // Respect prefers-reduced-motion
-            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                return;
-            }
-
-            function render() {
-                ctx.clearRect(0, 0, width, height);
-                for (let i = 0; i < particles.length; i++) {
-                    const p = particles[i];
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = p.color;
-                    ctx.shadowBlur = 8;
-                    ctx.shadowColor = '#FF9D32';
-                    ctx.fill();
-
-                    p.x += p.speedX;
-                    p.y += p.speedY;
-
-                    // Wrap around
-                    if (p.y < -10) {
-                        p.y = height + 10;
-                        p.x = Math.random() * width;
-                    }
-                    if (p.x < -10) p.x = width + 10;
-                    if (p.x > width + 10) p.x = -10;
-                }
-                animationFrameId = requestAnimationFrame(render);
-            }
-
-            render();
-        })();
-    </script>
-</body>
-</html>

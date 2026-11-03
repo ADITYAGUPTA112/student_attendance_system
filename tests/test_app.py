@@ -1,4 +1,4 @@
-"""Initial test suite for AttendX (CA-01)."""
+"""Initial test suite for CloudAttend (CA-01)."""
 
 
 def test_health_check(client):
@@ -8,7 +8,7 @@ def test_health_check(client):
     data = response.get_json()
     assert data is not None
     assert data.get("status") == "healthy"
-    assert data.get("service") in ["AttendX", "CloudAttend"]
+    assert data.get("service") == "CloudAttend"
     assert data.get("version") == "1.0.0"
 
 
