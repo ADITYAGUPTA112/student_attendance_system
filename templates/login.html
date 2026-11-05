@@ -1,69 +1,347 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In — AttendX — Intelligent Attendance & Academic Analytics Platform</title>
+    <!-- Browser Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <!-- Google Fonts: Space Grotesk (Display) & Inter (Interface) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5.3 CSS & Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Application Design System & Specialized AttendX Aurora Glass Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/attendx-login.css') }}">
+</head>
+<body class="attendx-body">
 
-{% block title %}Sign In — CloudAttend{% endblock %}
-
-{% block content %}
-<div class="row justify-content-center align-items-center" style="min-height: 65vh;">
-    <div class="col-md-6 col-lg-5">
-        <div class="card card-custom p-4 p-md-5">
-            <div class="text-center mb-4">
-                <div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle p-3 mb-2 border">
-                    <i class="bi bi-calendar-check text-primary" style="font-size: 2rem;"></i>
-                </div>
-                <h2 class="h4 fw-bold mb-1">Welcome to CloudAttend</h2>
-                <p class="text-muted small">Sign in to your academic account to continue</p>
-            </div>
-
-            <form method="POST" action="{{ url_for('auth.login') }}">
-                <div class="mb-3">
-                    <label for="username" class="form-label fw-semibold small">Username</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person"></i></span>
-                        <input type="text" class="form-control border-start-0" id="username" name="username" placeholder="e.g. admin or alice" required autofocus>
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <label for="password" class="form-label fw-semibold small">Password</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-lock"></i></span>
-                        <input type="password" class="form-control border-start-0" id="password" name="password" placeholder="••••••••" required>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary-navy w-100 py-2.5 d-flex align-items-center justify-content-center gap-2">
-                    <i class="bi bi-box-arrow-in-right"></i>
-                    <span>Sign In</span>
-                </button>
-            </form>
-
-            <!-- Academic Demo Credentials Accordion / Helper -->
-            <div class="mt-4 pt-3 border-top">
-                <div class="d-flex align-items-center justify-content-between text-muted small mb-2">
-                    <span class="fw-semibold"><i class="bi bi-key-fill text-warning me-1"></i> Demo Accounts</span>
-                    <span class="badge bg-light text-secondary border">Academic Prototype</span>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-sm table-borderless small mb-0">
-                        <tbody>
-                            <tr>
-                                <td class="text-muted py-0.5">Admin:</td>
-                                <td class="py-0.5"><code>admin</code> / <code>admin123</code></td>
-                            </tr>
-                            <tr>
-                                <td class="text-muted py-0.5">Faculty:</td>
-                                <td class="py-0.5"><code>prof_smith</code> / <code>faculty123</code></td>
-                            </tr>
-                            <tr>
-                                <td class="text-muted py-0.5">Student:</td>
-                                <td class="py-0.5"><code>alice</code> / <code>student123</code></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+    <!-- Atmospheric Aurora Background System -->
+    <div class="attendx-aurora-bg" aria-hidden="true">
+        <div class="aurora-blob aurora-blob-1"></div>
+        <div class="aurora-blob aurora-blob-2"></div>
+        <div class="aurora-blob aurora-blob-3"></div>
+        <div class="aurora-blob aurora-blob-4"></div>
+        <div class="attendx-grid-overlay"></div>
+        <div class="attendx-vignette"></div>
     </div>
-</div>
-{% endblock %}
 
+    <!-- Fixed Translucent Top Navigation Bar (~68px) -->
+    <header class="attendx-navbar">
+        <div class="attendx-nav-container">
+            <a href="{{ url_for('index') }}" class="attendx-nav-brand">
+                <img src="{{ url_for('static', filename='images/attendx-logo.svg') }}" alt="AttendX Logo" class="attendx-nav-logo-img">
+                <span class="badge-academic-portal ms-1 d-none d-sm-inline-flex">
+                    <span class="pulse-dot-aqua"></span>
+                    ACADEMIC PORTAL
+                </span>
+            </a>
+
+            <nav aria-label="Primary navigation">
+                <ul class="attendx-nav-menu">
+                    <li><a href="{{ url_for('index') }}" class="attendx-nav-link">Home</a></li>
+                    <li><a href="#features" class="attendx-nav-link">Features</a></li>
+                    <li><a href="{{ url_for('health') }}" class="attendx-nav-link" target="_blank" rel="noopener">System Status</a></li>
+                    <li>
+                        <a href="{{ url_for('auth.login') }}" class="attendx-nav-btn active">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            <span>Sign In</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Hero: Two-Column Layout (Max Container 1280px) -->
+    <main class="attendx-hero-section">
+        <div class="attendx-hero-grid">
+            
+            <!-- LEFT COLUMN (52% on Desktop): AttendX Introduction & Features -->
+            <section class="attendx-hero-left" aria-labelledby="heroHeadline">
+                <!-- Badge -->
+                <div class="glass-pill-badge">
+                    <i class="bi bi-stars"></i>
+                    <span>ACADEMIC ATTENDANCE INTELLIGENCE</span>
+                </div>
+
+                <!-- Main Heading -->
+                <h1 id="heroHeadline" class="hero-headline">
+                    Attendance Management,<br>
+                    <span class="text-gradient-aurora">Reimagined.</span>
+                </h1>
+
+                <!-- Product Identity & Description -->
+                <div class="hero-subtitle">AttendX</div>
+                <p class="hero-description">
+                    Track attendance, discover academic insights and simplify classroom management through one intelligent, secure and easy-to-use platform.
+                </p>
+
+                <!-- 4 Compact Feature Highlight Cards -->
+                <div class="feature-cards-grid" id="features">
+                    <!-- Feature 1: Smart Attendance -->
+                    <div class="feature-glass-card">
+                        <div class="feature-icon-box">
+                            <i class="bi bi-calendar2-check-fill"></i>
+                        </div>
+                        <h3 class="feature-title">Smart Attendance</h3>
+                        <p class="feature-desc">Course-wise attendance tracking with atomic transactions.</p>
+                    </div>
+
+                    <!-- Feature 2: Academic Analytics -->
+                    <div class="feature-glass-card">
+                        <div class="feature-icon-box magenta">
+                            <i class="bi bi-graph-up-arrow"></i>
+                        </div>
+                        <h3 class="feature-title">Academic Analytics</h3>
+                        <p class="feature-desc">Attendance statistics and visual insights powered by Pandas.</p>
+                    </div>
+
+                    <!-- Feature 3: Role-Based Security -->
+                    <div class="feature-glass-card">
+                        <div class="feature-icon-box sky">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <h3 class="feature-title">Role-Based Security</h3>
+                        <p class="feature-desc">Separate Admin, Faculty and Student access with privacy isolation.</p>
+                    </div>
+
+                    <!-- Feature 4: Reports & Backup -->
+                    <div class="feature-glass-card">
+                        <div class="feature-icon-box">
+                            <i class="bi bi-database-check"></i>
+                        </div>
+                        <h3 class="feature-title">Reports & Backup</h3>
+                        <p class="feature-desc">RFC 4180 CSV export reports and non-blocking database snapshots.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT COLUMN (48% on Desktop): Frosted-Glass Login Card -->
+            <section class="attendx-hero-right" aria-label="Sign In Area">
+                <div class="glass-login-container">
+                    <div class="glass-login-card">
+                        
+                        <!-- Login Card Header -->
+                        <div class="card-brand-header">
+                            <div class="brand-icon-wrapper">
+                                <img src="{{ url_for('static', filename='images/attendx-mark.svg') }}" alt="AttendX Emblem">
+                            </div>
+                            <h2 class="login-heading">Welcome Back</h2>
+                            <p class="login-subtitle">Sign in to your academic account.</p>
+                            <div class="aurora-divider-bar"></div>
+                        </div>
+
+                        <!-- Flash Message Alerts -->
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="attendx-flash-alert {% if category == 'success' %}success{% endif %}" role="alert">
+                                        <i class="bi {% if category == 'success' %}bi-check-circle-fill text-info{% else %}bi-exclamation-triangle-fill text-danger{% endif %}"></i>
+                                        <span>{{ message }}</span>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        <!-- Real Flask Authentication Form -->
+                        <form method="POST" action="{{ url_for('auth.login') }}" id="loginForm" novalidate>
+                            
+                            <!-- Username Field -->
+                            <div class="form-field-group">
+                                <label for="username" class="form-field-label">Username / Academic ID</label>
+                                <div class="glass-input-wrapper">
+                                    <span class="glass-input-icon"><i class="bi bi-person"></i></span>
+                                    <input type="text" 
+                                           class="glass-input-control" 
+                                           id="username" 
+                                           name="username" 
+                                           placeholder="Enter your username" 
+                                           autocomplete="username" 
+                                           required 
+                                           autofocus>
+                                </div>
+                            </div>
+
+                            <!-- Password Field -->
+                            <div class="form-field-group">
+                                <label for="password" class="form-field-label">Password</label>
+                                <div class="glass-input-wrapper">
+                                    <span class="glass-input-icon"><i class="bi bi-lock"></i></span>
+                                    <input type="password" 
+                                           class="glass-input-control" 
+                                           id="password" 
+                                           name="password" 
+                                           placeholder="Enter your password" 
+                                           autocomplete="current-password" 
+                                           required>
+                                    <button type="button" 
+                                            class="btn-toggle-eye" 
+                                            id="togglePasswordBtn" 
+                                            title="Toggle password visibility" 
+                                            aria-label="Toggle password visibility">
+                                        <i class="bi bi-eye" id="eyeIcon"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <button type="submit" class="btn-attendx-submit" id="submitBtn">
+                                <span>Sign In to AttendX</span>
+                                <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </form>
+
+                        <!-- Demo Accounts (Academic Prototype) -->
+                        <div class="demo-access-container">
+                            <div class="demo-header">
+                                <span class="demo-title"><i class="bi bi-key-fill text-warning me-1"></i> Demo Accounts &bull; DEMO ACCESS</span>
+                                <span class="demo-badge-academic">Academic Prototype</span>
+                            </div>
+
+                            <div class="demo-cards-list">
+                                <!-- Admin Card -->
+                                <button type="button" 
+                                        class="demo-account-pill role-admin" 
+                                        onclick="fillDemoCredentials('admin', 'admin123', 'Administrator')">
+                                    <div class="demo-pill-left">
+                                        <div class="demo-role-icon">
+                                            <i class="bi bi-shield-lock-fill"></i>
+                                        </div>
+                                        <div>
+                                            <div class="demo-role-name">Administrator</div>
+                                            <div class="demo-creds">admin &bull; admin123</div>
+                                        </div>
+                                    </div>
+                                    <span class="demo-click-cue">Select &rarr;</span>
+                                </button>
+
+                                <!-- Faculty Card -->
+                                <button type="button" 
+                                        class="demo-account-pill role-faculty" 
+                                        onclick="fillDemoCredentials('prof_smith', 'faculty123', 'Faculty')">
+                                    <div class="demo-pill-left">
+                                        <div class="demo-role-icon">
+                                            <i class="bi bi-mortarboard-fill"></i>
+                                        </div>
+                                        <div>
+                                            <div class="demo-role-name">Faculty</div>
+                                            <div class="demo-creds">prof_smith &bull; faculty123</div>
+                                        </div>
+                                    </div>
+                                    <span class="demo-click-cue">Select &rarr;</span>
+                                </button>
+
+                                <!-- Student Card -->
+                                <button type="button" 
+                                        class="demo-account-pill role-student" 
+                                        onclick="fillDemoCredentials('alice', 'student123', 'Student')">
+                                    <div class="demo-pill-left">
+                                        <div class="demo-role-icon">
+                                            <i class="bi bi-person-fill"></i>
+                                        </div>
+                                        <div>
+                                            <div class="demo-role-name">Student</div>
+                                            <div class="demo-creds">alice &bull; student123</div>
+                                        </div>
+                                    </div>
+                                    <span class="demo-click-cue">Select &rarr;</span>
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Technology Trust Strip -->
+    <section class="attendx-tech-strip" aria-label="Technology Stack">
+        <div class="tech-strip-title">POWERED BY MODERN TECHNOLOGY</div>
+        <div class="tech-pills-row">
+            <span class="tech-pill"><i class="bi bi-terminal-fill"></i> Python Flask</span>
+            <span class="tech-pill"><i class="bi bi-database-fill"></i> SQLite</span>
+            <span class="tech-pill"><i class="bi bi-file-earmark-bar-graph-fill"></i> Pandas</span>
+            <span class="tech-pill"><i class="bi bi-pie-chart-fill"></i> Chart.js</span>
+            <span class="tech-pill"><i class="bi bi-boxes"></i> Docker</span>
+        </div>
+    </section>
+
+    <!-- Minimal Dark Footer -->
+    <footer class="attendx-footer">
+        <div class="attendx-footer-inner">
+            <div class="attendx-footer-brand">
+                <img src="{{ url_for('static', filename='images/attendx-mark.svg') }}" alt="AttendX Mark" class="attendx-footer-mark">
+                <span>AttendX &bull; ENSP401 Cloud Computing Capstone Project</span>
+            </div>
+            <div class="small">Python Flask &bull; SQLite &bull; Pandas &bull; Chart.js &bull; Docker</div>
+        </div>
+    </footer>
+
+    <!-- Interactive Scripts: Password Toggle & Demo Auto-fill -->
+    <script>
+    // 1. Password Visibility Toggle
+    const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+    const passwordInput = document.getElementById('password');
+    const eyeIcon = document.getElementById('eyeIcon');
+
+    if (togglePasswordBtn && passwordInput && eyeIcon) {
+        togglePasswordBtn.addEventListener('click', function() {
+            const isPassword = passwordInput.getAttribute('type') === 'password';
+            passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+            eyeIcon.className = isPassword ? 'bi bi-eye-slash text-info' : 'bi bi-eye';
+        });
+    }
+
+    // 2. Demo Credentials Quick-Fill Function
+    function fillDemoCredentials(username, password, roleLabel) {
+        const uInput = document.getElementById('username');
+        const pInput = document.getElementById('password');
+
+        if (uInput && pInput) {
+            uInput.value = username;
+            pInput.value = password;
+
+            // Trigger dynamic focus pulse animation
+            uInput.parentElement.style.borderColor = 'var(--ax-aqua)';
+            uInput.parentElement.style.boxShadow = '0 0 0 4px rgba(45, 212, 191, 0.4)';
+            pInput.parentElement.style.borderColor = 'var(--ax-aqua)';
+            pInput.parentElement.style.boxShadow = '0 0 0 4px rgba(45, 212, 191, 0.4)';
+
+            setTimeout(() => {
+                uInput.parentElement.style.borderColor = '';
+                uInput.parentElement.style.boxShadow = '';
+                pInput.parentElement.style.borderColor = '';
+                pInput.parentElement.style.boxShadow = '';
+            }, 750);
+
+            // Show lightweight selection toast
+            showDemoToast('Loaded ' + roleLabel + ' credentials (' + username + ')');
+        }
+    }
+
+    // 3. Lightweight Dynamic Toast Helper
+    function showDemoToast(message) {
+        let existingToast = document.getElementById('demoToastPill');
+        if (!existingToast) {
+            existingToast = document.createElement('div');
+            existingToast.id = 'demoToastPill';
+            existingToast.className = 'demo-toast-pill';
+            document.body.appendChild(existingToast);
+        }
+        existingToast.innerHTML = '<i class="bi bi-check2-circle text-info me-1.5"></i> ' + message;
+        existingToast.style.display = 'block';
+
+        clearTimeout(window.demoToastTimer);
+        window.demoToastTimer = setTimeout(() => {
+            if (existingToast) existingToast.style.display = 'none';
+        }, 3200);
+    }
+    </script>
+</body>
+</html>

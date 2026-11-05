@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="favAqua" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5EEAD4" />
+      <stop offset="100%" stop-color="#2DD4BF" />
+    </linearGradient>
+    <linearGradient id="favMagenta" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F0ABFC" />
+      <stop offset="100%" stop-color="#E879F9" />
+    </linearGradient>
+    <linearGradient id="favBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#101820" />
+      <stop offset="100%" stop-color="#0B0F14" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background Squircle -->
+  <rect width="64" height="64" rx="16" fill="url(#favBg)" />
+  <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="15.25" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1.5" />
+
+  <!-- Centered Icon Mark scaled to 52x52 at offset (6, 6) -->
+  <g transform="translate(6, 6) scale(0.52)">
+    <polygon points="50,14 88,32 50,50 12,32" fill="url(#favAqua)" />
+    <path d="M50,32 Q78,35 84,52" stroke="url(#favMagenta)" stroke-width="3" stroke-linecap="round" fill="none" />
+    <circle cx="84" cy="54" r="3.5" fill="#E879F9" />
+    <path d="M26,84 L48,56 L40,46" stroke="url(#favAqua)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M74,84 L52,56 L64,42" stroke="url(#favMagenta)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M38,66 L48,77 L70,51" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>

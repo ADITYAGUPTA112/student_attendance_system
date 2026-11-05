@@ -1,0 +1,987 @@
+/* ==========================================================================
+   ATTENDX — Premium Dark Aurora Glassmorphism Design System
+   Intelligent Attendance & Academic Analytics Platform
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700;800&display=swap');
+
+:root {
+    /* Brand Color Palette */
+    --ax-deep-ink: #0B0F14;
+    --ax-dark-surface: #101820;
+    --ax-aqua: #2DD4BF;
+    --ax-light-aqua: #5EEAD4;
+    --ax-magenta: #E879F9;
+    --ax-sky-blue: #38BDF8;
+    --ax-indigo: #6366F1;
+    --ax-deep-indigo: #312E81;
+    
+    /* Typography Colors */
+    --ax-text-primary: #F8FAFC;
+    --ax-text-secondary: #CBD5E1;
+    --ax-text-muted: #94A3B8;
+
+    /* Gradients */
+    --ax-grad-aurora: linear-gradient(135deg, #2DD4BF 0%, #38BDF8 40%, #E879F9 100%);
+    --ax-grad-btn: linear-gradient(135deg, #2DD4BF 0%, #5EEAD4 40%, #E879F9 100%);
+    --ax-grad-btn-hover: linear-gradient(135deg, #5EEAD4 0%, #2DD4BF 45%, #F0ABFC 100%);
+    --ax-grad-card: linear-gradient(155deg, rgba(255, 255, 255, 0.085) 0%, rgba(255, 255, 255, 0.025) 100%);
+    
+    /* Typography Stacks */
+    --ax-font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ax-font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Base Document Reset */
+html, body.attendx-body {
+    background-color: var(--ax-deep-ink);
+    color: var(--ax-text-primary);
+    font-family: var(--ax-font-body);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    position: relative;
+    letter-spacing: -0.01em;
+}
+
+/* ==========================================================================
+   Aurora Background System
+   ========================================================================== */
+.attendx-aurora-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+    background-color: var(--ax-deep-ink);
+}
+
+/* Subtle 64px Grid Overlay */
+.attendx-grid-overlay {
+    position: absolute;
+    inset: 0;
+    background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 64px 64px;
+    opacity: 0.85;
+}
+
+/* Cinematic Radial Dark Vignette */
+.attendx-vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 45%, transparent 25%, rgba(11, 15, 20, 0.88) 100%);
+}
+
+/* Aurora Blobs */
+.aurora-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(110px);
+    opacity: 0.45;
+    pointer-events: none;
+    will-change: transform, opacity;
+}
+
+.aurora-blob-1 {
+    top: -12%;
+    left: 12%;
+    width: 620px;
+    height: 620px;
+    background: radial-gradient(circle, #2DD4BF 0%, #0F766E 50%, transparent 70%);
+    animation: auroraFloat1 16s ease-in-out infinite alternate;
+}
+
+.aurora-blob-2 {
+    top: 25%;
+    right: -8%;
+    width: 680px;
+    height: 680px;
+    background: radial-gradient(circle, #E879F9 0%, #6366F1 45%, transparent 70%);
+    opacity: 0.38;
+    animation: auroraFloat2 20s ease-in-out infinite alternate;
+}
+
+.aurora-blob-3 {
+    bottom: -15%;
+    left: 28%;
+    width: 720px;
+    height: 720px;
+    background: radial-gradient(circle, #38BDF8 0%, #312E81 50%, transparent 75%);
+    opacity: 0.32;
+    animation: auroraFloat3 18s ease-in-out infinite alternate-reverse;
+}
+
+.aurora-blob-4 {
+    top: 48%;
+    left: 2%;
+    width: 480px;
+    height: 480px;
+    background: radial-gradient(circle, #5EEAD4 0%, #2DD4BF 40%, transparent 70%);
+    opacity: 0.28;
+    animation: auroraFloat1 22s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes auroraFloat1 {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(45px, 35px) scale(1.08); }
+    100% { transform: translate(-25px, 60px) scale(0.96); }
+}
+
+@keyframes auroraFloat2 {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-50px, -40px) scale(1.12); }
+    100% { transform: translate(30px, 30px) scale(0.92); }
+}
+
+@keyframes auroraFloat3 {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-40px, 50px) scale(1.05); }
+    100% { transform: translate(50px, -30px) scale(0.98); }
+}
+
+/* ==========================================================================
+   Top Navigation Bar
+   ========================================================================== */
+.attendx-navbar {
+    height: 68px;
+    background: rgba(11, 15, 20, 0.65);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    position: sticky;
+    top: 0;
+    z-index: 1050;
+    transition: all 0.2s ease;
+}
+
+.attendx-nav-container {
+    max-width: 1280px;
+    height: 100%;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.attendx-nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: var(--ax-text-primary);
+}
+
+.attendx-nav-logo-img {
+    height: 34px;
+    width: auto;
+    transition: transform 0.25s ease;
+}
+
+.attendx-nav-brand:hover .attendx-nav-logo-img {
+    transform: scale(1.04);
+}
+
+.badge-academic-portal {
+    background: rgba(45, 212, 191, 0.12);
+    border: 1px solid rgba(45, 212, 191, 0.35);
+    color: var(--ax-light-aqua);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 0.22rem 0.6rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.pulse-dot-aqua {
+    width: 6px;
+    height: 6px;
+    background-color: var(--ax-aqua);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--ax-aqua);
+    animation: pulseDot 2s infinite;
+}
+
+@keyframes pulseDot {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(45, 212, 191, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(45, 212, 191, 0); }
+}
+
+.attendx-nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.attendx-nav-link {
+    color: var(--ax-text-secondary);
+    text-decoration: none;
+    font-size: 0.92rem;
+    font-weight: 500;
+    transition: color 0.18s ease;
+    padding: 0.4rem 0.2rem;
+    position: relative;
+}
+
+.attendx-nav-link:hover {
+    color: #FFFFFF;
+}
+
+.attendx-nav-link.active {
+    color: #FFFFFF;
+}
+
+.attendx-nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--ax-grad-aurora);
+    border-radius: 2px;
+}
+
+.attendx-nav-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: var(--ax-text-primary);
+    padding: 0.45rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+}
+
+.attendx-nav-btn:hover {
+    background: rgba(45, 212, 191, 0.16);
+    border-color: var(--ax-aqua);
+    color: #FFFFFF;
+    transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   Main Hero Layout (1280px Max Container)
+   ========================================================================== */
+.attendx-hero-section {
+    position: relative;
+    z-index: 10;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 2rem;
+    min-height: calc(100vh - 68px - 140px);
+    display: flex;
+    align-items: center;
+}
+
+.attendx-hero-grid {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 3.5rem;
+}
+
+.attendx-hero-left {
+    flex: 0 0 52%;
+    max-width: 52%;
+    animation: fadeInEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.attendx-hero-right {
+    flex: 0 0 44%;
+    max-width: 44%;
+    display: flex;
+    justify-content: flex-end;
+    animation: fadeInUpEntrance 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+/* ==========================================================================
+   Left Column: AttendX Introduction & Features
+   ========================================================================== */
+.glass-pill-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--ax-light-aqua);
+    margin-bottom: 1.25rem;
+}
+
+.hero-headline {
+    font-family: var(--ax-font-display);
+    font-size: 3.25rem;
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: -0.03em;
+    color: var(--ax-text-primary);
+    margin-bottom: 1.25rem;
+}
+
+.text-gradient-aurora {
+    background: var(--ax-grad-aurora);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+}
+
+.hero-subtitle {
+    font-family: var(--ax-font-display);
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--ax-aqua);
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.02em;
+}
+
+.hero-description {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--ax-text-secondary);
+    max-width: 540px;
+    margin-bottom: 2rem;
+}
+
+/* 4 Feature Highlights Grid */
+.feature-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    max-width: 560px;
+}
+
+.feature-glass-card {
+    background: rgba(255, 255, 255, 0.035);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 16px;
+    padding: 1.1rem 1.15rem;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.feature-glass-card:hover {
+    background: rgba(255, 255, 255, 0.065);
+    border-color: rgba(45, 212, 191, 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5), 0 0 20px rgba(45, 212, 191, 0.1);
+}
+
+.feature-icon-box {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(45, 212, 191, 0.12);
+    border: 1px solid rgba(45, 212, 191, 0.3);
+    color: var(--ax-aqua);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    margin-bottom: 0.65rem;
+}
+
+.feature-icon-box.magenta {
+    background: rgba(232, 121, 249, 0.12);
+    border-color: rgba(232, 121, 249, 0.3);
+    color: var(--ax-magenta);
+}
+
+.feature-icon-box.sky {
+    background: rgba(56, 189, 248, 0.12);
+    border-color: rgba(56, 189, 248, 0.3);
+    color: var(--ax-sky-blue);
+}
+
+.feature-title {
+    font-family: var(--ax-font-display);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--ax-text-primary);
+    margin-bottom: 0.2rem;
+}
+
+.feature-desc {
+    font-size: 0.8rem;
+    color: var(--ax-text-muted);
+    line-height: 1.4;
+    margin: 0;
+}
+
+/* ==========================================================================
+   Right Column: Premium Glassmorphism Login Card
+   ========================================================================== */
+.glass-login-container {
+    width: 100%;
+    max-width: 460px;
+    position: relative;
+}
+
+/* Ambient Corner Lighting around Card */
+.glass-login-container::before {
+    content: '';
+    position: absolute;
+    top: -30px;
+    right: -30px;
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(circle, rgba(232, 121, 249, 0.35) 0%, transparent 70%);
+    border-radius: 50%;
+    filter: blur(40px);
+    z-index: -1;
+}
+
+.glass-login-container::after {
+    content: '';
+    position: absolute;
+    bottom: -30px;
+    left: -30px;
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(circle, rgba(45, 212, 191, 0.35) 0%, transparent 70%);
+    border-radius: 50%;
+    filter: blur(40px);
+    z-index: -1;
+}
+
+.glass-login-card {
+    background: var(--ax-grad-card);
+    backdrop-filter: blur(34px);
+    -webkit-backdrop-filter: blur(34px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 26px;
+    padding: 34px;
+    box-shadow: 
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        0 30px 80px -20px rgba(0, 0, 0, 0.75),
+        0 0 40px rgba(45, 212, 191, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Card Header */
+.card-brand-header {
+    text-align: center;
+    margin-bottom: 1.75rem;
+}
+
+.brand-icon-wrapper {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 18px;
+    padding: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 20px rgba(45, 212, 191, 0.2);
+    animation: gentleFloat 6s ease-in-out infinite alternate;
+}
+
+.brand-icon-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+@keyframes gentleFloat {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-5px); }
+}
+
+.login-heading {
+    font-family: var(--ax-font-display);
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #FFFFFF;
+    margin-bottom: 0.35rem;
+    letter-spacing: -0.02em;
+}
+
+.login-subtitle {
+    font-size: 0.92rem;
+    color: var(--ax-text-muted);
+    margin-bottom: 0.9rem;
+}
+
+.aurora-divider-bar {
+    height: 3px;
+    width: 44px;
+    border-radius: 2px;
+    background: var(--ax-grad-aurora);
+    margin: 0 auto;
+}
+
+/* ==========================================================================
+   Form Controls
+   ========================================================================== */
+.form-field-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-field-label {
+    display: block;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--ax-text-secondary);
+    margin-bottom: 0.45rem;
+}
+
+.glass-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: rgba(16, 24, 32, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.glass-input-wrapper:hover {
+    border-color: rgba(255, 255, 255, 0.22);
+}
+
+.glass-input-wrapper:focus-within {
+    border-color: var(--ax-aqua);
+    background: rgba(45, 212, 191, 0.05);
+    box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.22), 0 0 20px rgba(45, 212, 191, 0.15);
+}
+
+.glass-input-icon {
+    padding-left: 1rem;
+    color: var(--ax-text-muted);
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.glass-input-wrapper:focus-within .glass-input-icon {
+    color: var(--ax-aqua);
+}
+
+.glass-input-control {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: #FFFFFF;
+    font-family: var(--ax-font-body);
+    font-size: 0.95rem;
+    padding: 0.75rem 0.85rem;
+    outline: none;
+}
+
+.glass-input-control::placeholder {
+    color: rgba(148, 163, 184, 0.5);
+}
+
+.btn-toggle-eye {
+    background: transparent;
+    border: none;
+    color: var(--ax-text-muted);
+    padding: 0.5rem 0.9rem;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: color 0.15s ease;
+    display: flex;
+    align-items: center;
+}
+
+.btn-toggle-eye:hover {
+    color: var(--ax-text-primary);
+}
+
+/* Full-Width Aurora Gradient Button */
+.btn-attendx-submit {
+    width: 100%;
+    background: var(--ax-grad-btn);
+    color: #0B0F14;
+    font-family: var(--ax-font-display);
+    font-size: 1.02rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 14px;
+    padding: 0.85rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(45, 212, 191, 0.35);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+    margin-top: 1.5rem;
+}
+
+.btn-attendx-submit:hover {
+    background: var(--ax-grad-btn-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(45, 212, 191, 0.5), 0 0 25px rgba(232, 121, 249, 0.3);
+    color: #0B0F14;
+}
+
+.btn-attendx-submit:active {
+    transform: translateY(0);
+}
+
+/* Flash Messages */
+.attendx-flash-alert {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.45);
+    color: #FECACA;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    font-size: 0.88rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1.25rem;
+}
+
+.attendx-flash-alert.success {
+    background: rgba(45, 212, 191, 0.15);
+    border-color: rgba(45, 212, 191, 0.45);
+    color: #CCFBF1;
+}
+
+/* ==========================================================================
+   Demo Accounts Section
+   ========================================================================== */
+.demo-access-container {
+    margin-top: 1.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.demo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.demo-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--ax-text-muted);
+    text-transform: uppercase;
+}
+
+.demo-badge-academic {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--ax-light-aqua);
+    background: rgba(45, 212, 191, 0.1);
+    border: 1px solid rgba(45, 212, 191, 0.25);
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+}
+
+.demo-cards-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.demo-account-pill {
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 12px;
+    padding: 0.65rem 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    width: 100%;
+}
+
+.demo-account-pill:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.demo-account-pill.role-admin { border-left: 3px solid var(--ax-aqua); }
+.demo-account-pill.role-faculty { border-left: 3px solid var(--ax-magenta); }
+.demo-account-pill.role-student { border-left: 3px solid var(--ax-light-aqua); }
+
+.demo-account-pill.role-admin:hover { border-color: var(--ax-aqua); }
+.demo-account-pill.role-faculty:hover { border-color: var(--ax-magenta); }
+.demo-account-pill.role-student:hover { border-color: var(--ax-light-aqua); }
+
+.demo-pill-left {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.demo-role-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+}
+
+.demo-account-pill.role-admin .demo-role-icon {
+    background: rgba(45, 212, 191, 0.15);
+    color: var(--ax-aqua);
+}
+
+.demo-account-pill.role-faculty .demo-role-icon {
+    background: rgba(232, 121, 249, 0.15);
+    color: var(--ax-magenta);
+}
+
+.demo-account-pill.role-student .demo-role-icon {
+    background: rgba(94, 234, 212, 0.15);
+    color: var(--ax-light-aqua);
+}
+
+.demo-role-name {
+    font-weight: 600;
+    font-size: 0.84rem;
+    color: var(--ax-text-primary);
+    line-height: 1.2;
+}
+
+.demo-creds {
+    font-family: monospace;
+    font-size: 0.76rem;
+    color: var(--ax-text-muted);
+}
+
+.demo-click-cue {
+    font-size: 0.72rem;
+    color: var(--ax-aqua);
+    opacity: 0.8;
+}
+
+/* ==========================================================================
+   Technology Trust Strip
+   ========================================================================== */
+.attendx-tech-strip {
+    position: relative;
+    z-index: 10;
+    max-width: 1280px;
+    margin: 1.5rem auto 2.5rem;
+    padding: 1.5rem 1.5rem 0;
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tech-strip-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--ax-text-muted);
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+}
+
+.tech-pills-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.tech-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 9999px;
+    padding: 0.45rem 1rem;
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: var(--ax-text-secondary);
+    transition: all 0.2s ease;
+}
+
+.tech-pill i {
+    color: var(--ax-aqua);
+    font-size: 0.95rem;
+}
+
+.tech-pill:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(45, 212, 191, 0.35);
+    color: #FFFFFF;
+    transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
+.attendx-footer {
+    position: relative;
+    z-index: 10;
+    background: rgba(11, 15, 20, 0.85);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 1.75rem 1.5rem;
+    text-align: center;
+    color: var(--ax-text-muted);
+    font-size: 0.84rem;
+}
+
+.attendx-footer-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.attendx-footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--ax-text-primary);
+    font-weight: 600;
+}
+
+.attendx-footer-mark {
+    width: 22px;
+    height: 22px;
+}
+
+/* ==========================================================================
+   Animations & Transitions
+   ========================================================================== */
+@keyframes fadeInEntrance {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUpEntrance {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Toast alert for quick fill */
+.demo-toast-pill {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 2000;
+    background: rgba(16, 24, 32, 0.92);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--ax-aqua);
+    color: #FFFFFF;
+    padding: 0.65rem 1.25rem;
+    border-radius: 9999px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(45, 212, 191, 0.3);
+    animation: fadeInEntrance 0.3s ease;
+}
+
+/* ==========================================================================
+   Responsive Adaptations
+   ========================================================================== */
+@media (max-width: 1024px) {
+    .hero-headline {
+        font-size: 2.6rem;
+    }
+    .attendx-hero-grid {
+        gap: 2rem;
+    }
+}
+
+@media (max-width: 900px) {
+    .attendx-hero-section {
+        padding: 2rem 1.25rem;
+    }
+
+    .attendx-hero-grid {
+        flex-direction: column-reverse;
+        gap: 3rem;
+    }
+
+    .attendx-hero-left,
+    .attendx-hero-right {
+        flex: 0 0 100%;
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .attendx-hero-right {
+        justify-content: center;
+    }
+
+    .glass-login-container {
+        max-width: 100%;
+    }
+
+    .feature-cards-grid {
+        max-width: 100%;
+    }
+
+    .hero-headline {
+        font-size: 2.25rem;
+        text-align: center;
+    }
+
+    .hero-subtitle,
+    .hero-description {
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .glass-pill-badge {
+        display: flex;
+        margin-left: auto;
+        margin-right: auto;
+        width: fit-content;
+    }
+
+    .attendx-nav-menu {
+        display: none; /* Mobile collapse */
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

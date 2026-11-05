@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
+  <defs>
+    <linearGradient id="logoAqua" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5EEAD4" />
+      <stop offset="100%" stop-color="#2DD4BF" />
+    </linearGradient>
+    <linearGradient id="logoMagenta" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F0ABFC" />
+      <stop offset="100%" stop-color="#E879F9" />
+    </linearGradient>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2DD4BF" />
+      <stop offset="50%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#E879F9" />
+    </linearGradient>
+    <filter id="logoGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#2DD4BF" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- AttendX Mark Icon Group (Scaled to 56x56 at x=12, y=12) -->
+  <g transform="translate(12, 12) scale(0.56)">
+    <!-- Dynamic Mortarboard Top -->
+    <polygon points="50,14 88,32 50,50 12,32" fill="url(#logoAqua)" filter="url(#logoGlow)" />
+    <polygon points="50,18 82,32 50,46 18,32" fill="#0B0F14" opacity="0.3" />
+
+    <!-- Tassel -->
+    <path d="M50,32 Q78,35 84,52" stroke="url(#logoMagenta)" stroke-width="2.5" stroke-linecap="round" fill="none" />
+    <circle cx="84" cy="54" r="3" fill="#E879F9" />
+
+    <!-- X & Chevron Legs -->
+    <path d="M26,84 L48,56 L40,46" stroke="url(#logoAqua)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M74,84 L52,56 L64,42" stroke="url(#logoMagenta)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Verified Check Accent -->
+    <path d="M38,66 L48,77 L70,51" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#logoGlow)" />
+  </g>
+
+  <!-- Wordmark: Attend (White) + X (Aqua-Magenta Gradient) -->
+  <text x="80" y="47" font-family="'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="34" letter-spacing="-0.03em" fill="#F8FAFC">Attend<tspan fill="url(#logoGrad)">X</tspan></text>
+  
+  <!-- Sub-Badge Wordmark -->
+  <text x="82" y="63" font-family="'Inter', -apple-system, BlinkMacSystemFont, sans-serif" font-weight="600" font-size="8.5" letter-spacing="0.16em" fill="#94A3B8" text-transform="uppercase">ACADEMIC INTELLIGENCE</text>
+</svg>
