@@ -5,6 +5,7 @@ ENSP401 - Cloud Computing Capstone Project
 import os
 import io
 import csv
+import shutil
 import tempfile
 import sqlite3
 from datetime import datetime, date
@@ -61,7 +62,6 @@ def create_app(test_config=None):
     if not os.path.exists(app.config["DATABASE"]):
         bundled_db = os.path.join(BASE_DIR, "instance", "cloudattend.db")
         if IS_VERCEL and os.path.exists(bundled_db):
-            import shutil
             shutil.copyfile(bundled_db, app.config["DATABASE"])
         else:
             with app.app_context():
@@ -819,6 +819,52 @@ def create_app(test_config=None):
                 os.unlink(temp_path)
             flash(f"Backup generation failed: {str(ex)}", "danger")
             return redirect(url_for("backup"))
+
+    @app.route("/backup/restore", methods=["POST"])
+    @login_required
+    @role_required("admin")
+    def restore_backup():
+        """Restore database from an uploaded SQLite .db snapshot."""
+        uploaded = request.files.get("backup_file")
+        if not uploaded or not uploaded.filename:
+            flash("Please select a .db backup file to upload.", "warning")
+            return redirect(url_for("backup"))
+
+        if not uploaded.filename.lower().endswith(".db"):
+            flash("Invalid file format. Only SQLite .db files are supported.", "danger")
+            return redirect(url_for("backup"))
+
+        temp_fd, temp_path = tempfile.mkstemp(suffix=".db")
+        os.close(temp_fd)
+
+        try:
+            uploaded.save(temp_path)
+            # Verify SQLite integrity
+            test_conn = sqlite3.connect(temp_path)
+            check = test_conn.execute("PRAGMA integrity_check;").fetchone()
+            # Also verify core tables exist
+            tables = [r[0] for r in test_conn.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall()]
+            test_conn.close()
+
+            required = {"users", "students", "courses", "attendance"}
+            if not check or check[0] != "ok" or not required.issubset(set(tables)):
+                flash("Restoration failed: The uploaded file is corrupted or not a valid CloudAttend database.", "danger")
+                return redirect(url_for("backup"))
+
+            # Safely replace active database
+            target_path = app.config["DATABASE"]
+            db.close_db()
+            shutil.copyfile(temp_path, target_path)
+
+            log_audit(g.user["id"], "RESTORE_DATABASE", f"Restored active database from uploaded snapshot '{uploaded.filename}'.")
+            flash("Database restored successfully! All tables, attendance records, and student profiles are updated.", "success")
+        except Exception as ex:
+            flash(f"Restoration error: {str(ex)}", "danger")
+        finally:
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+
+        return redirect(url_for("backup"))
 
     # -------------------------------------------------------------------------
     # HTTP Error Handlers

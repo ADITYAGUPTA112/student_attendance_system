@@ -59,28 +59,29 @@
         </div>
     </div>
 
-    <!-- Restore Instructions Card -->
+    <!-- Restore / Upload Database Card -->
     <div class="col-lg-5">
-        <div class="card card-custom p-4 h-100">
+        <div class="card card-custom p-4 h-100 d-flex flex-column">
             <h2 class="h5 fw-bold mb-3 d-flex align-items-center gap-2">
-                <i class="bi bi-arrow-counterclockwise text-primary"></i> Restoration Test Guide
+                <i class="bi bi-upload text-primary"></i> Restore / Upload Database
             </h2>
-            <p class="text-muted small">To restore a downloaded backup into an isolated local or testing environment:</p>
+            <p class="text-muted small">Upload an existing <code>.db</code> snapshot to restore records or sync data between local and online environments.</p>
 
-            <ol class="small text-dark ps-3 mb-4">
-                <li class="mb-2">Stop the running application or container.</li>
-                <li class="mb-2">Place the snapshot into the instance directory:<br>
-                    <code>cp backup_cloudattend.db instance/cloudattend.db</code>
-                </li>
-                <li class="mb-2">Verify integrity via the SQLite CLI:<br>
-                    <code>sqlite3 instance/cloudattend.db "PRAGMA integrity_check;"</code>
-                </li>
-                <li>Restart the application or Docker container.</li>
-            </ol>
+            <form action="{{ url_for('restore_backup') }}" method="POST" enctype="multipart/form-data" class="mb-4">
+                <div class="mb-3">
+                    <label for="backupFile" class="form-label small fw-semibold text-muted">Select SQLite Backup File (.db)</label>
+                    <input class="form-control form-control-sm" type="file" id="backupFile" name="backup_file" accept=".db" required>
+                </div>
+                <button type="submit" class="btn btn-outline-primary btn-sm w-100 d-flex align-items-center justify-content-center gap-1.5 fw-semibold" onclick="return confirm('Are you sure you want to restore? This will replace the active database with the uploaded file.');">
+                    <i class="bi bi-cloud-arrow-up"></i> Upload &amp; Restore Database
+                </button>
+            </form>
 
             <div class="pt-3 border-top mt-auto">
-                <a href="{{ url_for('download_backup') }}" class="btn btn-primary-navy w-100 py-2">
-                    <i class="bi bi-cloud-arrow-down me-1"></i> Generate & Download Now
+                <span class="fw-semibold small text-dark d-block mb-1">Local &bull; Online Sync Workflow:</span>
+                <p class="text-muted small mb-3">1. Render se <strong>Download</strong> karein ➔ 2. Local testing karein ➔ 3. Yahan <strong>Upload</strong> karke online sync karein.</p>
+                <a href="{{ url_for('download_backup') }}" class="btn btn-primary-navy w-100 py-2 d-flex align-items-center justify-content-center gap-1.5 fw-semibold">
+                    <i class="bi bi-cloud-arrow-down"></i> Generate &amp; Download Snapshot
                 </a>
             </div>
         </div>

@@ -79,3 +79,23 @@ def test_backup_access_denied_for_non_admin(client):
     resp_stu = client.get("/backup/download")
     assert resp_stu.status_code == 403
 
+
+def test_restore_backup_upload(client):
+    """Verify admin can restore database from a valid uploaded snapshot."""
+    import io
+    client.post("/login", data={"username": "admin", "password": "admin123"})
+    # Download existing valid snapshot
+    dl_resp = client.get("/backup/download")
+    assert dl_resp.status_code == 200
+
+    # Upload snapshot to restore endpoint
+    restore_resp = client.post(
+        "/backup/restore",
+        data={"backup_file": (io.BytesIO(dl_resp.data), "test_backup.db")},
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+    assert restore_resp.status_code == 200
+    assert b"Database restored successfully" in restore_resp.data
+
+
