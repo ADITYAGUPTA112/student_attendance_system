@@ -5,19 +5,19 @@
 {% block content %}
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
     <div>
-        <h1 class="h3 fw-bold mb-1">System Audit & Traceability Log</h1>
+        <h1 class="h3 fw-bold mb-1">System Audit &amp; Traceability Log</h1>
         <p class="text-muted small mb-0">Immutable record of administrative, authentication, and attendance events.</p>
     </div>
     <div>
         <span class="badge bg-light text-secondary border px-3 py-2">
-            <i class="bi bi-shield-lock-fill text-warning me-1"></i> Admin Privileged View
+            <i class="bi bi-shield-lock-fill text-warning me-1"></i> Admin Privileged View &bull; Immutable
         </span>
     </div>
 </div>
 
 <!-- Filter Controls -->
 <div class="card card-custom p-3 mb-4">
-    <form method="GET" action="{{ url_for('audit') }}" class="row g-2 align-items-center">
+    <form method="GET" action="{{ url_for('audit') }}" class="row g-2 align-items-center mb-2">
         <div class="col-md-9 col-lg-10">
             <div class="input-group">
                 <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-search"></i></span>
@@ -25,14 +25,32 @@
             </div>
         </div>
         <div class="col-md-3 col-lg-2 d-flex gap-2">
-            <button type="submit" class="btn btn-primary-navy w-100">Filter</button>
+            <button type="submit" class="btn btn-primary-navy w-100 fw-semibold rounded-3">Filter</button>
             {% if query %}
-                <a href="{{ url_for('audit') }}" class="btn btn-outline-secondary" title="Clear filter">
+                <a href="{{ url_for('audit') }}" class="btn btn-outline-secondary rounded-3" title="Clear filter">
                     <i class="bi bi-x-lg"></i>
                 </a>
             {% endif %}
         </div>
     </form>
+
+    <!-- Instant Filter Chips -->
+    <div class="d-flex flex-wrap gap-1.5 pt-2 border-top align-items-center">
+        <span class="text-muted small fw-bold me-1">Quick Filter:</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2.5 small rounded-pill fw-semibold" onclick="filterAuditCategory('ALL')">All Records</button>
+        <button type="button" class="badge-audit badge-audit-mark border-0" style="cursor:pointer;" onclick="filterAuditCategory('MARK')">
+            <i class="bi bi-check2-square"></i> MARK_ATTENDANCE
+        </button>
+        <button type="button" class="badge-audit badge-audit-create border-0" style="cursor:pointer;" onclick="filterAuditCategory('CREATE')">
+            <i class="bi bi-plus-circle-fill"></i> CREATE / ENROLL
+        </button>
+        <button type="button" class="badge-audit badge-audit-backup border-0" style="cursor:pointer;" onclick="filterAuditCategory('BACKUP')">
+            <i class="bi bi-database-check"></i> BACKUP
+        </button>
+        <button type="button" class="badge-audit badge-audit-auth border-0" style="cursor:pointer;" onclick="filterAuditCategory('AUTH')">
+            <i class="bi bi-shield-check"></i> AUTH
+        </button>
+    </div>
 </div>
 
 <!-- Audit Trail Table -->
@@ -40,26 +58,48 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="h5 fw-bold mb-0">
             Audit Records
-            <span class="badge bg-light text-secondary border ms-1">{{ logs|length }}</span>
+            <span class="badge bg-light text-secondary border ms-1" id="visibleAuditCount">{{ logs|length }}</span>
         </h2>
     </div>
 
     {% if logs %}
         <div class="table-responsive">
-            <table class="table table-custom align-middle mb-0">
+            <table class="table table-custom align-middle mb-0" id="auditTable">
                 <thead>
                     <tr>
                         <th style="width: 18%;">Timestamp</th>
                         <th style="width: 15%;">Actor</th>
-                        <th style="width: 20%;">Action Category</th>
-                        <th style="width: 47%;">Event Details</th>
+                        <th style="width: 22%;">Action Category</th>
+                        <th style="width: 45%;">Event Details</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in logs %}
-                        <tr>
-                            <td class="text-nowrap small text-muted">
-                                <i class="bi bi-clock me-1"></i>
+                        {% set act = item.action | upper %}
+                        {% if 'MARK' in act %}
+                            {% set cat = 'MARK' %}
+                            {% set badge_class = 'badge-audit-mark' %}
+                            {% set badge_icon = 'bi-check2-square' %}
+                        {% elif 'CREATE' in act or 'ENROLL' in act %}
+                            {% set cat = 'CREATE' %}
+                            {% set badge_class = 'badge-audit-create' %}
+                            {% set badge_icon = 'bi-plus-circle-fill' %}
+                        {% elif 'BACKUP' in act or 'RESTORE' in act %}
+                            {% set cat = 'BACKUP' %}
+                            {% set badge_class = 'badge-audit-backup' %}
+                            {% set badge_icon = 'bi-database-check' %}
+                        {% elif 'LOGIN' in act or 'AUTH' in act or 'LOGOUT' in act %}
+                            {% set cat = 'AUTH' %}
+                            {% set badge_class = 'badge-audit-auth' %}
+                            {% set badge_icon = 'bi-shield-check' %}
+                        {% else %}
+                            {% set cat = 'OTHER' %}
+                            {% set badge_class = 'badge-audit-danger' %}
+                            {% set badge_icon = 'bi-activity' %}
+                        {% endif %}
+                        <tr class="audit-row" data-cat="{{ cat }}">
+                            <td class="text-nowrap small text-muted font-monospace">
+                                <i class="bi bi-clock me-1 text-primary"></i>
                                 {% if item.created_at.strftime is defined %}
                                     {{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
                                 {% else %}
@@ -68,16 +108,16 @@
                             </td>
                             <td>
                                 {% if item.username %}
-                                    <span class="badge bg-light text-dark border">
-                                        <i class="bi bi-person me-1"></i>{{ item.username }}
+                                    <span class="badge bg-light text-dark border font-monospace">
+                                        <i class="bi bi-person me-1 text-primary"></i>{{ item.username }}
                                     </span>
                                 {% else %}
                                     <span class="badge bg-light text-muted border">System / Anonymous</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace">
-                                    {{ item.action }}
+                                <span class="badge-audit {{ badge_class }}">
+                                    <i class="bi {{ badge_icon }}"></i> {{ item.action }}
                                 </span>
                             </td>
                             <td class="small text-dark">{{ item.detail }}</td>
@@ -94,5 +134,26 @@
         </div>
     {% endif %}
 </div>
-{% endblock %}
 
+{% block scripts %}
+<script>
+function filterAuditCategory(cat) {
+    const rows = document.querySelectorAll('.audit-row');
+    let visible = 0;
+    rows.forEach(row => {
+        if (cat === 'ALL' || row.dataset.cat === cat) {
+            row.style.display = '';
+            visible++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    const countEl = document.getElementById('visibleAuditCount');
+    if (countEl) countEl.textContent = visible;
+    if (typeof showToast === 'function') {
+        showToast('Filtered audit records by: ' + cat);
+    }
+}
+</script>
+{% endblock %}
+{% endblock %}

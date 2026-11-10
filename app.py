@@ -27,15 +27,22 @@ from auth import login_required, role_required, log_audit
 import analytics_service
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-DEFAULT_DB_PATH = os.path.join(BASE_DIR, "instance", "cloudattend.db")
+IS_VERCEL = bool(os.environ.get("VERCEL"))
+if IS_VERCEL:
+    DEFAULT_DB_PATH = os.path.join(tempfile.gettempdir(), "cloudattend.db")
+else:
+    DEFAULT_DB_PATH = os.path.join(BASE_DIR, "instance", "cloudattend.db")
 
 
 def create_app(test_config=None):
     """Application factory for CloudAttend."""
     app = Flask(__name__, instance_relative_config=True)
 
-    # Ensure instance folder exists
-    os.makedirs(app.instance_path, exist_ok=True)
+    # Ensure instance folder exists (use system tempdir on Vercel serverless)
+    if IS_VERCEL:
+        app.instance_path = tempfile.gettempdir()
+    else:
+        os.makedirs(app.instance_path, exist_ok=True)
 
     # Default configuration
     app.config.from_mapping(
@@ -51,9 +58,14 @@ def create_app(test_config=None):
 
     # Automatically initialize and seed database on first startup if file does not exist
     if not os.path.exists(app.config["DATABASE"]):
-        with app.app_context():
-            db.init_db()
-            db.seed_db()
+        bundled_db = os.path.join(BASE_DIR, "instance", "cloudattend.db")
+        if IS_VERCEL and os.path.exists(bundled_db):
+            import shutil
+            shutil.copyfile(bundled_db, app.config["DATABASE"])
+        else:
+            with app.app_context():
+                db.init_db()
+                db.seed_db()
 
     # Register Auth blueprint
     app.register_blueprint(auth.bp)
@@ -383,36 +395,72 @@ def create_app(test_config=None):
             all_students=all_students,
         )
 
+    @app.route("/preview", methods=["GET"])
+    def preview():
+        """Interactive AttendX upgraded UI design preview and sandbox."""
+        return render_template("preview.html")
+
     @app.route("/courses/<int:course_id>/enroll", methods=["POST"])
     @login_required
     @role_required("admin")
     def enroll_student(course_id):
-        """Enroll a student into a course (CA-08)."""
+        """Enroll a single student or batch of students into a course (CA-08)."""
         database = db.get_db()
-        student_id = request.form.get("student_id")
+        student_ids = request.form.getlist("student_ids")
+        single_student_id = request.form.get("student_id")
+        if not student_ids and single_student_id:
+            student_ids = [single_student_id]
 
-        if not student_id:
-            flash("Please select a student to enroll.", "warning")
+        if not student_ids:
+            flash("Please select at least one student to enroll.", "warning")
             return redirect(url_for("courses"))
 
-        try:
-            database.execute(
-                "INSERT INTO enrollments (student_id, course_id) VALUES (?, ?)",
-                (student_id, course_id),
-            )
-            course = database.execute("SELECT code FROM courses WHERE id = ?", (course_id,)).fetchone()
-            student = database.execute("SELECT roll_no, name FROM students WHERE id = ?", (student_id,)).fetchone()
+        course = database.execute("SELECT code FROM courses WHERE id = ?", (course_id,)).fetchone()
 
-            log_audit(
-                g.user["id"],
-                "ENROLL_STUDENT",
-                f"Enrolled {student['name']} ({student['roll_no']}) into {course['code']}.",
-            )
-            database.commit()
-            flash(f"Student {student['roll_no']} successfully enrolled in {course['code']}.", "success")
-        except sqlite3.IntegrityError:
-            database.rollback()
-            flash("This student is already enrolled in this course.", "info")
+        if len(student_ids) == 1:
+            sid = student_ids[0]
+            try:
+                database.execute(
+                    "INSERT INTO enrollments (student_id, course_id) VALUES (?, ?)",
+                    (sid, course_id),
+                )
+                student = database.execute("SELECT roll_no, name FROM students WHERE id = ?", (sid,)).fetchone()
+                log_audit(
+                    g.user["id"],
+                    "ENROLL_STUDENT",
+                    f"Enrolled {student['name']} ({student['roll_no']}) into {course['code']}.",
+                )
+                database.commit()
+                flash(f"Student {student['roll_no']} successfully enrolled in {course['code']}.", "success")
+            except sqlite3.IntegrityError:
+                database.rollback()
+                flash("This student is already enrolled in this course.", "info")
+            return redirect(url_for("courses"))
+
+        # Batch enrollment
+        enrolled_count = 0
+        for sid in student_ids:
+            try:
+                database.execute(
+                    "INSERT INTO enrollments (student_id, course_id) VALUES (?, ?)",
+                    (sid, course_id),
+                )
+                student = database.execute("SELECT roll_no, name FROM students WHERE id = ?", (sid,)).fetchone()
+                if student:
+                    log_audit(
+                        g.user["id"],
+                        "ENROLL_STUDENT",
+                        f"Enrolled {student['name']} ({student['roll_no']}) into {course['code']}.",
+                    )
+                enrolled_count += 1
+            except sqlite3.IntegrityError:
+                pass
+
+        database.commit()
+        if enrolled_count > 0:
+            flash(f"Successfully enrolled {enrolled_count} student(s) into {course['code']}.", "success")
+        else:
+            flash("Selected student(s) are already enrolled in this course.", "info")
 
         return redirect(url_for("courses"))
 
@@ -520,13 +568,18 @@ def create_app(test_config=None):
             if selected_course:
                 enrolled = database.execute(
                     """
-                    SELECT s.id, s.roll_no, s.name, a.status AS current_status
+                    SELECT s.id, s.roll_no, s.name, a.status AS current_status,
+                           COUNT(past.id) AS past_total,
+                           SUM(CASE WHEN past.status = 'Present' THEN 1 ELSE 0 END) AS past_present
                     FROM students s
                     JOIN enrollments e ON e.student_id = s.id
                     LEFT JOIN attendance a ON a.student_id = s.id 
                                          AND a.course_id = e.course_id 
                                          AND a.attendance_date = ?
+                    LEFT JOIN attendance past ON past.student_id = s.id
+                                             AND past.course_id = e.course_id
                     WHERE e.course_id = ?
+                    GROUP BY s.id, s.roll_no, s.name, a.status
                     ORDER BY s.roll_no ASC
                     """,
                     (selected_date, selected_course_id),
@@ -535,11 +588,25 @@ def create_app(test_config=None):
                 for st in enrolled:
                     if st["current_status"]:
                         is_existing = True
+                    p_tot = st["past_total"] or 0
+                    p_pres = st["past_present"] or 0
+                    p_pct = (p_pres / p_tot * 100.0) if p_tot > 0 else 100.0
+                    if p_pct >= 75.0:
+                        halo = "avatar-halo-safe"
+                    elif p_pct >= 65.0:
+                        halo = "avatar-halo-warning"
+                    else:
+                        halo = "avatar-halo-danger"
+
                     roster_data.append({
                         "id": st["id"],
                         "roll_no": st["roll_no"],
                         "name": st["name"],
                         "current_status": st["current_status"],
+                        "past_total": p_tot,
+                        "past_present": p_pres,
+                        "past_pct": p_pct,
+                        "halo_class": halo,
                     })
 
         return render_template(

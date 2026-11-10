@@ -39,7 +39,7 @@
     </div>
 </div>
 
-<!-- Modern KPI Summary 4-Grid Cards (Stitch Design Pattern) -->
+<!-- Modern Bento-Grid KPI Summary Cards with Mini Sparklines -->
 <div class="row g-3 mb-4">
     <div class="col-sm-6 col-xl-3">
         <div class="kpi-card navy shadow-sm">
@@ -50,9 +50,16 @@
                 </span>
             </div>
             <div class="kpi-value">{{ stats.student_count | default(0) }}</div>
-            <div class="d-flex align-items-center gap-1 mt-2 text-muted small">
+            <!-- Sparkline Trend Wave -->
+            <div class="mt-2 mb-1">
+                <svg class="sparkline-svg" viewBox="0 0 100 24" preserveAspectRatio="none">
+                    <path d="M0,18 Q20,10 40,14 T80,6 T100,10" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round"></path>
+                    <path d="M0,18 Q20,10 40,14 T80,6 T100,10 L100,24 L0,24 Z" fill="rgba(37, 99, 235, 0.12)"></path>
+                </svg>
+            </div>
+            <div class="d-flex align-items-center justify-content-between text-muted small">
                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace">Enrolled</span>
-                <span>Active learners</span>
+                <span style="font-size: 0.72rem;">Active learners</span>
             </div>
         </div>
     </div>
@@ -65,9 +72,16 @@
                 </span>
             </div>
             <div class="kpi-value">{{ stats.course_count | default(0) }}</div>
-            <div class="d-flex align-items-center gap-1 mt-2 text-muted small">
+            <!-- Sparkline Trend Wave -->
+            <div class="mt-2 mb-1">
+                <svg class="sparkline-svg" viewBox="0 0 100 24" preserveAspectRatio="none">
+                    <path d="M0,16 Q25,8 50,12 T100,4" fill="none" stroke="#38BDF8" stroke-width="2.5" stroke-linecap="round"></path>
+                    <path d="M0,16 Q25,8 50,12 T100,4 L100,24 L0,24 Z" fill="rgba(56, 189, 248, 0.12)"></path>
+                </svg>
+            </div>
+            <div class="d-flex align-items-center justify-content-between text-muted small">
                 <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle font-monospace">Curriculum</span>
-                <span>Active offerings</span>
+                <span style="font-size: 0.72rem;">Active offerings</span>
             </div>
         </div>
     </div>
@@ -80,9 +94,16 @@
                 </span>
             </div>
             <div class="kpi-value text-success">{{ stats.attendance_count | default(0) }}</div>
-            <div class="d-flex align-items-center gap-1 mt-2 text-muted small">
+            <!-- Sparkline Trend Wave -->
+            <div class="mt-2 mb-1">
+                <svg class="sparkline-svg" viewBox="0 0 100 24" preserveAspectRatio="none">
+                    <path d="M0,14 Q30,20 60,6 T100,2" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"></path>
+                    <path d="M0,14 Q30,20 60,6 T100,2 L100,24 L0,24 Z" fill="rgba(16, 185, 129, 0.15)"></path>
+                </svg>
+            </div>
+            <div class="d-flex align-items-center justify-content-between text-muted small">
                 <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace">Verified</span>
-                <span>Recorded sessions</span>
+                <span style="font-size: 0.72rem;">Recorded sessions</span>
             </div>
         </div>
     </div>
@@ -95,10 +116,42 @@
                 </span>
             </div>
             <div class="kpi-value">{{ stats.audit_count | default(0) }}</div>
-            <div class="d-flex align-items-center gap-1 mt-2 text-muted small">
-                <span class="badge bg-light text-secondary border font-monospace">Immutable</span>
-                <span>Traceability logs</span>
+            <!-- Sparkline Trend Wave -->
+            <div class="mt-2 mb-1">
+                <svg class="sparkline-svg" viewBox="0 0 100 24" preserveAspectRatio="none">
+                    <path d="M0,20 Q20,15 40,8 T80,14 T100,6" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round"></path>
+                    <path d="M0,20 Q20,15 40,8 T80,14 T100,6 L100,24 L0,24 Z" fill="rgba(239, 68, 68, 0.12)"></path>
+                </svg>
             </div>
+            <div class="d-flex align-items-center justify-content-between text-muted small">
+                <span class="badge bg-light text-secondary border font-monospace">Immutable</span>
+                <span style="font-size: 0.72rem;">Traceability logs</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bento Row: Live Academic Schedule Clock & Quick Session Launcher -->
+<div class="card bento-schedule-card mb-4">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                <span class="pulse-dot-live"></span>
+                <span class="badge bg-success text-white border-0 font-monospace text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.06em;">Live Academic Session</span>
+                <span class="text-white-50 small">&bull; Lecture Hall 302</span>
+            </div>
+            <h2 class="h4 fw-bold text-white mb-1">CS101 — Introduction to Computer Science</h2>
+            <p class="text-white-50 small mb-0">Scheduled Period &bull; Monday &ndash; Friday &bull; Active Faculty: <strong>prof_smith</strong></p>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <div class="text-end d-none d-sm-block">
+                <div class="text-white-50 small text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.05em;">Current Time</div>
+                <div id="liveDashboardClock" class="font-monospace fw-bold fs-4 text-white">--:--:--</div>
+            </div>
+            <a href="{{ url_for('attendance') }}" class="btn btn-primary px-3 py-2 fw-bold rounded-pill shadow-sm d-flex align-items-center gap-1.5">
+                <i class="bi bi-check2-circle fs-5"></i>
+                <span>Mark This Session</span>
+            </a>
         </div>
     </div>
 </div>
@@ -174,16 +227,35 @@
             {% if recent_activity %}
                 <ul class="list-group list-group-flush small">
                     {% for item in recent_activity %}
-                        <li class="list-group-item px-0 py-2.5 d-flex justify-content-between align-items-start border-bottom">
+                        {% set act = item.action | upper %}
+                        {% if 'MARK' in act %}
+                            {% set badge_class = 'badge-audit-mark' %}
+                            {% set badge_icon = 'bi-check2-square' %}
+                        {% elif 'CREATE' in act or 'ENROLL' in act %}
+                            {% set badge_class = 'badge-audit-create' %}
+                            {% set badge_icon = 'bi-plus-circle-fill' %}
+                        {% elif 'BACKUP' in act or 'RESTORE' in act %}
+                            {% set badge_class = 'badge-audit-backup' %}
+                            {% set badge_icon = 'bi-database-check' %}
+                        {% elif 'LOGIN' in act or 'AUTH' in act or 'LOGOUT' in act %}
+                            {% set badge_class = 'badge-audit-auth' %}
+                            {% set badge_icon = 'bi-shield-check' %}
+                        {% else %}
+                            {% set badge_class = 'badge-audit-danger' %}
+                            {% set badge_icon = 'bi-activity' %}
+                        {% endif %}
+                        <li class="list-group-item bg-transparent px-0 py-2.5 d-flex justify-content-between align-items-start border-bottom">
                             <div>
-                                <span class="badge bg-light text-primary border me-1 font-monospace" style="font-size: 0.68rem;">{{ item.action }}</span>
+                                <span class="badge-audit {{ badge_class }} me-1">
+                                    <i class="bi {{ badge_icon }}"></i> {{ item.action }}
+                                </span>
                                 <span class="text-dark fw-medium">{{ item.detail }}</span>
                             </div>
-                            <span class="text-muted ms-2 text-nowrap" style="font-size: 0.75rem;">
+                            <span class="text-muted ms-2 text-nowrap font-monospace" style="font-size: 0.75rem;">
                                 {% if item.created_at.strftime is defined %}
-                                    {{ item.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                    {{ item.created_at.strftime('%H:%M') }}
                                 {% else %}
-                                    {{ item.created_at }}
+                                    {{ item.created_at[11:16] if item.created_at|length >= 16 else item.created_at }}
                                 {% endif %}
                             </span>
                         </li>
@@ -198,4 +270,17 @@
         </div>
     </div>
 </div>
+
+{% block scripts %}
+<script>
+function updateDashboardClock() {
+    const el = document.getElementById('liveDashboardClock');
+    if (!el) return;
+    const now = new Date();
+    el.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+setInterval(updateDashboardClock, 1000);
+updateDashboardClock();
+</script>
+{% endblock %}
 {% endblock %}

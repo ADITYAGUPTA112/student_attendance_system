@@ -11,8 +11,19 @@
                 <li class="breadcrumb-item active" aria-current="page">Daily Session Log</li>
             </ol>
         </nav>
-        <h1 class="h3 fw-bold mb-1">Class Attendance Entry</h1>
-        <p class="text-muted small mb-0">Record, update, and verify student attendance with atomic database writes.</p>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <h1 class="h3 fw-bold mb-0">Class Attendance Entry</h1>
+            {% if is_existing %}
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1 rounded-pill small">
+                    <i class="bi bi-pencil-square me-1"></i> Previously Recorded &bull; Editing Mode
+                </span>
+            {% else %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill small">
+                    <i class="bi bi-plus-circle me-1"></i> New Session Entry
+                </span>
+            {% endif %}
+        </div>
+        <p class="text-muted small mb-0 mt-1">Upgraded with live student standing halos, Invert Selection, keyboard hotkeys, and modified-row tracking.</p>
     </div>
     {% if selected_course %}
         <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 fs-6 rounded-3">
@@ -26,7 +37,7 @@
     <form method="GET" action="{{ url_for('attendance') }}" class="row g-3 align-items-end">
         <div class="col-md-5">
             <label for="course_id" class="form-label fw-bold small text-muted text-uppercase tracking-wider">Course Selection</label>
-            <select class="form-select rounded-3 py-2" id="course_id" name="course_id" onchange="this.form.submit()">
+            <select class="form-select rounded-3 py-2 fw-semibold" id="course_id" name="course_id" onchange="this.form.submit()">
                 {% for c in courses %}
                     <option value="{{ c.id }}" {% if selected_course and selected_course.id == c.id %}selected{% endif %}>
                         {{ c.code }} — {{ c.name }}
@@ -39,7 +50,7 @@
             <input type="date" class="form-control rounded-3 py-2" id="date" name="date" value="{{ selected_date }}" onchange="this.form.submit()" required>
         </div>
         <div class="col-md-3">
-            <button type="submit" class="btn btn-outline-secondary w-100 py-2 rounded-3">
+            <button type="submit" class="btn btn-outline-secondary w-100 py-2 rounded-3 fw-semibold">
                 <i class="bi bi-arrow-repeat me-1"></i> Refresh Roster
             </button>
         </div>
@@ -49,20 +60,23 @@
 <!-- Attendance Entry Form Card -->
 {% if selected_course %}
     <div class="card card-custom p-4">
-        <!-- Live Batch & Metric Bar (from Stitch layout) -->
+        <!-- Live Batch & Metric Bar -->
         <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-3 pb-3 border-bottom gap-3">
-            <div class="d-flex items-center gap-2 flex-wrap">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
                 <button type="button" class="btn btn-sm btn-success fw-semibold px-3 py-1.5 rounded-3" onclick="bulkMark('Present')">
                     <i class="bi bi-check2-all me-1"></i> Mark All Present
                 </button>
                 <button type="button" class="btn btn-sm btn-danger fw-semibold px-3 py-1.5 rounded-3" onclick="bulkMark('Absent')">
                     <i class="bi bi-x-lg me-1"></i> Mark All Absent
                 </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary fw-semibold px-3 py-1.5 rounded-3" onclick="invertSelection()">
+                    <i class="bi bi-arrow-left-right me-1"></i> Invert Selection
+                </button>
             </div>
 
-            <!-- Live Status Counters & Search Filter -->
-            <div class="d-flex flex-column flex-sm-row items-center gap-3 w-100 w-lg-auto justify-content-end">
-                <div class="d-flex align-items-center gap-2">
+            <!-- Live Status Counters & Search Filter & View Mode -->
+            <div class="d-flex flex-column flex-sm-row align-items-center gap-3 w-100 w-lg-auto justify-content-end">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
                     <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill font-monospace" id="livePresentCount">
                         0 Present
                     </span>
@@ -73,54 +87,92 @@
                         Total: {{ roster|length }}
                     </span>
                 </div>
-                <div class="input-group input-group-sm" style="max-width: 240px;">
+                <!-- View Mode Switch: Table vs Card Grid -->
+                <div class="view-mode-pill">
+                    <button type="button" class="view-mode-btn active" id="btnViewList" onclick="switchRosterView('list')" title="List Table View">
+                        <i class="bi bi-list-ul me-1"></i> List
+                    </button>
+                    <button type="button" class="view-mode-btn" id="btnViewGrid" onclick="switchRosterView('grid')" title="Photo Card Grid View">
+                        <i class="bi bi-grid-3x3-gap-fill me-1"></i> Cards
+                    </button>
+                </div>
+                <div class="input-group input-group-sm" style="max-width: 210px;">
                     <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                    <input type="text" class="form-control border-start-0" id="rosterSearchInput" placeholder="Filter by name or roll..." onkeyup="filterRoster()">
+                    <input type="text" class="form-control border-start-0" id="rosterSearchInput" placeholder="Filter by name or roll..." oninput="filterRoster()">
                 </div>
             </div>
         </div>
 
         {% if roster %}
-            <!-- Keyboard Shortcut & Speed Helper Banner -->
-            <div class="alert alert-light border d-flex align-items-center justify-content-between py-2 px-3 mb-3 small text-muted rounded-3">
+            <!-- Keyboard Shortcut & Halo Legend Banner -->
+            <div class="alert alert-light border d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between py-2 px-3 mb-3 small text-muted rounded-3 gap-2">
                 <div class="d-flex align-items-center gap-2">
                     <span class="badge bg-secondary-subtle text-secondary font-monospace"><i class="bi bi-keyboard"></i> Hotkeys</span>
                     <span>Click any row, then press <kbd>P</kbd> for <strong>Present</strong>, <kbd>A</kbd> for <strong>Absent</strong>, or <kbd>&uarr;</kbd> <kbd>&darr;</kbd> to navigate.</span>
                 </div>
-                <span class="d-none d-md-inline text-muted" style="font-size: 0.78rem;">
-                    Autosync enabled
-                </span>
+                <div class="d-flex align-items-center gap-3" style="font-size: 0.76rem;">
+                    <span><span class="d-inline-block rounded-circle me-1" style="width:8px;height:8px;background:#10B981;"></span>&ge;75% Safe Halo</span>
+                    <span><span class="d-inline-block rounded-circle me-1" style="width:8px;height:8px;background:#F59E0B;"></span>65–74% Warning</span>
+                    <span><span class="d-inline-block rounded-circle me-1" style="width:8px;height:8px;background:#EF4444;"></span>&lt;65% At-Risk</span>
+                </div>
             </div>
 
             <form method="POST" action="{{ url_for('attendance') }}" id="attendanceForm">
                 <input type="hidden" name="course_id" value="{{ selected_course.id }}">
                 <input type="hidden" name="date" value="{{ selected_date }}">
 
-                <div class="table-responsive mb-4">
+                <!-- Table View Mode -->
+                <div class="table-responsive mb-3" id="rosterTableView">
                     <table class="table table-custom align-middle mb-0" id="rosterTable">
                         <thead>
                             <tr>
                                 <th style="width: 15%;">Roll Number</th>
-                                <th style="width: 50%;">Student Profile</th>
-                                <th style="width: 35%;" class="text-end">Live Status Toggle</th>
+                                <th style="width: 48%;">Student Profile &amp; Course Standing</th>
+                                <th style="width: 37%;" class="text-end">Live Status Toggle</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="rosterTableBody">
                             {% for s in roster %}
-                                <tr class="roster-row" tabindex="0" data-student-id="{{ s.id }}">
+                                {% set initial_val = s.current_status if s.current_status else 'Present' %}
+                                <tr class="roster-row" tabindex="0" data-student-id="{{ s.id }}" data-initial-status="{{ initial_val }}">
                                     <td>
                                         <span class="badge bg-light text-primary border font-monospace fw-bold px-2 py-1">
                                             {{ s.roll_no }}
                                         </span>
                                     </td>
                                     <td>
-                                        <div class="d-flex align-items-center gap-2.5">
-                                            <div class="student-avatar" id="avatar_{{ s.id }}">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="student-avatar {{ s.halo_class }}" id="avatar_{{ s.id }}">
                                                 {{ s.name[:2]|upper }}
                                             </div>
                                             <div>
-                                                <div class="fw-bold text-dark student-name">{{ s.name }}</div>
-                                                <div class="text-muted small">Student ID #{{ s.id }}</div>
+                                                <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                                    <span class="student-name">{{ s.name }}</span>
+                                                    {% if s.past_total > 0 %}
+                                                        {% if s.past_pct >= 75.0 %}
+                                                            <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace" style="font-size: 0.68rem;">
+                                                                {{ "%.0f"|format(s.past_pct) }}%
+                                                            </span>
+                                                        {% elif s.past_pct >= 65.0 %}
+                                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle font-monospace" style="font-size: 0.68rem;">
+                                                                <i class="bi bi-exclamation-circle-fill me-1"></i>{{ "%.0f"|format(s.past_pct) }}%
+                                                            </span>
+                                                        {% else %}
+                                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace" style="font-size: 0.68rem;">
+                                                                <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ "%.0f"|format(s.past_pct) }}%
+                                                            </span>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                </div>
+                                                <div class="text-muted small">
+                                                    Student ID #{{ s.id }}
+                                                    {% if s.past_total > 0 %}
+                                                        &bull; {{ s.past_present }}/{{ s.past_total }} classes attended
+                                                        {% if s.past_pct < 65.0 %}<span class="text-danger fw-bold">(At-Risk)</span>{% elif s.past_pct < 75.0 %}<span class="text-warning fw-bold">(Borderline)</span>{% endif %}
+                                                    {% else %}
+                                                        &bull; First session in course
+                                                    {% endif %}
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -129,7 +181,7 @@
                                             <input type="radio" class="btn-check status-radio-present" 
                                                    name="status_{{ s.id }}" id="present_{{ s.id }}" 
                                                    value="Present" 
-                                                   onchange="updateLiveCounters()"
+                                                   onchange="onRowStatusChange({{ s.id }})"
                                                    {% if s.current_status == 'Present' or not s.current_status %}checked{% endif %}>
                                             <label class="btn-status btn-present" for="present_{{ s.id }}">
                                                 <i class="bi bi-check-lg me-1"></i>Present
@@ -138,7 +190,7 @@
                                             <input type="radio" class="btn-check status-radio-absent" 
                                                    name="status_{{ s.id }}" id="absent_{{ s.id }}" 
                                                    value="Absent" 
-                                                   onchange="updateLiveCounters()"
+                                                   onchange="onRowStatusChange({{ s.id }})"
                                                    {% if s.current_status == 'Absent' %}checked{% endif %}>
                                             <label class="btn-status btn-absent" for="absent_{{ s.id }}">
                                                 <i class="bi bi-x-lg me-1"></i>Absent
@@ -151,12 +203,66 @@
                     </table>
                 </div>
 
+                <!-- Card Grid View Mode (Interactive Photo Cards) -->
+                <div class="student-card-grid mb-3 d-none" id="rosterGridView">
+                    {% for s in roster %}
+                        {% set initial_val = s.current_status if s.current_status else 'Present' %}
+                        <div class="student-grid-card {% if initial_val == 'Present' %}card-present{% else %}card-absent{% endif %} roster-card" 
+                             id="gridCard_{{ s.id }}" data-student-id="{{ s.id }}">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <span class="badge bg-light text-primary border font-monospace fw-bold px-2 py-1">
+                                    {{ s.roll_no }}
+                                </span>
+                                {% if s.past_total > 0 %}
+                                    {% if s.past_pct >= 75.0 %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace" style="font-size: 0.68rem;">
+                                            {{ "%.0f"|format(s.past_pct) }}%
+                                        </span>
+                                    {% elif s.past_pct >= 65.0 %}
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle font-monospace" style="font-size: 0.68rem;">
+                                            <i class="bi bi-exclamation-circle-fill me-1"></i>{{ "%.0f"|format(s.past_pct) }}%
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace" style="font-size: 0.68rem;">
+                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ "%.0f"|format(s.past_pct) }}%
+                                        </span>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="student-avatar {{ s.halo_class }}" style="width: 48px; height: 48px; font-size: 1.05rem;">
+                                    {{ s.name[:2]|upper }}
+                                </div>
+                                <div class="overflow-hidden">
+                                    <div class="fw-bold text-dark text-truncate student-name">{{ s.name }}</div>
+                                    <div class="text-muted small" style="font-size: 0.75rem;">
+                                        ID #{{ s.id }} &bull; {{ s.past_present }}/{{ s.past_total }} attended
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-sm w-50 fw-semibold rounded-2 btn-grid-present {% if initial_val == 'Present' %}btn-success text-white{% else %}btn-outline-success{% endif %}" 
+                                        id="gridBtnPresent_{{ s.id }}" onclick="setStudentStatus({{ s.id }}, 'Present')">
+                                    <i class="bi bi-check-lg me-1"></i> Present
+                                </button>
+                                <button type="button" class="btn btn-sm w-50 fw-semibold rounded-2 btn-grid-absent {% if initial_val == 'Absent' %}btn-danger text-white{% else %}btn-outline-danger{% endif %}" 
+                                        id="gridBtnAbsent_{{ s.id }}" onclick="setStudentStatus({{ s.id }}, 'Absent')">
+                                    <i class="bi bi-x-lg me-1"></i> Absent
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
                 <!-- Floating Sticky Glass Action Bar -->
-                <div class="floating-roster-bar d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
+                <div class="floating-roster-bar d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <span class="badge bg-success px-3 py-2 font-monospace" id="floatingPresentBadge">0 Present</span>
                         <span class="badge bg-danger px-3 py-2 font-monospace" id="floatingAbsentBadge">0 Absent</span>
                         <span class="badge bg-light text-dark px-3 py-2 font-monospace" id="floatingRateBadge">0.0% Rate</span>
+                        <span class="badge bg-warning text-dark px-2.5 py-2 font-monospace d-none" id="floatingModifiedBadge">0 Changed</span>
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <span class="text-white-50 small d-none d-lg-inline">
@@ -178,10 +284,84 @@
     </div>
 {% endif %}
 
+{% block scripts %}
 <script>
+function switchRosterView(mode) {
+    const tableView = document.getElementById('rosterTableView');
+    const gridView = document.getElementById('rosterGridView');
+    const btnList = document.getElementById('btnViewList');
+    const btnGrid = document.getElementById('btnViewGrid');
+
+    if (mode === 'grid') {
+        if (tableView) tableView.classList.add('d-none');
+        if (gridView) gridView.classList.remove('d-none');
+        if (btnGrid) btnGrid.classList.add('active');
+        if (btnList) btnList.classList.remove('active');
+        localStorage.setItem('attendx_roster_view', 'grid');
+    } else {
+        if (gridView) gridView.classList.add('d-none');
+        if (tableView) tableView.classList.remove('d-none');
+        if (btnList) btnList.classList.add('active');
+        if (btnGrid) btnGrid.classList.remove('active');
+        localStorage.setItem('attendx_roster_view', 'list');
+    }
+}
+
+function setStudentStatus(studentId, status) {
+    const pRadio = document.getElementById('present_' + studentId);
+    const aRadio = document.getElementById('absent_' + studentId);
+    if (status === 'Present' && pRadio) {
+        pRadio.checked = true;
+    } else if (status === 'Absent' && aRadio) {
+        aRadio.checked = true;
+    }
+    onRowStatusChange(studentId);
+}
+
+function onRowStatusChange(studentId) {
+    const row = document.querySelector('.roster-row[data-student-id="' + studentId + '"]');
+    const pRadio = document.getElementById('present_' + studentId);
+    const current = (pRadio && pRadio.checked) ? 'Present' : 'Absent';
+
+    if (row) {
+        const initial = row.dataset.initialStatus;
+        row.classList.toggle('row-modified', current !== initial);
+    }
+
+    // Synchronize Card Grid UI state
+    const card = document.getElementById('gridCard_' + studentId);
+    const btnPres = document.getElementById('gridBtnPresent_' + studentId);
+    const btnAbs = document.getElementById('gridBtnAbsent_' + studentId);
+
+    if (card) {
+        if (current === 'Present') {
+            card.classList.add('card-present');
+            card.classList.remove('card-absent');
+            if (btnPres) {
+                btnPres.className = 'btn btn-sm w-50 fw-semibold rounded-2 btn-grid-present btn-success text-white';
+            }
+            if (btnAbs) {
+                btnAbs.className = 'btn btn-sm w-50 fw-semibold rounded-2 btn-grid-absent btn-outline-danger';
+            }
+        } else {
+            card.classList.add('card-absent');
+            card.classList.remove('card-present');
+            if (btnPres) {
+                btnPres.className = 'btn btn-sm w-50 fw-semibold rounded-2 btn-grid-present btn-outline-success';
+            }
+            if (btnAbs) {
+                btnAbs.className = 'btn btn-sm w-50 fw-semibold rounded-2 btn-grid-absent btn-danger text-white';
+            }
+        }
+    }
+
+    updateLiveCounters();
+}
+
 function updateLiveCounters() {
     const presentCount = document.querySelectorAll('.status-radio-present:checked').length;
     const absentCount = document.querySelectorAll('.status-radio-absent:checked').length;
+    const modifiedCount = document.querySelectorAll('.roster-row.row-modified').length;
     const totalCount = presentCount + absentCount;
     const rate = totalCount > 0 ? ((presentCount / totalCount) * 100).toFixed(1) : '0.0';
 
@@ -190,6 +370,7 @@ function updateLiveCounters() {
     const floatPres = document.getElementById('floatingPresentBadge');
     const floatAbs = document.getElementById('floatingAbsentBadge');
     const floatRate = document.getElementById('floatingRateBadge');
+    const modBadge = document.getElementById('floatingModifiedBadge');
 
     if (presEl) presEl.textContent = `${presentCount} Present`;
     if (absEl) absEl.textContent = `${absentCount} Absent`;
@@ -197,35 +378,70 @@ function updateLiveCounters() {
     if (floatPres) floatPres.textContent = `${presentCount} Present`;
     if (floatAbs) floatAbs.textContent = `${absentCount} Absent`;
     if (floatRate) floatRate.textContent = `${rate}% Rate`;
+
+    if (modBadge) {
+        if (modifiedCount > 0) {
+            modBadge.textContent = `${modifiedCount} Changed`;
+            modBadge.classList.remove('d-none');
+        } else {
+            modBadge.classList.add('d-none');
+        }
+    }
 }
 
 function bulkMark(status) {
-    if (status === 'Present') {
-        document.querySelectorAll('.status-radio-present').forEach(el => el.checked = true);
-    } else {
-        document.querySelectorAll('.status-radio-absent').forEach(el => el.checked = true);
+    document.querySelectorAll('.roster-row').forEach(row => {
+        if (row.style.display === 'none') return;
+        const sid = row.dataset.studentId;
+        const pRadio = document.getElementById('present_' + sid);
+        const aRadio = document.getElementById('absent_' + sid);
+        if (status === 'Present' && pRadio) pRadio.checked = true;
+        if (status === 'Absent' && aRadio) aRadio.checked = true;
+        onRowStatusChange(sid);
+    });
+    if (typeof showToast === 'function') {
+        showToast('Marked all students as ' + status);
     }
-    updateLiveCounters();
+}
+
+function invertSelection() {
+    document.querySelectorAll('.roster-row').forEach(row => {
+        if (row.style.display === 'none') return;
+        const sid = row.dataset.studentId;
+        const pRadio = document.getElementById('present_' + sid);
+        const aRadio = document.getElementById('absent_' + sid);
+        if (pRadio && aRadio) {
+            if (pRadio.checked) {
+                aRadio.checked = true;
+            } else {
+                pRadio.checked = true;
+            }
+            onRowStatusChange(sid);
+        }
+    });
+    if (typeof showToast === 'function') {
+        showToast('Inverted attendance selection');
+    }
 }
 
 function filterRoster() {
-    const filter = document.getElementById('rosterSearchInput').value.toLowerCase();
+    const filter = (document.getElementById('rosterSearchInput').value || '').toLowerCase();
     const rows = document.querySelectorAll('.roster-row');
-
     rows.forEach(row => {
         const text = row.textContent.toLowerCase();
-        if (text.includes(filter)) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
+        row.style.display = text.includes(filter) ? '' : 'none';
+    });
+
+    const cards = document.querySelectorAll('.roster-card');
+    cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(filter) ? '' : 'none';
     });
 }
 
-// Rapid-Entry Keyboard Shortcuts (P, A, Arrow Navigation)
+// Rapid-Entry Keyboard Shortcuts (P, A, Up/Down Arrow Navigation)
 document.addEventListener('keydown', function(e) {
-    // Ignore keystrokes inside search input or form fields
-    if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+    if (e.target.tagName === 'INPUT' && (e.target.type === 'text' || e.target.type === 'date')) return;
 
     const focusedRow = document.activeElement && document.activeElement.classList.contains('roster-row') 
         ? document.activeElement 
@@ -242,7 +458,7 @@ document.addEventListener('keydown', function(e) {
         const pRadio = document.getElementById('present_' + studentId);
         if (pRadio) {
             pRadio.checked = true;
-            updateLiveCounters();
+            onRowStatusChange(studentId);
             moveToNextRow(focusedRow);
         }
     } else if (key === 'A') {
@@ -250,7 +466,7 @@ document.addEventListener('keydown', function(e) {
         const aRadio = document.getElementById('absent_' + studentId);
         if (aRadio) {
             aRadio.checked = true;
-            updateLiveCounters();
+            onRowStatusChange(studentId);
             moveToNextRow(focusedRow);
         }
     } else if (e.key === 'ArrowDown') {
@@ -282,6 +498,13 @@ function moveToPrevRow(currentRow) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', updateLiveCounters);
+document.addEventListener('DOMContentLoaded', function() {
+    updateLiveCounters();
+    const savedView = localStorage.getItem('attendx_roster_view');
+    if (savedView === 'grid') {
+        switchRosterView('grid');
+    }
+});
 </script>
+{% endblock %}
 {% endblock %}

@@ -29,6 +29,9 @@
         <div class="attendx-vignette"></div>
     </div>
 
+    <!-- 3D Interactive WebGL Neon Tubes Cursor Background Canvas -->
+    <canvas id="tubesCanvas" class="attendx-tubes-canvas" aria-hidden="true"></canvas>
+
     <!-- Fixed Translucent Top Navigation Bar (~68px) -->
     <header class="attendx-navbar">
         <div class="attendx-nav-container">
@@ -45,6 +48,12 @@
                     <li><a href="{{ url_for('index') }}" class="attendx-nav-link">Home</a></li>
                     <li><a href="#features" class="attendx-nav-link">Features</a></li>
                     <li><a href="{{ url_for('health') }}" class="attendx-nav-link" target="_blank" rel="noopener">System Status</a></li>
+                    <li>
+                        <button type="button" class="tubes-ctrl-pill" id="randomizeNeonBtn" title="Randomize 3D Neon Colors">
+                            <i class="bi bi-magic"></i>
+                            <span>Randomize Neon</span>
+                        </button>
+                    </li>
                     <li>
                         <a href="{{ url_for('auth.login') }}" class="attendx-nav-btn active">
                             <i class="bi bi-box-arrow-in-right"></i>
@@ -79,6 +88,14 @@
                 <p class="hero-description">
                     Track attendance, discover academic insights and simplify classroom management through one intelligent, secure and easy-to-use platform.
                 </p>
+
+                <!-- Interactive 3D Background Cue Pill -->
+                <div class="mb-3">
+                    <div class="tubes-interactive-cue">
+                        <i class="bi bi-cursor-fill text-info"></i>
+                        <span>3D Interactive Neon: Move cursor in 3D &bull; Click anywhere to randomize</span>
+                    </div>
+                </div>
 
                 <!-- 4 Compact Feature Highlight Cards -->
                 <div class="feature-cards-grid" id="features">
@@ -342,6 +359,76 @@
             if (existingToast) existingToast.style.display = 'none';
         }, 3200);
     }
+
+    // 4. 3D Interactive Neon Tubes Background Engine
+    const randomNeonColors = (count) => {
+        const vibrantHues = [
+            "#2DD4BF", "#38BDF8", "#E879F9", "#818CF8",
+            "#F43F5E", "#10B981", "#F59E0B", "#A855F7",
+            "#06B6D4", "#EC4899", "#3B82F6", "#84CC16"
+        ];
+        const res = [];
+        for (let i = 0; i < count; i++) {
+            res.push(vibrantHues[Math.floor(Math.random() * vibrantHues.length)]);
+        }
+        return res;
+    };
+
+    let tubesApp = null;
+
+    async function init3DTubes() {
+        const canvas = document.getElementById('tubesCanvas');
+        if (!canvas) return;
+
+        try {
+            const module = await import('https://cdn.jsdelivr.net/npm/threejs-components@0.0.19/build/cursors/tubes1.min.js');
+            const TubesCursor = module.default;
+
+            tubesApp = TubesCursor(canvas, {
+                tubes: {
+                    colors: ["#2DD4BF", "#38BDF8", "#E879F9"], // AttendX signature Aqua, Sky Blue, Aurora Violet
+                    lights: {
+                        intensity: 220,
+                        colors: ["#2DD4BF", "#2563EB", "#E879F9", "#10B981"]
+                    }
+                }
+            });
+
+            canvas.classList.add('loaded');
+
+            // Click interaction: Randomize neon colors when clicking background
+            window.addEventListener('click', function(e) {
+                if (e.target.closest('input, button, a, label, .glass-login-card, .feature-glass-card')) return;
+                randomizeTubes(false);
+            });
+
+            // Randomize neon button in navbar
+            const randomizeBtn = document.getElementById('randomizeNeonBtn');
+            if (randomizeBtn) {
+                randomizeBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    randomizeTubes(true);
+                });
+            }
+        } catch (err) {
+            console.warn('3D Tubes canvas initialization deferred or unsupported:', err);
+        }
+    }
+
+    function randomizeTubes(showNotification) {
+        if (!tubesApp || !tubesApp.tubes) return;
+        const colors = randomNeonColors(3);
+        const lightsColors = randomNeonColors(4);
+        tubesApp.tubes.setColors(colors);
+        tubesApp.tubes.setLightsColors(lightsColors);
+
+        if (showNotification && typeof showDemoToast === 'function') {
+            showDemoToast('Randomized 3D neon tube colors!');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', init3DTubes);
     </script>
 </body>
 </html>

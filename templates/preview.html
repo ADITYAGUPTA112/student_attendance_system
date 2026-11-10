@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AttendX · CloudAttend — Upgraded UI Interactive Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <!-- Unified AttendX Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container main-container">
+            <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none" href="#top" onclick="switchView('attendance'); return false;">
+                <span class="navbar-brand-mark shadow-sm">
+                    <svg viewBox="0 0 64 64" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="axGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stop-color="#2DD4BF"/>
+                                <stop offset="50%" stop-color="#38BDF8"/>
+                                <stop offset="100%" stop-color="#E879F9"/>
+                            </linearGradient>
+                        </defs>
+                        <path d="M32 8L8 20L32 32L56 20L32 8Z" stroke="url(#axGrad)" stroke-width="4" stroke-linejoin="round" fill="rgba(45,212,191,0.15)"/>
+                        <path d="M16 26V42C16 47 23 52 32 52C41 52 48 47 48 42V26" stroke="url(#axGrad)" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M25 38L30 43L40 33" stroke="#2DD4BF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+                <span>AttendX <span class="fw-normal opacity-75 d-none d-sm-inline" style="font-size: 0.9rem;">&middot; CloudAttend</span></span>
+                <span class="badge-portal ms-1 d-none d-md-inline-block">Upgraded UI</span>
+            </a>
+
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarPreview">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarPreview">
+                <div class="navbar-nav me-auto ms-lg-3 gap-1 py-2 py-lg-0 flex-wrap">
+                    <button type="button" class="nav-tab-btn active" id="tabBtn_attendance" onclick="switchView('attendance')">
+                        <i class="bi bi-check2-circle"></i> Take Attendance
+                    </button>
+                    <button type="button" class="nav-tab-btn" id="tabBtn_student" onclick="switchView('student')">
+                        <i class="bi bi-person-badge-fill"></i> Student Portal
+                    </button>
+                    <button type="button" class="nav-tab-btn" id="tabBtn_analytics" onclick="switchView('analytics')">
+                        <i class="bi bi-bar-chart-fill"></i> Analytics &amp; 75% Line
+                    </button>
+                    <button type="button" class="nav-tab-btn" id="tabBtn_courses" onclick="switchView('courses')">
+                        <i class="bi bi-journal-bookmark-fill"></i> Multi-Enroll &amp; Audit
+                    </button>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-outline-light rounded-pill px-3 py-1 font-monospace" style="font-size: 0.78rem;">
+                        <i class="bi bi-arrow-left me-1"></i> Live App
+                    </a>
+                    <button id="themeToggleBtn" class="theme-switch-pill" type="button" onclick="toggleTheme()" title="Switch between Light and Dark mode">
+                        <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+                        <span id="themeLabel">Dark Mode</span>
+                    </button>
+                    <span class="user-pill d-flex align-items-center gap-1.5">
+                        <i class="bi bi-stars text-info"></i>
+                        <span id="activeRoleBadge">Faculty / Admin</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Interactive Stage -->
+    <main class="container main-container py-4 flex-grow-1" id="top">
+
+        <!-- VIEW 1: UPGRADED ATTENDANCE ENTRY (Avatar Halos + Invert + Hotkeys + Edited Tracking) -->
+        <section id="view_attendance">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
+                <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <h1 class="h3 fw-bold mb-0">Class Attendance Entry</h1>
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1 rounded-pill small">
+                            <i class="bi bi-pencil-square me-1"></i> Previously Recorded &bull; Editing Mode
+                        </span>
+                    </div>
+                    <p class="text-muted small mb-0 mt-1">Upgraded with live student standing halos, Invert Selection, and modified-row indicators.</p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <select class="form-select form-select-sm rounded-3 fw-semibold" id="attCourseSelect" onchange="changeAttendanceCourse()">
+                        <option value="CS101">CS101 — Intro to Computer Science</option>
+                        <option value="CS201">CS201 — Data Structures &amp; Algorithms</option>
+                    </select>
+                    <input type="date" class="form-control form-control-sm rounded-3" id="attDateInput" value="2026-11-10" onchange="showToast('Loaded session roster for ' + this.value)">
+                </div>
+            </div>
+
+            <div class="card card-custom p-4">
+                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-3 pb-3 border-bottom gap-3">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <button type="button" class="btn btn-sm btn-success fw-semibold px-3 py-1.5 rounded-3" onclick="bulkMark('Present')">
+                            <i class="bi bi-check2-all me-1"></i> Mark All Present
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger fw-semibold px-3 py-1.5 rounded-3" onclick="bulkMark('Absent')">
+                            <i class="bi bi-x-lg me-1"></i> Mark All Absent
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary fw-semibold px-3 py-1.5 rounded-3" onclick="invertSelection()">
+                            <i class="bi bi-arrow-left-right me-1"></i> Invert Selection
+                        </button>
+                    </div>
+
+                    <div class="d-flex flex-column flex-sm-row align-items-center gap-3 w-100 w-lg-auto justify-content-end">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill font-monospace" id="livePresentCount">3 Present</span>
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1.5 rounded-pill font-monospace" id="liveAbsentCount">1 Absent</span>
+                        </div>
+                        <div class="input-group input-group-sm" style="max-width: 230px;">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control border-start-0" id="rosterSearchInput" placeholder="Filter by name or roll..." oninput="filterRoster()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Keyboard Shortcut & Halo Legend Banner -->
+                <div class="alert alert-light border d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between py-2 px-3 mb-3 small text-muted rounded-3 gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-secondary-subtle text-secondary font-monospace"><i class="bi bi-keyboard"></i> Hotkeys</span>
+                        <span>Click any row below, then press <kbd>P</kbd> for <strong>Present</strong>, <kbd>A</kbd> for <strong>Absent</strong>, or <kbd>&uarr;</kbd> <kbd>&darr;</kbd> to navigate.</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3" style="font-size: 0.76rem;">
+                        <span><span class="d-inline-block rounded-circle me-1" style="width:8px;height:8px;background:#10B981;"></span>&ge;75% Safe Halo</span>
+                        <span><span class="d-inline-block rounded-circle me-1" style="width:8px;height:8px;background:#F59E0B;"></span>65–74% Warning</span>
+                        <span><span class="d-inline-block rounded-circle me-1" style="width:8px;height:8px;background:#EF4444;"></span>&lt;65% At-Risk</span>
+                    </div>
+                </div>
+
+                <div class="table-responsive mb-3">
+                    <table class="table table-custom align-middle mb-0" id="rosterTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 15%;">Roll Number</th>
+                                <th style="width: 48%;">Student Profile &amp; Course Standing</th>
+                                <th style="width: 37%;" class="text-end">Live Status Toggle</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rosterTableBody">
+                            <!-- Row 1: Alice (88% Safe Halo) -->
+                            <tr class="roster-row" tabindex="0" data-student-id="1" data-initial-status="Present">
+                                <td><span class="badge bg-light text-primary border font-monospace fw-bold px-2 py-1">CS-001</span></td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="student-avatar avatar-halo-safe" id="avatar_1">AA</div>
+                                        <div>
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                                <span>Alice Adams</span>
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace" style="font-size: 0.68rem;">88%</span>
+                                            </div>
+                                            <div class="text-muted small">Student ID #1 &bull; 14/16 classes attended</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <div class="segmented-status" role="group">
+                                        <input type="radio" class="btn-check status-radio-present" name="status_1" id="present_1" value="Present" checked onchange="onRowStatusChange(1)">
+                                        <label class="btn-status btn-present" for="present_1"><i class="bi bi-check-lg me-1"></i>Present</label>
+                                        <input type="radio" class="btn-check status-radio-absent" name="status_1" id="absent_1" value="Absent" onchange="onRowStatusChange(1)">
+                                        <label class="btn-status btn-absent" for="absent_1"><i class="bi bi-x-lg me-1"></i>Absent</label>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- Row 2: Bob (75% Borderline Safe) -->
+                            <tr class="roster-row" tabindex="0" data-student-id="2" data-initial-status="Present">
+                                <td><span class="badge bg-light text-primary border font-monospace fw-bold px-2 py-1">CS-002</span></td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="student-avatar avatar-halo-safe" id="avatar_2">BB</div>
+                                        <div>
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                                <span>Bob Baker</span>
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace" style="font-size: 0.68rem;">75%</span>
+                                            </div>
+                                            <div class="text-muted small">Student ID #2 &bull; 12/16 classes attended</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <div class="segmented-status" role="group">
+                                        <input type="radio" class="btn-check status-radio-present" name="status_2" id="present_2" value="Present" checked onchange="onRowStatusChange(2)">
+                                        <label class="btn-status btn-present" for="present_2"><i class="bi bi-check-lg me-1"></i>Present</label>
+                                        <input type="radio" class="btn-check status-radio-absent" name="status_2" id="absent_2" value="Absent" onchange="onRowStatusChange(2)">
+                                        <label class="btn-status btn-absent" for="absent_2"><i class="bi bi-x-lg me-1"></i>Absent</label>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- Row 3: Charlie (56% Critical Danger Halo) -->
+                            <tr class="roster-row" tabindex="0" data-student-id="3" data-initial-status="Absent">
+                                <td><span class="badge bg-light text-primary border font-monospace fw-bold px-2 py-1">CS-003</span></td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="student-avatar avatar-halo-danger" id="avatar_3">CC</div>
+                                        <div>
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                                <span>Charlie Clark</span>
+                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace" style="font-size: 0.68rem;">
+                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>56%
+                                                </span>
+                                            </div>
+                                            <div class="text-muted small">Student ID #3 &bull; 9/16 classes attended (At-Risk)</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <div class="segmented-status" role="group">
+                                        <input type="radio" class="btn-check status-radio-present" name="status_3" id="present_3" value="Present" onchange="onRowStatusChange(3)">
+                                        <label class="btn-status btn-present" for="present_3"><i class="bi bi-check-lg me-1"></i>Present</label>
+                                        <input type="radio" class="btn-check status-radio-absent" name="status_3" id="absent_3" value="Absent" checked onchange="onRowStatusChange(3)">
+                                        <label class="btn-status btn-absent" for="absent_3"><i class="bi bi-x-lg me-1"></i>Absent</label>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- Row 4: Diana (69% Warning Halo) -->
+                            <tr class="roster-row" tabindex="0" data-student-id="4" data-initial-status="Present">
+                                <td><span class="badge bg-light text-primary border font-monospace fw-bold px-2 py-1">CS-004</span></td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="student-avatar avatar-halo-warning" id="avatar_4">DD</div>
+                                        <div>
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                                <span>Diana Davies</span>
+                                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle font-monospace" style="font-size: 0.68rem;">
+                                                    <i class="bi bi-exclamation-circle-fill me-1"></i>69%
+                                                </span>
+                                            </div>
+                                            <div class="text-muted small">Student ID #4 &bull; 11/16 classes attended (Borderline)</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <div class="segmented-status" role="group">
+                                        <input type="radio" class="btn-check status-radio-present" name="status_4" id="present_4" value="Present" checked onchange="onRowStatusChange(4)">
+                                        <label class="btn-status btn-present" for="present_4"><i class="bi bi-check-lg me-1"></i>Present</label>
+                                        <input type="radio" class="btn-check status-radio-absent" name="status_4" id="absent_4" value="Absent" onchange="onRowStatusChange(4)">
+                                        <label class="btn-status btn-absent" for="absent_4"><i class="bi bi-x-lg me-1"></i>Absent</label>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Floating Sticky Glass Action Bar -->
+                <div class="floating-roster-bar d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="badge bg-success px-3 py-2 font-monospace" id="floatingPresentBadge">3 Present</span>
+                        <span class="badge bg-danger px-3 py-2 font-monospace" id="floatingAbsentBadge">1 Absent</span>
+                        <span class="badge bg-light text-dark px-3 py-2 font-monospace" id="floatingRateBadge">75.0% Rate</span>
+                        <span class="badge bg-warning text-dark px-2.5 py-2 font-monospace d-none" id="floatingModifiedBadge">0 Changed</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-white-50 small d-none d-lg-inline">
+                            <i class="bi bi-shield-check text-success me-1"></i> Atomic SQLite Write
+                        </span>
+                        <button type="button" class="btn btn-primary px-4 py-2 fw-bold rounded-pill shadow" onclick="submitAttendancePreview()">
+                            <i class="bi bi-check2-circle me-1"></i> Submit Attendance
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 2: UPGRADED STUDENT DASHBOARD -->
+        <section id="view_student" class="d-none">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="student-avatar avatar-halo-safe" style="width: 52px; height: 52px; font-size: 1.15rem; background: #DBEAFE; color: #1D4ED8;">AA</div>
+                    <div>
+                        <h1 class="h3 fw-bold mb-0">Alice Adams</h1>
+                        <p class="text-muted small mb-0">
+                            Roll Number: <span class="badge bg-light text-primary border font-monospace">CS-001</span>
+                            &bull; Email: <span class="text-dark">alice.adams@example.edu</span>
+                        </p>
+                    </div>
+                </div>
+                <span class="badge-present fs-6 px-3 py-2">Good Standing (78.6%)</span>
+            </div>
+
+            <!-- KPI Summary Row -->
+            <div class="row g-3 mb-4 align-items-stretch">
+                <div class="col-12 col-lg-5">
+                    <div class="card card-custom p-3 h-100 d-flex flex-row align-items-center justify-content-around shadow-sm">
+                        <div class="radial-progress-container">
+                            <svg class="radial-progress-svg" viewBox="0 0 120 120">
+                                <circle class="radial-track" cx="60" cy="60" r="50"></circle>
+                                <circle id="studentRadialIndicator" class="radial-indicator emerald" cx="60" cy="60" r="50" stroke-dasharray="314.159" stroke-dashoffset="67.2"></circle>
+                            </svg>
+                            <div class="radial-inner-label">
+                                <span class="radial-pct-value text-success" id="heroRadialPct">78.6%</span>
+                                <span class="radial-pct-sub" id="heroRadialSub">Overall</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-muted small fw-bold text-uppercase">Academic Standing</div>
+                            <div class="fw-bold fs-5 mt-1 text-success" id="heroStandingLabel">Eligible</div>
+                            <div class="text-muted small">Target: &ge; 75.0%</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-7">
+                    <div class="row g-3 h-100">
+                        <div class="col-sm-4">
+                            <div class="kpi-card emerald shadow-sm h-100 d-flex flex-column justify-content-center">
+                                <div class="text-muted small fw-bold text-uppercase">Present</div>
+                                <div class="kpi-value text-success mt-1">22</div>
+                                <div class="text-muted small mt-1">Attended sessions</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="kpi-card rose shadow-sm h-100 d-flex flex-column justify-content-center">
+                                <div class="text-muted small fw-bold text-uppercase">Absent</div>
+                                <div class="kpi-value text-danger mt-1">6</div>
+                                <div class="text-muted small mt-1">Missed sessions</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="kpi-card navy shadow-sm h-100 d-flex flex-column justify-content-center">
+                                <div class="text-muted small fw-bold text-uppercase">Total Lectures</div>
+                                <div class="kpi-value mt-1">28</div>
+                                <div class="text-muted small mt-1">Conducted to date</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Per-Course Attendance Safety Calculator -->
+            <div class="safety-calc-card p-4 mb-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="d-inline-flex p-1.5 rounded-3 bg-primary-subtle text-primary">
+                                <i class="bi bi-calculator-fill fs-5"></i>
+                            </span>
+                            <h2 class="h5 fw-bold mb-0">Per-Course Attendance Safety &amp; Exam Eligibility Calculator</h2>
+                        </div>
+                        <p class="text-muted small mb-0 mt-1">Switch between Overall and individual courses (try selecting CS201 at 60%) to test recovery plans.</p>
+                    </div>
+                    <div id="safetyVerdictBadge" class="safety-badge-status safety-badge-safe">
+                        <i class="bi bi-shield-check"></i>
+                        <span>Eligible for Exams (78.6%)</span>
+                    </div>
+                </div>
+
+                <div class="row g-3 align-items-center pt-3 border-top">
+                    <div class="col-md-3">
+                        <label for="calcCourseScope" class="form-label small fw-bold text-muted">Target Scope</label>
+                        <select id="calcCourseScope" class="form-select form-select-sm" onchange="updateSimulation()">
+                            <option value="All Courses" data-present="22" data-total="28" selected>All Courses (22/28 • 79%)</option>
+                            <option value="CS101" data-present="14" data-total="16">CS101 — Intro to CS (14/16 • 88%)</option>
+                            <option value="CS201" data-present="6" data-total="10">CS201 — Data Structures (6/10 • 60%)</option>
+                            <option value="CS301" data-present="2" data-total="2">CS301 — Databases (2/2 • 100%)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="simulationRange" class="form-label small fw-bold text-muted d-flex justify-content-between">
+                            <span>Simulate Upcoming Lectures</span>
+                            <span id="sliderValueLabel" class="text-primary fw-bold font-monospace">+0 Lectures</span>
+                        </label>
+                        <input type="range" class="form-range slider-custom" id="simulationRange" min="0" max="20" value="0" oninput="updateSimulation()">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="simulationMode" class="form-label small fw-bold text-muted">Assumption</label>
+                        <select id="simulationMode" class="form-select form-select-sm" onchange="updateSimulation()">
+                            <option value="attend" selected>Attend All (+100%)</option>
+                            <option value="miss">Miss All (0%)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="p-2.5 rounded-3 bg-light border text-center">
+                            <div class="text-muted small" style="font-size: 0.74rem;">Simulated Projected Rate</div>
+                            <div id="projectedPctDisplay" class="fw-bold fs-5 text-success font-monospace mt-0.5">78.6%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3 p-2.5 rounded-3 bg-light border-0 small d-flex align-items-center gap-2 text-muted">
+                    <i class="bi bi-info-circle-fill text-primary"></i>
+                    <span id="safetyAdviceText"></span>
+                </div>
+            </div>
+
+            <!-- Course Breakdown with 75% Threshold Marker + Session Streak Heatmap -->
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="card card-custom p-4 h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h2 class="h5 fw-bold mb-0">Course-Wise Attendance Standing</h2>
+                                <span class="text-muted small">Vertical tick marks the 75% exam cutoff</span>
+                            </div>
+                            <span class="badge bg-light text-secondary border">3 Enrolled</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-custom align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 52%;">Course &amp; 75% Cutoff Bar</th>
+                                        <th style="width: 22%;">Attended</th>
+                                        <th style="width: 26%;" class="text-end">Standing</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold text-dark">CS101</div>
+                                            <div class="text-muted small">Introduction to Computer Science</div>
+                                            <div class="progress-threshold-wrap" title="75% Threshold">
+                                                <div class="threshold-marker-75"></div>
+                                                <div class="progress-threshold-fill" style="width: 87.5%; background-color: #10B981;"></div>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge bg-light text-dark border font-monospace">14 / 16</span></td>
+                                        <td class="text-end"><span class="badge-present">87.5%</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold text-dark">CS201</div>
+                                            <div class="text-muted small">Data Structures &amp; Algorithms</div>
+                                            <div class="progress-threshold-wrap" title="75% Threshold">
+                                                <div class="threshold-marker-75"></div>
+                                                <div class="progress-threshold-fill" style="width: 60.0%; background-color: #EF4444;"></div>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge bg-light text-dark border font-monospace">6 / 10</span></td>
+                                        <td class="text-end"><span class="badge-absent">60.0%</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold text-dark">CS301</div>
+                                            <div class="text-muted small">Database Management Systems</div>
+                                            <div class="progress-threshold-wrap" title="75% Threshold">
+                                                <div class="threshold-marker-75"></div>
+                                                <div class="progress-threshold-fill" style="width: 100%; background-color: #10B981;"></div>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge bg-light text-dark border font-monospace">2 / 2</span></td>
+                                        <td class="text-end"><span class="badge-present">100.0%</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="card card-custom p-4 h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h2 class="h5 fw-bold mb-0">Recent Activity &amp; Streak Strip</h2>
+                                <span class="text-muted small">Visual dot matrix for instant pattern recognition</span>
+                            </div>
+                            <span class="badge bg-light text-secondary border">Last 12 Sessions</span>
+                        </div>
+
+                        <div class="mb-3 p-2.5 rounded-3 bg-light border">
+                            <div class="d-flex justify-content-between align-items-center mb-1.5">
+                                <span class="text-muted fw-bold text-uppercase" style="font-size: 0.68rem;">Session Streak (Newest &rarr; Oldest)</span>
+                                <span class="text-muted" style="font-size: 0.7rem;">Green = Present &bull; Red = Absent</span>
+                            </div>
+                            <div class="session-heatmap-strip">
+                                <span class="session-dot-pill present" title="2026-11-10 • CS101: Present">P</span>
+                                <span class="session-dot-pill present" title="2026-11-09 • CS301: Present">P</span>
+                                <span class="session-dot-pill absent" title="2026-11-08 • CS201: Absent">A</span>
+                                <span class="session-dot-pill present" title="2026-11-07 • CS101: Present">P</span>
+                                <span class="session-dot-pill present" title="2026-11-06 • CS201: Present">P</span>
+                                <span class="session-dot-pill absent" title="2026-11-05 • CS201: Absent">A</span>
+                                <span class="session-dot-pill present" title="2026-11-04 • CS101: Present">P</span>
+                                <span class="session-dot-pill present" title="2026-11-03 • CS101: Present">P</span>
+                                <span class="session-dot-pill present" title="2026-11-02 • CS301: Present">P</span>
+                                <span class="session-dot-pill absent" title="2026-11-01 • CS201: Absent">A</span>
+                                <span class="session-dot-pill present" title="2026-10-30 • CS101: Present">P</span>
+                                <span class="session-dot-pill present" title="2026-10-29 • CS101: Present">P</span>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-custom align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Course</th>
+                                        <th class="text-end">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="small text-muted font-monospace"><i class="bi bi-calendar3 me-1 text-primary"></i>2026-11-10</td>
+                                        <td class="fw-bold text-dark">CS101</td>
+                                        <td class="text-end"><span class="badge-present">Present</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="small text-muted font-monospace"><i class="bi bi-calendar3 me-1 text-primary"></i>2026-11-09</td>
+                                        <td class="fw-bold text-dark">CS301</td>
+                                        <td class="text-end"><span class="badge-present">Present</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="small text-muted font-monospace"><i class="bi bi-calendar3 me-1 text-primary"></i>2026-11-08</td>
+                                        <td class="fw-bold text-dark">CS201</td>
+                                        <td class="text-end"><span class="badge-absent">Absent</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 3: UPGRADED ANALYTICS -->
+        <section id="view_analytics" class="d-none">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
+                <div>
+                    <h1 class="h3 fw-bold mb-1">Attendance Analytics &amp; 75% Benchmark Reports</h1>
+                    <p class="text-muted small mb-0">Bars automatically color-code by 75% threshold compliance and adapt live to Dark Mode.</p>
+                </div>
+                <button type="button" class="btn btn-outline-success d-flex align-items-center gap-1.5" onclick="showToast('Exported RFC 4180 attendance_report.csv')">
+                    <i class="bi bi-file-earmark-spreadsheet-fill"></i> Export CSV Report
+                </button>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-lg-6">
+                    <div class="card card-custom p-4 h-100">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h2 class="h5 fw-bold mb-1">Course-Wise Attendance vs. 75% Target</h2>
+                                <p class="text-muted small mb-0">Emerald (&ge;75%), Amber (65–74%), Rose (&lt;65%)</p>
+                            </div>
+                            <span class="badge bg-light text-secondary border small">Dashed = 75% Cutoff</span>
+                        </div>
+                        <div style="height: 280px; position: relative;">
+                            <canvas id="previewCourseBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="card card-custom p-4 h-100">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h2 class="h5 fw-bold mb-1">Daily Turnout Trend Over Time</h2>
+                                <p class="text-muted small mb-0">Classroom turnout trajectory against 75% benchmark</p>
+                            </div>
+                            <span class="badge bg-light text-secondary border small">Last 7 Sessions</span>
+                        </div>
+                        <div style="height: 280px; position: relative;">
+                            <canvas id="previewTimelineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 4: UPGRADED ADMIN MULTI-ENROLL & SEMANTIC AUDIT LOG -->
+        <section id="view_courses" class="d-none">
+            <div class="row g-4">
+                <!-- Left: Multi-Select Course Roster Enrollment -->
+                <div class="col-lg-6">
+                    <div class="card card-custom p-4 h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace mb-1">CS201</span>
+                                <h2 class="h5 fw-bold mb-0">Batch Course Roster Enrollment</h2>
+                                <span class="text-muted small">Replaces single-student dropdown with filtered multi-checkboxes</span>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-link text-decoration-none" onclick="toggleAllPreviewEnroll()">Select All</button>
+                        </div>
+
+                        <div class="border rounded-3 p-3 bg-light mb-3" id="unenrolledListContainer">
+                            <div class="form-check py-1.5">
+                                <input class="form-check-input preview-enroll-chk" type="checkbox" value="CS-004 — Diana Davies" id="pchk_4" checked>
+                                <label class="form-check-label small fw-medium" for="pchk_4">
+                                    <span class="font-monospace fw-bold text-primary">CS-004</span> &mdash; Diana Davies <span class="badge bg-secondary-subtle text-secondary ms-1">Unenrolled</span>
+                                </label>
+                            </div>
+                            <div class="form-check py-1.5">
+                                <input class="form-check-input preview-enroll-chk" type="checkbox" value="CS-005 — Edward Evans" id="pchk_5" checked>
+                                <label class="form-check-label small fw-medium" for="pchk_5">
+                                    <span class="font-monospace fw-bold text-primary">CS-005</span> &mdash; Edward Evans <span class="badge bg-secondary-subtle text-secondary ms-1">Unenrolled</span>
+                                </label>
+                            </div>
+                            <div class="form-check py-1.5">
+                                <input class="form-check-input preview-enroll-chk" type="checkbox" value="CS-006 — Fiona Foster" id="pchk_6">
+                                <label class="form-check-label small fw-medium" for="pchk_6">
+                                    <span class="font-monospace fw-bold text-primary">CS-006</span> &mdash; Fiona Foster <span class="badge bg-secondary-subtle text-secondary ms-1">Unenrolled</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-primary-navy w-100 mb-4" onclick="enrollSelectedPreview()">
+                            <i class="bi bi-person-plus-fill me-1"></i> Enroll Selected Students into CS201
+                        </button>
+
+                        <h6 class="fw-bold small text-muted text-uppercase mb-2">Currently Enrolled in CS201 (<span id="enrolledCountBadge">3</span>)</h6>
+                        <ul class="list-group list-group-flush small border rounded-3 p-2 bg-light" id="enrolledRosterList">
+                            <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center py-1.5">
+                                <span><strong class="font-monospace text-primary">CS-001</strong> &bull; Alice Adams</span>
+                                <span class="badge bg-success-subtle text-success">Active</span>
+                            </li>
+                            <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center py-1.5">
+                                <span><strong class="font-monospace text-primary">CS-002</strong> &bull; Bob Baker</span>
+                                <span class="badge bg-success-subtle text-success">Active</span>
+                            </li>
+                            <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center py-1.5">
+                                <span><strong class="font-monospace text-primary">CS-003</strong> &bull; Charlie Clark</span>
+                                <span class="badge bg-success-subtle text-success">Active</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Right: Semantic Audit Trail -->
+                <div class="col-lg-6">
+                    <div class="card card-custom p-4 h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h2 class="h5 fw-bold mb-0">Semantic System Audit Trail</h2>
+                                <span class="text-muted small">Color-coded action categories with instant filter chips</span>
+                            </div>
+                            <span class="badge bg-light text-secondary border"><i class="bi bi-shield-lock-fill text-warning me-1"></i>Immutable</span>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-1.5 mb-3 pb-2 border-bottom">
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 small" onclick="filterAuditPreview('ALL')">All</button>
+                            <button type="button" class="badge-audit badge-audit-mark border-0" style="cursor:pointer;" onclick="filterAuditPreview('MARK')">MARK_ATTENDANCE</button>
+                            <button type="button" class="badge-audit badge-audit-create border-0" style="cursor:pointer;" onclick="filterAuditPreview('ENROLL')">CREATE / ENROLL</button>
+                            <button type="button" class="badge-audit badge-audit-backup border-0" style="cursor:pointer;" onclick="filterAuditPreview('BACKUP')">BACKUP</button>
+                            <button type="button" class="badge-audit badge-audit-auth border-0" style="cursor:pointer;" onclick="filterAuditPreview('LOGIN')">AUTH</button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-custom align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Actor &amp; Event Detail</th>
+                                        <th class="text-end">Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="auditPreviewBody">
+                                    <tr class="audit-row" data-cat="MARK">
+                                        <td><span class="badge-audit badge-audit-mark"><i class="bi bi-check2-square"></i> MARK_ATTENDANCE</span></td>
+                                        <td class="small"><strong>prof_smith</strong> recorded CS101 session (4 records)</td>
+                                        <td class="text-end small text-muted font-monospace">15:32</td>
+                                    </tr>
+                                    <tr class="audit-row" data-cat="ENROLL">
+                                        <td><span class="badge-audit badge-audit-create"><i class="bi bi-plus-circle-fill"></i> ENROLL_STUDENT</span></td>
+                                        <td class="small"><strong>admin</strong> enrolled CS-004 into CS101</td>
+                                        <td class="text-end small text-muted font-monospace">14:50</td>
+                                    </tr>
+                                    <tr class="audit-row" data-cat="BACKUP">
+                                        <td><span class="badge-audit badge-audit-backup"><i class="bi bi-database-check"></i> BACKUP_DATABASE</span></td>
+                                        <td class="small"><strong>admin</strong> generated online SQLite snapshot</td>
+                                        <td class="text-end small text-muted font-monospace">13:15</td>
+                                    </tr>
+                                    <tr class="audit-row" data-cat="LOGIN">
+                                        <td><span class="badge-audit badge-audit-auth"><i class="bi bi-shield-check"></i> LOGIN_SUCCESS</span></td>
+                                        <td class="small"><strong>alice</strong> authenticated to Student Portal</td>
+                                        <td class="text-end small text-muted font-monospace">11:40</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Toast Notification Element -->
+    <div id="uiToast" class="ui-toast">
+        <i class="bi bi-check-circle-fill text-info"></i>
+        <span id="uiToastText">Action completed</span>
+    </div>
+
+    <footer class="py-3 mt-auto bg-white border-top text-center text-muted small">
+        <div class="container main-container d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+            <span><strong>AttendX &middot; CloudAttend</strong> &bull; Upgraded UI Interactive Sandbox</span>
+            <span>Use top tabs to switch screens &bull; Press P / A / Arrows in Attendance view</span>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let previewBarChart = null;
+        let previewLineChart = null;
+
+        function showToast(msg) {
+            const toast = document.getElementById('uiToast');
+            const text = document.getElementById('uiToastText');
+            if (!toast || !text) return;
+            text.textContent = msg;
+            toast.style.display = 'inline-flex';
+            clearTimeout(window.toastTimer);
+            window.toastTimer = setTimeout(() => {
+                toast.style.display = 'none';
+            }, 2800);
+        }
+
+        function switchView(viewName) {
+            const views = ['attendance', 'student', 'analytics', 'courses'];
+            views.forEach(v => {
+                const sec = document.getElementById('view_' + v);
+                const btn = document.getElementById('tabBtn_' + v);
+                if (sec) sec.classList.toggle('d-none', v !== viewName);
+                if (btn) btn.classList.toggle('active', v === viewName);
+            });
+
+            const roleBadge = document.getElementById('activeRoleBadge');
+            if (roleBadge) {
+                if (viewName === 'student') roleBadge.textContent = 'alice (Student)';
+                else if (viewName === 'courses') roleBadge.textContent = 'admin (Admin)';
+                else roleBadge.textContent = 'prof_smith (Faculty)';
+            }
+
+            if (viewName === 'analytics') {
+                renderPreviewCharts();
+            }
+        }
+
+        function applyThemeState(isDark) {
+            document.body.classList.toggle('dark-mode', isDark);
+            document.documentElement.setAttribute('data-bs-theme', isDark ? 'dark' : 'light');
+            const icon = document.getElementById('themeIcon');
+            const label = document.getElementById('themeLabel');
+            if (icon) icon.className = isDark ? 'bi bi-sun-fill text-warning' : 'bi bi-moon-stars-fill text-info';
+            if (label) label.textContent = isDark ? 'Switch to Light' : 'Switch to Dark';
+            if (previewBarChart || previewLineChart || !document.getElementById('view_analytics').classList.contains('d-none')) {
+                renderPreviewCharts();
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = !document.body.classList.contains('dark-mode');
+            applyThemeState(isDark);
+            try {
+                localStorage.setItem('cloudattend-theme', isDark ? 'dark' : 'light');
+            } catch (e) {}
+            showToast(isDark ? 'Switched to Dark Mode' : 'Switched to Light Mode');
+        }
+
+        function onRowStatusChange(studentId) {
+            const row = document.querySelector('.roster-row[data-student-id="' + studentId + '"]');
+            if (row) {
+                const initial = row.dataset.initialStatus;
+                const pRadio = document.getElementById('present_' + studentId);
+                const current = (pRadio && pRadio.checked) ? 'Present' : 'Absent';
+                row.classList.toggle('row-modified', current !== initial);
+            }
+            updateLiveCounters();
+        }
+
+        function updateLiveCounters() {
+            const presentCount = document.querySelectorAll('.status-radio-present:checked').length;
+            const absentCount = document.querySelectorAll('.status-radio-absent:checked').length;
+            const modifiedCount = document.querySelectorAll('.roster-row.row-modified').length;
+            const total = presentCount + absentCount;
+            const rate = total > 0 ? ((presentCount / total) * 100).toFixed(1) : '0.0';
+
+            document.getElementById('livePresentCount').textContent = presentCount + ' Present';
+            document.getElementById('liveAbsentCount').textContent = absentCount + ' Absent';
+            document.getElementById('floatingPresentBadge').textContent = presentCount + ' Present';
+            document.getElementById('floatingAbsentBadge').textContent = absentCount + ' Absent';
+            document.getElementById('floatingRateBadge').textContent = rate + '% Rate';
+
+            const modBadge = document.getElementById('floatingModifiedBadge');
+            if (modifiedCount > 0) {
+                modBadge.textContent = modifiedCount + ' Changed';
+                modBadge.classList.remove('d-none');
+            } else {
+                modBadge.classList.add('d-none');
+            }
+        }
+
+        function bulkMark(status) {
+            document.querySelectorAll('.roster-row').forEach(row => {
+                if (row.style.display === 'none') return;
+                const sid = row.dataset.studentId;
+                const pRadio = document.getElementById('present_' + sid);
+                const aRadio = document.getElementById('absent_' + sid);
+                if (status === 'Present' && pRadio) pRadio.checked = true;
+                if (status === 'Absent' && aRadio) aRadio.checked = true;
+                onRowStatusChange(sid);
+            });
+        }
+
+        function invertSelection() {
+            document.querySelectorAll('.roster-row').forEach(row => {
+                if (row.style.display === 'none') return;
+                const sid = row.dataset.studentId;
+                const pRadio = document.getElementById('present_' + sid);
+                const aRadio = document.getElementById('absent_' + sid);
+                if (pRadio && aRadio) {
+                    if (pRadio.checked) aRadio.checked = true;
+                    else pRadio.checked = true;
+                    onRowStatusChange(sid);
+                }
+            });
+            showToast('Inverted attendance selection');
+        }
+
+        function filterRoster() {
+            const q = document.getElementById('rosterSearchInput').value.toLowerCase();
+            document.querySelectorAll('.roster-row').forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+            });
+        }
+
+        function changeAttendanceCourse() {
+            const sel = document.getElementById('attCourseSelect');
+            showToast('Switched active roster to ' + sel.value);
+        }
+
+        function submitAttendancePreview() {
+            document.querySelectorAll('.roster-row').forEach(row => {
+                const sid = row.dataset.studentId;
+                const pRadio = document.getElementById('present_' + sid);
+                row.dataset.initialStatus = (pRadio && pRadio.checked) ? 'Present' : 'Absent';
+                row.classList.remove('row-modified');
+            });
+            updateLiveCounters();
+            showToast('Attendance saved atomically to SQLite WAL');
+        }
+
+        function updateSimulation() {
+            const scopeSelect = document.getElementById('calcCourseScope');
+            const slider = document.getElementById('simulationRange');
+            const modeSelect = document.getElementById('simulationMode');
+            const opt = scopeSelect.options[scopeSelect.selectedIndex];
+
+            const basePresent = parseInt(opt.getAttribute('data-present') || '0', 10);
+            const baseTotal = parseInt(opt.getAttribute('data-total') || '0', 10);
+            const extra = parseInt(slider.value, 10);
+            const mode = modeSelect.value;
+
+            document.getElementById('sliderValueLabel').textContent = '+' + extra + ' Lectures';
+
+            const simPresent = mode === 'attend' ? basePresent + extra : basePresent;
+            const simTotal = baseTotal + extra;
+            const simPct = simTotal > 0 ? (simPresent / simTotal) * 100 : 0;
+
+            const projEl = document.getElementById('projectedPctDisplay');
+            const verdict = document.getElementById('safetyVerdictBadge');
+            const advice = document.getElementById('safetyAdviceText');
+
+            projEl.textContent = simPct.toFixed(1) + '%';
+
+            if (simPct >= 75.0) {
+                verdict.className = 'safety-badge-status safety-badge-safe';
+                verdict.innerHTML = '<i class="bi bi-shield-check"></i> <span>Eligible for Exams (' + simPct.toFixed(1) + '%)</span>';
+                projEl.className = 'fw-bold fs-5 text-success font-monospace mt-0.5';
+            } else if (simPct >= 65.0) {
+                verdict.className = 'safety-badge-status safety-badge-warning';
+                verdict.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> <span>Borderline Risk (' + simPct.toFixed(1) + '%)</span>';
+                projEl.className = 'fw-bold fs-5 text-warning font-monospace mt-0.5';
+            } else {
+                verdict.className = 'safety-badge-status safety-badge-danger';
+                verdict.innerHTML = '<i class="bi bi-x-circle-fill"></i> <span>Debarment Warning (' + simPct.toFixed(1) + '%)</span>';
+                projEl.className = 'fw-bold fs-5 text-danger font-monospace mt-0.5';
+            }
+
+            const currentPct = baseTotal > 0 ? (basePresent / baseTotal) * 100 : 100;
+            if (currentPct >= 75.0) {
+                const safeMisses = Math.floor((basePresent - 0.75 * baseTotal) / 0.75);
+                advice.innerHTML = safeMisses > 0
+                    ? '<strong>Safety Margin (' + scopeSelect.value + '):</strong> You can safely miss up to <strong>' + safeMisses + '</strong> upcoming lecture(s) and stay above 75%.'
+                    : '<strong>Caution (' + scopeSelect.value + '):</strong> You are on the 75% boundary. Do not miss the next lecture.';
+            } else {
+                const needed = Math.max(1, Math.ceil(3 * baseTotal - 4 * basePresent));
+                advice.innerHTML = '<strong>Recovery Plan (' + scopeSelect.value + '):</strong> Attend the next <strong>' + needed + '</strong> consecutive lecture(s) to restore standing to &ge; 75%.';
+            }
+        }
+
+        function renderPreviewCharts() {
+            const isDark = document.body.classList.contains('dark-mode');
+            const textColor = isDark ? '#CBD5E1' : '#64748B';
+            const gridColor = isDark ? 'rgba(148, 163, 184, 0.15)' : 'rgba(226, 232, 240, 0.85)';
+            const thresholdColor = isDark ? '#F59E0B' : '#DC2626';
+
+            const cLabels = ['CS101 (Intro CS)', 'CS201 (Data Struct)', 'CS301 (Databases)', 'CS401 (Cloud Sys)'];
+            const cData = [84.5, 62.0, 91.0, 73.5];
+            const barColors = cData.map(v => v >= 75 ? '#10B981' : (v >= 65 ? '#F59E0B' : '#EF4444'));
+
+            const ctxBar = document.getElementById('previewCourseBarChart');
+            if (ctxBar) {
+                if (previewBarChart) previewBarChart.destroy();
+                previewBarChart = new Chart(ctxBar, {
+                    type: 'bar',
+                    data: {
+                        labels: cLabels,
+                        datasets: [
+                            {
+                                label: 'Attendance %',
+                                data: cData,
+                                backgroundColor: barColors,
+                                borderRadius: 6,
+                                order: 2
+                            },
+                            {
+                                label: '75% Target Benchmark',
+                                data: [75, 75, 75, 75],
+                                type: 'line',
+                                borderColor: thresholdColor,
+                                borderWidth: 2,
+                                borderDash: [6, 4],
+                                pointRadius: 0,
+                                fill: false,
+                                order: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { ticks: { color: textColor }, grid: { display: false } },
+                            y: { beginAtZero: true, max: 100, ticks: { color: textColor, callback: v => v + '%' }, grid: { color: gridColor } }
+                        },
+                        plugins: { legend: { labels: { color: textColor, boxWidth: 12 } } }
+                    }
+                });
+            }
+
+            const tLabels = ['Nov 02', 'Nov 04', 'Nov 05', 'Nov 06', 'Nov 08', 'Nov 09', 'Nov 10'];
+            const tData = [78, 82, 71, 76, 85, 88, 84];
+            const ctxLine = document.getElementById('previewTimelineChart');
+            if (ctxLine) {
+                if (previewLineChart) previewLineChart.destroy();
+                previewLineChart = new Chart(ctxLine, {
+                    type: 'line',
+                    data: {
+                        labels: tLabels,
+                        datasets: [
+                            {
+                                label: 'Daily Turnout %',
+                                data: tData,
+                                borderColor: '#14B8A6',
+                                backgroundColor: 'rgba(20, 184, 166, 0.15)',
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 5
+                            },
+                            {
+                                label: '75% Benchmark',
+                                data: tLabels.map(() => 75),
+                                borderColor: thresholdColor,
+                                borderWidth: 2,
+                                borderDash: [6, 4],
+                                pointRadius: 0,
+                                fill: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { ticks: { color: textColor }, grid: { display: false } },
+                            y: { beginAtZero: true, max: 100, ticks: { color: textColor, callback: v => v + '%' }, grid: { color: gridColor } }
+                        },
+                        plugins: { legend: { labels: { color: textColor, boxWidth: 12 } } }
+                    }
+                });
+            }
+        }
+
+        function toggleAllPreviewEnroll() {
+            const boxes = document.querySelectorAll('.preview-enroll-chk');
+            const allChecked = Array.from(boxes).every(b => b.checked);
+            boxes.forEach(b => b.checked = !allChecked);
+        }
+
+        function enrollSelectedPreview() {
+            const checked = Array.from(document.querySelectorAll('.preview-enroll-chk:checked'));
+            if (checked.length === 0) {
+                showToast('Select at least one student to enroll');
+                return;
+            }
+            const rosterList = document.getElementById('enrolledRosterList');
+            checked.forEach(box => {
+                const parts = box.value.split(' — ');
+                const li = document.createElement('li');
+                li.className = 'list-group-item bg-transparent d-flex justify-content-between align-items-center py-1.5';
+                li.innerHTML = '<span><strong class="font-monospace text-primary">' + parts[0] + '</strong> &bull; ' + parts[1] + '</span><span class="badge bg-success-subtle text-success">Just Enrolled</span>';
+                rosterList.appendChild(li);
+                box.parentElement.remove();
+            });
+            const totalEnrolled = rosterList.querySelectorAll('li').length;
+            document.getElementById('enrolledCountBadge').textContent = totalEnrolled;
+            showToast('Enrolled ' + checked.length + ' student(s) into CS201');
+        }
+
+        function filterAuditPreview(cat) {
+            document.querySelectorAll('.audit-row').forEach(row => {
+                row.style.display = (cat === 'ALL' || row.dataset.cat === cat) ? '' : 'none';
+            });
+        }
+
+        // Keyboard navigation (P, A, Up/Down)
+        document.addEventListener('keydown', function(e) {
+            if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+            const focusedRow = document.activeElement && document.activeElement.classList.contains('roster-row')
+                ? document.activeElement
+                : document.querySelector('.roster-row:focus-within');
+            if (!focusedRow) return;
+            const sid = focusedRow.dataset.studentId;
+            const key = e.key.toUpperCase();
+            if (key === 'P') {
+                e.preventDefault();
+                document.getElementById('present_' + sid).checked = true;
+                onRowStatusChange(sid);
+                if (focusedRow.nextElementSibling) focusedRow.nextElementSibling.focus();
+            } else if (key === 'A') {
+                e.preventDefault();
+                document.getElementById('absent_' + sid).checked = true;
+                onRowStatusChange(sid);
+                if (focusedRow.nextElementSibling) focusedRow.nextElementSibling.focus();
+            } else if (e.key === 'ArrowDown' && focusedRow.nextElementSibling) {
+                e.preventDefault();
+                focusedRow.nextElementSibling.focus();
+            } else if (e.key === 'ArrowUp' && focusedRow.previousElementSibling) {
+                e.preventDefault();
+                focusedRow.previousElementSibling.focus();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            let savedTheme = 'light';
+            try {
+                savedTheme = localStorage.getItem('cloudattend-theme') || 'light';
+            } catch (e) {}
+            applyThemeState(savedTheme === 'dark');
+            updateLiveCounters();
+            updateSimulation();
+        });
+    </script>
+</body>
+</html>

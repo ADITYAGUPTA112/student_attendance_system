@@ -985,3 +985,92 @@ html, body.attendx-body {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* ==========================================================================
+   3D Interactive Tubes Cursor Canvas & Controls
+   ========================================================================== */
+.attendx-tubes-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1; /* Sits above ambient aurora blobs (z-index 0) and below hero content (z-index 10) */
+    pointer-events: auto;
+    touch-action: none;
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out;
+}
+
+.attendx-tubes-canvas.loaded {
+    opacity: 1;
+}
+
+.attendx-navbar,
+.attendx-hero-section,
+.attendx-tech-strip,
+.attendx-footer {
+    position: relative;
+    z-index: 10;
+}
+
+/* Let cursor move and clicks through background pass to 3D canvas */
+.attendx-hero-section {
+    pointer-events: none;
+}
+
+.attendx-hero-left,
+.attendx-hero-right,
+.attendx-navbar,
+.attendx-tech-strip,
+.attendx-footer,
+.feature-glass-card,
+.glass-login-card,
+.tubes-ctrl-pill {
+    pointer-events: auto;
+}
+
+/* Tubes Controller Pill in Navbar */
+.tubes-ctrl-pill {
+    background: rgba(45, 212, 191, 0.12);
+    border: 1px solid rgba(45, 212, 191, 0.35);
+    color: var(--ax-light-aqua);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 0 16px rgba(45, 212, 191, 0.12);
+}
+
+.tubes-ctrl-pill:hover {
+    background: rgba(45, 212, 191, 0.25);
+    border-color: #5EEAD4;
+    color: #FFFFFF;
+    transform: translateY(-1px);
+    box-shadow: 0 0 24px rgba(45, 212, 191, 0.35);
+}
+
+.tubes-interactive-cue {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: rgba(203, 213, 225, 0.88);
+    background: rgba(11, 25, 44, 0.65);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(45, 212, 191, 0.25);
+    padding: 0.3rem 0.85rem;
+    border-radius: 9999px;
+    margin-top: 0.75rem;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+

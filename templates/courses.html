@@ -6,18 +6,18 @@
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
     <div>
         <h1 class="h3 fw-bold mb-1">Course Catalogue</h1>
-        <p class="text-muted small mb-0">Academic courses, enrollment rosters, and curriculum identifiers.</p>
+        <p class="text-muted small mb-0">Academic courses, batch enrollment rosters, and curriculum identifiers.</p>
     </div>
     {% if g.user.role == 'admin' %}
         <div>
-            <button type="button" class="btn btn-primary-navy d-flex align-items-center gap-1.5" data-bs-toggle="modal" data-bs-target="#addCourseModal">
+            <button type="button" class="btn btn-primary-navy d-flex align-items-center gap-1.5 fw-semibold rounded-3" data-bs-toggle="modal" data-bs-target="#addCourseModal">
                 <i class="bi bi-journal-plus"></i> Add New Course
             </button>
         </div>
     {% endif %}
 </div>
 
-<!-- Courses Grid / Table -->
+<!-- Courses Grid -->
 <div class="row g-4">
     {% if courses %}
         {% for c in courses %}
@@ -45,53 +45,97 @@
 
                     <div class="d-flex gap-2 pt-3 border-top mt-2">
                         {% if g.user.role in ['faculty', 'admin'] %}
-                            <a href="{{ url_for('attendance') }}?course_id={{ c.id }}" class="btn btn-sm btn-primary-navy flex-grow-1">
+                            <a href="{{ url_for('attendance') }}?course_id={{ c.id }}" class="btn btn-sm btn-primary-navy flex-grow-1 fw-semibold rounded-3">
                                 <i class="bi bi-calendar-check me-1"></i> Mark Attendance
                             </a>
                         {% endif %}
                         {% if g.user.role == 'admin' %}
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#enrollModal{{ c.id }}" title="Manage Roster">
-                                <i class="bi bi-person-check"></i> Roster
+                            <button type="button" class="btn btn-sm btn-outline-secondary fw-semibold rounded-3" data-bs-toggle="modal" data-bs-target="#enrollModal{{ c.id }}" title="Manage Roster">
+                                <i class="bi bi-people-fill me-1"></i> Roster
                             </button>
                         {% endif %}
                     </div>
                 </div>
 
-                <!-- Modal: Manage Course Roster (CA-08) -->
+                <!-- Modal: Manage Course Roster & Multi-Enrollment (CA-08) -->
                 {% if g.user.role == 'admin' %}
                     <div class="modal fade" id="enrollModal{{ c.id }}" tabindex="-1" aria-labelledby="enrollModalLabel{{ c.id }}" aria-hidden="true">
-                        <div class="modal-dialog">
+                        <div class="modal-dialog modal-lg">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title fw-bold" id="enrollModalLabel{{ c.id }}">
-                                        {{ c.code }} — Manage Enrollment Roster
-                                    </h5>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace">{{ c.code }}</span>
+                                        <h5 class="modal-title fw-bold mb-0" id="enrollModalLabel{{ c.id }}">
+                                            Manage Enrollment Roster — {{ c.name }}
+                                        </h5>
+                                    </div>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
+                                    <!-- Extract enrolled student IDs for easy comparison -->
+                                    {% set enrolled_ids = [] %}
+                                    {% if c.roster %}
+                                        {% for enr in c.roster %}
+                                            {% set _ = enrolled_ids.append(enr.id) %}
+                                        {% endfor %}
+                                    {% endif %}
+
                                     <form method="POST" action="{{ url_for('enroll_student', course_id=c.id) }}" class="mb-4">
-                                        <label for="student_id{{ c.id }}" class="form-label fw-semibold small">Enroll Student to Course</label>
-                                        <div class="input-group">
-                                            <select class="form-select" id="student_id{{ c.id }}" name="student_id" required>
-                                                <option value="" disabled selected>Select an unenrolled student...</option>
-                                                {% for s in all_students %}
-                                                    <option value="{{ s.id }}">{{ s.roll_no }} — {{ s.name }}</option>
-                                                {% endfor %}
-                                            </select>
-                                            <button type="submit" class="btn btn-primary-navy">Enroll</button>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="form-label fw-bold small text-muted text-uppercase mb-0">
+                                                Batch Enroll Students into {{ c.code }}
+                                            </label>
+                                            <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 small" onclick="toggleSelectAllEnroll({{ c.id }})">
+                                                Select All Unenrolled
+                                            </button>
                                         </div>
+
+                                        <div class="border rounded-3 p-3 bg-light mb-3" style="max-height: 180px; overflow-y: auto;" id="enrollList_{{ c.id }}">
+                                            {% set unenrolled_found = false %}
+                                            {% for s in all_students %}
+                                                {% if s.id not in enrolled_ids %}
+                                                    {% set unenrolled_found = true %}
+                                                    <div class="form-check py-1">
+                                                        <input class="form-check-input chk-enroll-{{ c.id }}" type="checkbox" name="student_ids" value="{{ s.id }}" id="chk_{{ c.id }}_{{ s.id }}">
+                                                        <label class="form-check-label small fw-medium" for="chk_{{ c.id }}_{{ s.id }}">
+                                                            <span class="font-monospace fw-bold text-primary">{{ s.roll_no }}</span> &mdash; {{ s.name }}
+                                                            <span class="badge bg-secondary-subtle text-secondary ms-1">Available</span>
+                                                        </label>
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+
+                                            {% if not unenrolled_found %}
+                                                <div class="text-center text-muted small py-2">
+                                                    All registered students are already enrolled in this course.
+                                                </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <button type="submit" class="btn btn-primary-navy w-100 fw-semibold">
+                                            <i class="bi bi-person-plus-fill me-1"></i> Enroll Selected Students
+                                        </button>
                                     </form>
 
-                                    <h6 class="fw-bold small text-muted text-uppercase mb-2">Currently Enrolled Students</h6>
-                                    <div class="border rounded p-2 bg-light" style="max-height: 200px; overflow-y: auto;">
+                                    <!-- Currently Enrolled Section -->
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="fw-bold small text-muted text-uppercase mb-0">
+                                            Currently Enrolled Students ({{ c.roster|length if c.roster else 0 }})
+                                        </h6>
+                                    </div>
+                                    <div class="border rounded-3 p-2 bg-light" style="max-height: 220px; overflow-y: auto;">
                                         {% if c.roster %}
                                             <ul class="list-group list-group-flush small">
                                                 {% for enr in c.roster %}
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-2 py-1.5">
-                                                        <span><strong>{{ enr.roll_no }}</strong> &bull; {{ enr.name }}</span>
-                                                        <form method="POST" action="{{ url_for('unenroll_student', course_id=c.id, student_id=enr.id) }}" onsubmit="return confirm('Remove this student from {{ c.code }}?');">
-                                                            <button type="submit" class="btn btn-link text-danger p-0 border-0" title="Remove enrollment">
-                                                                <i class="bi bi-trash"></i>
+                                                    <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-2 py-2">
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <span class="badge bg-light text-primary border font-monospace fw-bold">{{ enr.roll_no }}</span>
+                                                            <span class="fw-medium text-dark">{{ enr.name }}</span>
+                                                            <span class="badge bg-success-subtle text-success ms-1">Active</span>
+                                                        </div>
+                                                        <form method="POST" action="{{ url_for('unenroll_student', course_id=c.id, student_id=enr.id) }}" onsubmit="return confirm('Remove {{ enr.name }} ({{ enr.roll_no }}) from {{ c.code }}?');">
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" title="Remove enrollment">
+                                                                <i class="bi bi-trash me-1"></i> Remove
                                                             </button>
                                                         </form>
                                                     </li>
@@ -103,7 +147,7 @@
                                     </div>
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                                    <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal">Close</button>
                                 </div>
                             </div>
                         </div>
@@ -151,13 +195,26 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary-navy">Create Course</button>
+                        <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-navy rounded-3">Create Course</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 {% endif %}
-{% endblock %}
 
+{% block scripts %}
+<script>
+function toggleSelectAllEnroll(courseId) {
+    const boxes = document.querySelectorAll('.chk-enroll-' + courseId);
+    if (!boxes.length) return;
+    const allChecked = Array.from(boxes).every(b => b.checked);
+    boxes.forEach(b => b.checked = !allChecked);
+    if (typeof showToast === 'function') {
+        showToast(allChecked ? 'Deselected all students' : 'Selected all available students');
+    }
+}
+</script>
+{% endblock %}
+{% endblock %}
