@@ -117,3 +117,39 @@ def test_student_forbidden_from_attendance_marking(client):
     response = client.get("/attendance")
     assert response.status_code == 403
 
+
+def test_mapreduce_analytics_unit(app):
+    """Verify MapReduce distributed aggregation calculates correct daily and course totals."""
+    import mapreduce_engine
+    with app.app_context():
+        database = get_db()
+        mr_results = mapreduce_engine.compute_mapreduce_analytics(database)
+        assert len(mr_results["course_totals"]) > 0
+        assert len(mr_results["daily_totals"]) > 0
+        assert mr_results["telemetry"]["num_records"] > 0
+        assert "map_duration_ms" in mr_results["telemetry"]
+        assert "reduce_duration_ms" in mr_results["telemetry"]
+
+
+def test_api_analytics_mapreduce_endpoint(client):
+    """Verify /api/analytics/mapreduce returns JSON with MapReduce paradigm and stages."""
+    client.post("/login", data={"username": "admin", "password": "admin123"})
+    response = client.get("/api/analytics/mapreduce")
+    assert response.status_code == 200
+    json_data = response.get_json()
+    assert json_data["status"] == "success"
+    assert json_data["paradigm"] == "MapReduce"
+    assert "daily_totals" in json_data["results"]
+    assert "course_totals" in json_data["results"]
+
+
+def test_mapreduce_ui_section_renders(client):
+    """Verify analytics page displays the Cloud MapReduce section."""
+    client.post("/login", data={"username": "admin", "password": "admin123"})
+    response = client.get("/analytics")
+    assert response.status_code == 200
+    assert b"MapReduce Engine" in response.data
+    assert b"Course-Wise Totals (MapReduce)" in response.data
+    assert b"Daily Totals (MapReduce)" in response.data
+
+

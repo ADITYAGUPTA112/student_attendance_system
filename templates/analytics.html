@@ -139,7 +139,7 @@
 </div>
 
 <!-- Tables Row -->
-<div class="row g-4">
+<div class="row g-4 mb-4">
     <!-- At-Risk Students Panel -->
     <div class="col-lg-5">
         <div class="card card-custom p-4 h-100">
@@ -212,11 +212,11 @@
                                     <td><span class="badge bg-light text-dark border font-monospace">{{ st.present }} / {{ st.total }}</span></td>
                                     <td class="text-end">
                                         {% if st.percentage >= 75.0 %}
-                                            <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace">{{ "%.1f"|format(st.percentage) }}%</span>
+                                             <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace">{{ "%.1f"|format(st.percentage) }}%</span>
                                         {% elif st.percentage >= 65.0 %}
-                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle font-monospace">{{ "%.1f"|format(st.percentage) }}%</span>
+                                             <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle font-monospace">{{ "%.1f"|format(st.percentage) }}%</span>
                                         {% else %}
-                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace">{{ "%.1f"|format(st.percentage) }}%</span>
+                                             <span class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace">{{ "%.1f"|format(st.percentage) }}%</span>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -231,6 +231,155 @@
                 </div>
             {% endif %}
         </div>
+    </div>
+</div>
+
+<!-- Cloud MapReduce Aggregation Engine Panel -->
+<div class="card card-custom p-4 mb-4 border-primary border-opacity-25 shadow-sm">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-3 pb-3 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary text-white px-2.5 py-1 rounded-pill small fw-bold">
+                    <i class="bi bi-cpu"></i> MapReduce Engine
+                </span>
+                <span class="badge bg-light text-dark border small font-monospace">Computational Services in the Cloud</span>
+            </div>
+            <h2 class="h5 fw-bold mb-1 mt-2 text-dark">Distributed Data Processing: Daily &amp; Course-Wise Aggregates</h2>
+            <p class="text-muted small mb-0">Processes raw attendance logs across parallel <code>Map()</code> &rarr; <code>Shuffle/Sort</code> &rarr; <code>Reduce()</code> cloud pipeline.</p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <a href="{{ url_for('api_mapreduce') }}{% if selected_course_id %}?course_id={{ selected_course_id }}{% endif %}" target="_blank" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 font-monospace rounded-3">
+                <i class="bi bi-code-slash"></i> View JSON API
+            </a>
+        </div>
+    </div>
+
+    <!-- MapReduce Stage Execution Telemetry Metrics -->
+    <div class="row g-2 mb-3 text-center">
+        <div class="col-6 col-md-3">
+            <div class="p-2.5 rounded-3 bg-light border">
+                <div class="text-muted small text-uppercase fw-semibold" style="font-size: 0.72rem;">1. Map Phase</div>
+                <div class="fw-bold font-monospace text-primary">{{ mapreduce_metrics.telemetry.map_duration_ms }} ms</div>
+                <span class="text-muted" style="font-size: 0.7rem;">Key-Value Emission</span>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="p-2.5 rounded-3 bg-light border">
+                <div class="text-muted small text-uppercase fw-semibold" style="font-size: 0.72rem;">2. Shuffle &amp; Sort</div>
+                <div class="fw-bold font-monospace text-warning-emphasis">{{ mapreduce_metrics.telemetry.shuffle_duration_ms }} ms</div>
+                <span class="text-muted" style="font-size: 0.7rem;">Partition Grouping</span>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="p-2.5 rounded-3 bg-light border">
+                <div class="text-muted small text-uppercase fw-semibold" style="font-size: 0.72rem;">3. Reduce Phase</div>
+                <div class="fw-bold font-monospace text-success">{{ mapreduce_metrics.telemetry.reduce_duration_ms }} ms</div>
+                <span class="text-muted" style="font-size: 0.7rem;">Parallel Aggregation</span>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="p-2.5 rounded-3 bg-light border">
+                <div class="text-muted small text-uppercase fw-semibold" style="font-size: 0.72rem;">Total Latency</div>
+                <div class="fw-bold font-monospace text-dark">{{ mapreduce_metrics.telemetry.execution_time_ms }} ms</div>
+                <span class="text-muted" style="font-size: 0.7rem;">{{ mapreduce_metrics.telemetry.num_records }} records processed</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course-wise & Daily Totals Tables (Generated via MapReduce) -->
+    <div class="row g-3">
+        <!-- Course-wise MapReduce Totals -->
+        <div class="col-lg-6">
+            <div class="border rounded-3 p-3 bg-body h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold small text-dark"><i class="bi bi-book text-primary me-1"></i> Course-Wise Totals (MapReduce)</span>
+                    <span class="badge bg-light text-muted border font-monospace small">{{ mapreduce_metrics.course_totals|length }} courses</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-custom align-middle mb-0" style="font-size: 0.85rem;">
+                        <thead>
+                            <tr>
+                                <th>Course</th>
+                                <th class="text-center">Present / Total</th>
+                                <th class="text-end">Aggregate %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ct in mapreduce_metrics.course_totals %}
+                                <tr>
+                                    <td class="fw-semibold font-monospace">{{ ct.key }}</td>
+                                    <td class="text-center font-monospace text-muted">{{ ct.present_count }} / {{ ct.total_sessions }}</td>
+                                    <td class="text-end font-monospace">
+                                        <span class="badge {% if ct.percentage >= 75.0 %}bg-success-subtle text-success border-success-subtle{% elif ct.percentage >= 65.0 %}bg-warning-subtle text-warning border-warning-subtle{% else %}bg-danger-subtle text-danger border-danger-subtle{% endif %} border">
+                                            {{ "%.1f"|format(ct.percentage) }}%
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="3" class="text-muted text-center py-2">No records mapped.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Daily Totals MapReduce -->
+        <div class="col-lg-6">
+            <div class="border rounded-3 p-3 bg-body h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold small text-dark"><i class="bi bi-calendar3 text-primary me-1"></i> Daily Totals (MapReduce)</span>
+                    <span class="badge bg-light text-muted border font-monospace small">{{ mapreduce_metrics.daily_totals|length }} dates</span>
+                </div>
+                <div class="table-responsive" style="max-height: 180px; overflow-y: auto;">
+                    <table class="table table-sm table-custom align-middle mb-0" style="font-size: 0.85rem;">
+                        <thead>
+                            <tr>
+                                <th>Attendance Date</th>
+                                <th class="text-center">Present / Total</th>
+                                <th class="text-end">Turnout %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dt in mapreduce_metrics.daily_totals %}
+                                <tr>
+                                    <td class="fw-semibold font-monospace">{{ dt.key }}</td>
+                                    <td class="text-center font-monospace text-muted">{{ dt.present_count }} / {{ dt.total_sessions }}</td>
+                                    <td class="text-end font-monospace">
+                                        <span class="badge {% if dt.percentage >= 75.0 %}bg-success-subtle text-success border-success-subtle{% elif dt.percentage >= 65.0 %}bg-warning-subtle text-warning border-warning-subtle{% else %}bg-danger-subtle text-danger border-danger-subtle{% endif %} border">
+                                            {{ "%.1f"|format(dt.percentage) }}%
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="3" class="text-muted text-center py-2">No daily records mapped.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MapReduce Pipeline Architecture Accordion -->
+    <div class="mt-3">
+        <details class="bg-light p-3 rounded-3 border" style="font-size: 0.85rem;">
+            <summary class="fw-bold text-dark cursor-pointer user-select-none">
+                <i class="bi bi-info-circle text-primary me-1"></i> How the Cloud MapReduce Architecture Works (Viva / Exam Guide)
+            </summary>
+            <div class="mt-2 text-muted">
+                <ul class="mb-2 ps-3">
+                    <li><strong>Map Phase:</strong> <code>mapper_course_totals()</code> emits key-value pairs <code>(CourseCode, (1, 1))</code> or <code>(CourseCode, (0, 1))</code> per student record.</li>
+                    <li><strong>Shuffle &amp; Sort Phase:</strong> Distributes intermediate pairs across worker nodes grouped by unique key (Course / Date).</li>
+                    <li><strong>Reduce Phase:</strong> <code>reducer_attendance()</code> aggregates values in parallel: <code>&Sigma;(present) / &Sigma;(total) * 100%</code>.</li>
+                    <li><strong>Fault Tolerance &amp; Horizontal Scale:</strong> Independent partition workers can scale horizontally across cloud compute instances without state sharing.</li>
+                </ul>
+                <div class="p-2 rounded bg-dark text-light font-monospace small">
+                    <strong>Sample Intermediate Stream:</strong>
+                    {{ mapreduce_metrics.telemetry.map_samples }}
+                </div>
+            </div>
+        </details>
     </div>
 </div>
 

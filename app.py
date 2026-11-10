@@ -25,6 +25,7 @@ import db
 import auth
 from auth import login_required, role_required, log_audit
 import analytics_service
+import mapreduce_engine
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 IS_VERCEL = bool(os.environ.get("VERCEL"))
@@ -628,13 +629,30 @@ def create_app(test_config=None):
         course_id = request.args.get("course_id", type=int)
 
         metrics = analytics_service.compute_attendance_analytics(database, course_id=course_id)
+        mapreduce_metrics = mapreduce_engine.compute_mapreduce_analytics(database, course_id=course_id)
 
         return render_template(
             "analytics.html",
             courses=courses,
             selected_course_id=course_id,
             metrics=metrics,
+            mapreduce_metrics=mapreduce_metrics,
         )
+
+    @app.route("/api/analytics/mapreduce", methods=["GET"])
+    @login_required
+    def api_mapreduce():
+        """Cloud MapReduce aggregation endpoint: generates daily and course-wise totals."""
+        database = db.get_db()
+        course_id = request.args.get("course_id", type=int)
+        results = mapreduce_engine.compute_mapreduce_analytics(database, course_id=course_id)
+        return jsonify({
+            "status": "success",
+            "service": "Computational Services in the Cloud",
+            "paradigm": "MapReduce",
+            "stages": ["Map", "Shuffle & Sort", "Reduce"],
+            "results": results
+        }), 200
 
     @app.route("/export/csv", methods=["GET"])
     @login_required
