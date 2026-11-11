@@ -1,160 +1,466 @@
-{% extends "base.html" %}
+{% extends "obsidian_admin_base.html" %}
 
-{% block title %}Student Management — CloudAttend{% endblock %}
+{% block title %}Student Management — AttendX{% endblock %}
 
 {% block content %}
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
-    <div>
-        <h1 class="h3 fw-bold mb-1">Student Management</h1>
-        <p class="text-muted small mb-0">Manage registered learners, academic profiles, and student access accounts.</p>
+<!-- Header -->
+<div class="animate-entrance delay-1 flex flex-col md:flex-row md:items-end justify-between gap-space-md">
+  <div class="flex flex-col gap-space-xxs">
+    <div class="flex items-center gap-space-xs font-label-sm obsidian-text-muted font-mono tracking-wider">
+      <span>SYS</span>
+      <span aria-hidden="true">//</span>
+      <span>DIRECTORY</span>
+      <span aria-hidden="true">//</span>
+      <span class="text-secondary font-semibold">ENROLLED LEARNERS</span>
     </div>
-    <div>
-        <button type="button" class="btn btn-primary-navy d-flex align-items-center gap-1.5" data-bs-toggle="modal" data-bs-target="#addStudentModal">
-            <i class="bi bi-person-plus-fill"></i> Add New Student
-        </button>
-    </div>
+    <h1 class="font-headline-xl text-headline-xl-mobile sm:text-headline-xl obsidian-text-heading font-bold">
+      Student Management
+    </h1>
+    <p class="font-body-md obsidian-text-muted">
+      Manage registered learners, academic profiles, and institutional login accounts.
+    </p>
+  </div>
+
+  <div class="flex items-center gap-space-sm shrink-0">
+    <button
+      type="button"
+      id="openAddStudentBtn"
+      class="obsidian-primary-btn inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-label-md font-semibold transition-all active:scale-95 min-h-[44px]"
+    >
+      <span class="material-symbols-outlined text-[20px]" aria-hidden="true">person_add</span>
+      <span>Add New Student</span>
+    </button>
+  </div>
 </div>
 
-<!-- Search & Filter Bar -->
-<div class="card card-custom p-3 mb-4">
-    <form method="GET" action="{{ url_for('students') }}" class="row g-2 align-items-center">
-        <div class="col-md-9 col-lg-10">
-            <div class="input-group">
-                <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                <input type="text" class="form-control border-start-0" name="q" value="{{ query or '' }}" placeholder="Search by student name or roll number...">
-            </div>
-        </div>
-        <div class="col-md-3 col-lg-2 d-flex gap-2">
-            <button type="submit" class="btn btn-primary-navy w-100">Search</button>
-            {% if query %}
-                <a href="{{ url_for('students') }}" class="btn btn-outline-secondary" title="Clear search">
-                    <i class="bi bi-x-lg"></i>
-                </a>
-            {% endif %}
-        </div>
-    </form>
+<!-- Search & Filter Controls -->
+<div class="animate-entrance delay-2 obsidian-card p-space-md rounded-xl">
+  <form method="GET" action="{{ url_for('students') }}" class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+    <div class="relative flex-1">
+      <label for="studentSearchInput" class="sr-only">Search students by name or roll number</label>
+      <span class="material-symbols-outlined text-[20px] obsidian-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true">search</span>
+      <input
+        id="studentSearchInput"
+        type="text"
+        name="q"
+        value="{{ query or '' }}"
+        placeholder="Search by student name or roll number (e.g. CS-001)..."
+        class="obsidian-input w-full rounded-lg pl-10 pr-4 py-2.5 text-sm min-h-[44px]"
+      />
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+      <button type="submit" class="obsidian-primary-btn px-5 py-2.5 rounded-lg text-sm font-semibold min-h-[44px] flex-1 sm:flex-none">
+        Search
+      </button>
+      {% if query %}
+        <a
+          href="{{ url_for('students') }}"
+          title="Clear search"
+          aria-label="Clear search"
+          class="obsidian-subcard inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-lg obsidian-text-muted hover:text-secondary transition-colors"
+        >
+          <span class="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+        </a>
+      {% endif %}
+    </div>
+  </form>
 </div>
 
-<!-- Students Directory Table -->
-<div class="card card-custom p-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="h5 fw-bold mb-0">
-            Registered Students
-            <span class="badge bg-light text-secondary border ms-1">{{ students|length }}</span>
-        </h2>
+<!-- Registered Students Directory -->
+<div class="animate-entrance delay-3 obsidian-card p-space-lg rounded-xl flex flex-col gap-space-md">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <div class="flex items-center gap-2.5">
+      <h2 id="students-table-heading" class="font-headline-sm text-headline-sm obsidian-text-heading font-semibold">
+        Registered Students
+      </h2>
+      <span class="obsidian-subcard px-2.5 py-0.5 rounded-full font-mono text-label-sm text-secondary font-semibold">
+        {{ students|length }}
+      </span>
     </div>
+    <span class="font-mono text-label-sm obsidian-text-muted">
+      Total Course Links: {{ students|sum(attribute='enrolled_count') }}
+    </span>
+  </div>
 
-    {% if students %}
-        <div class="table-responsive">
-            <table class="table table-custom align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th>Roll Number</th>
-                        <th>Student Name</th>
-                        <th>Institutional Email</th>
-                        <th>Enrollments</th>
-                        <th>Registration Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for s in students %}
-                        <tr>
-                            <td>
-                                <span class="badge bg-light text-primary border font-monospace fw-bold px-2 py-1">{{ s.roll_no }}</span>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center gap-2.5">
-                                    <div class="student-avatar" style="background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); color: #1D4ED8; font-weight: 800;">
-                                        {{ s.name[:2]|upper }}
-                                    </div>
-                                    <div>
-                                        <div class="fw-bold text-dark">{{ s.name }}</div>
-                                        <div class="text-muted small">ID: #{{ s.id }} &bull; Account Active</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                {% if s.email %}
-                                    <span class="text-muted"><i class="bi bi-envelope me-1 text-primary"></i>{{ s.email }}</span>
-                                {% else %}
-                                    <span class="text-muted fst-italic">Not provided</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1">
-                                    <i class="bi bi-book-half me-1"></i>{{ s.enrolled_count or 0 }} Courses
-                                </span>
-                            </td>
-                            <td class="text-muted small">
-                                {% if s.created_at.strftime is defined %}
-                                    {{ s.created_at.strftime('%Y-%m-%d') }}
-                                {% else %}
-                                    {{ s.created_at[:10] if s.created_at else 'N/A' }}
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <div class="empty-state py-5">
-            <i class="bi bi-people"></i>
-            <p class="h6 text-muted mb-1">
-                {% if query %}
-                    No students match the search term "{{ query }}".
+  {% if students %}
+    <div tabindex="0" role="region" aria-labelledby="students-table-heading" class="table-wrapper table-responsive-cards border border-white/10">
+      <table class="text-left text-sm">
+        <thead>
+          <tr class="font-mono text-label-sm uppercase tracking-wider">
+            <th class="px-4 py-3">Roll Number</th>
+            <th class="px-4 py-3">Student Name</th>
+            <th class="px-4 py-3">Login ID</th>
+            <th class="px-4 py-3">Institutional Email</th>
+            <th class="px-4 py-3">Enrollments</th>
+            <th class="px-4 py-3 text-right">Credentials</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/10">
+          {% for s in students %}
+            <tr class="transition-colors">
+              <td data-label="Roll Number" class="px-4 py-3.5 whitespace-nowrap">
+                <span class="obsidian-chip-blue inline-flex items-center px-2.5 py-1 rounded-md font-mono font-bold text-xs border">
+                  {{ s.roll_no }}
+                </span>
+              </td>
+              <td data-label="Student Name" class="px-4 py-3.5">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-full obsidian-primary-btn flex items-center justify-center font-bold text-xs uppercase shrink-0" aria-hidden="true">
+                    {{ s.name[:2]|upper }}
+                  </div>
+                  <div>
+                    <div class="font-semibold obsidian-text-heading">{{ s.name }}</div>
+                    <div class="font-mono text-xs obsidian-text-muted">ID: #{{ s.id }} • {{ s.created_at[:10] if s.created_at is string else (s.created_at.strftime('%Y-%m-%d') if s.created_at is defined and s.created_at else 'N/A') }}</div>
+                  </div>
+                </div>
+              </td>
+              <td data-label="Login ID" class="px-4 py-3.5 whitespace-nowrap">
+                {% if s.login_username %}
+                  <span class="obsidian-chip-emerald inline-flex items-center gap-1 px-2.5 py-1 rounded-md font-mono font-semibold text-xs border">
+                    <span class="material-symbols-outlined text-[14px]" aria-hidden="true">verified_user</span>
+                    <span>@{{ s.login_username }}</span>
+                  </span>
                 {% else %}
-                    No students have been added yet.
+                  <span class="obsidian-chip-amber inline-flex items-center gap-1 px-2.5 py-1 rounded-md font-mono text-xs border">
+                    <span class="material-symbols-outlined text-[14px]" aria-hidden="true">person_off</span>
+                    <span>No Login</span>
+                  </span>
                 {% endif %}
-            </p>
-            {% if not query %}
-                <p class="small text-muted mb-3">Begin by registering the first academic student profile.</p>
-                <button type="button" class="btn btn-sm btn-primary-navy" data-bs-toggle="modal" data-bs-target="#addStudentModal">
-                    <i class="bi bi-plus-lg me-1"></i> Add Student
+              </td>
+              <td data-label="Institutional Email" class="px-4 py-3.5">
+                {% if s.email %}
+                  <span class="inline-flex items-center gap-1.5 obsidian-text-muted">
+                    <span class="material-symbols-outlined text-[16px] text-secondary" aria-hidden="true">mail</span>
+                    <span>{{ s.email }}</span>
+                  </span>
+                {% else %}
+                  <span class="italic obsidian-text-muted opacity-75">Not provided</span>
+                {% endif %}
+              </td>
+              <td data-label="Enrollments" class="px-4 py-3.5 whitespace-nowrap">
+                <span class="obsidian-chip-emerald inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono border">
+                  <span class="material-symbols-outlined text-[14px]" aria-hidden="true">menu_book</span>
+                  <span>{{ s.enrolled_count or 0 }} Courses</span>
+                </span>
+              </td>
+              <td data-label="Credentials" class="px-4 py-3.5 whitespace-nowrap sm:text-right">
+                <button
+                  type="button"
+                  data-student-id="{{ s.id }}"
+                  data-student-name="{{ s.name }}"
+                  data-student-roll="{{ s.roll_no }}"
+                  data-login-username="{{ s.login_username or '' }}"
+                  onclick="openStudentCredsModal(this)"
+                  class="obsidian-subcard inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold hover:text-secondary border border-white/15 min-h-[38px] transition-colors"
+                >
+                  <span class="material-symbols-outlined text-[16px]" aria-hidden="true">key</span>
+                  <span>{{ 'Edit ID / Pass' if s.login_username else 'Create Login' }}</span>
                 </button>
-            {% endif %}
-        </div>
-    {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="obsidian-subcard rounded-xl p-10 text-center flex flex-col items-center gap-2">
+      <span class="material-symbols-outlined text-[40px] text-secondary" aria-hidden="true">groups</span>
+      <p class="font-label-lg obsidian-text-heading">
+        {% if query %}
+          No students match the search term "{{ query }}".
+        {% else %}
+          No students have been added yet.
+        {% endif %}
+      </p>
+      {% if not query %}
+        <p class="font-body-sm obsidian-text-muted mb-2">Begin by registering the first academic student profile.</p>
+        <button type="button" onclick="document.getElementById('addStudentModal').showModal()" class="obsidian-primary-btn inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold min-h-[44px]">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">add</span>Add Student
+        </button>
+      {% endif %}
+    </div>
+  {% endif %}
 </div>
 
-<!-- Modal: Add New Student -->
-<div class="modal fade" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="POST" action="{{ url_for('students') }}">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold" id="addStudentModalLabel">Register New Student</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="roll_no" class="form-label fw-semibold small">Roll Number <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="roll_no" name="roll_no" placeholder="e.g. CS-005" required>
-                        <div class="form-text">Must be a unique student identifier across the institution.</div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="name" class="form-label fw-semibold small">Full Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="name" name="name" placeholder="e.g. Eleanor Vance" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="email" class="form-label fw-semibold small">Email Address</label>
-                        <input type="email" class="form-control" id="email" name="email" placeholder="e.g. eleanor.vance@example.edu">
-                    </div>
-                    <div class="form-check p-3 bg-light rounded border">
-                        <input class="form-check-input ms-0 me-2" type="checkbox" id="create_login" name="create_login" value="1" checked>
-                        <label class="form-check-label small" for="create_login">
-                            <strong>Create Login Account</strong><br>
-                            <span class="text-muted">Creates student login credentials with default password <code>student123</code>.</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary-navy">Register Student</button>
-                </div>
-            </form>
-        </div>
+<!-- Native Modal Dialog: Add New Student -->
+<dialog id="addStudentModal" closedby="any" aria-labelledby="addStudentModalLabel" class="obsidian-modal">
+  <form method="POST" action="{{ url_for('students') }}" class="flex flex-col">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-white/10">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-[20px] text-secondary" aria-hidden="true">person_add</span>
+        <h2 id="addStudentModalLabel" class="font-headline-sm text-headline-sm obsidian-text-heading font-semibold">
+          Register New Student
+        </h2>
+      </div>
+      <button
+        type="button"
+        onclick="document.getElementById('addStudentModal').close()"
+        aria-label="Close registration modal"
+        class="inline-flex items-center justify-center min-w-[40px] min-h-[40px] rounded-lg hover:bg-white/10 obsidian-text-muted transition-colors"
+      >
+        <span class="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+      </button>
     </div>
-</div>
+
+    <div class="p-5 flex flex-col gap-4">
+      <div>
+        <label for="roll_no" class="block font-label-md text-xs font-semibold uppercase tracking-wider obsidian-text-muted mb-1.5">
+          Roll Number <span class="text-red-400">*</span>
+        </label>
+        <input
+          type="text"
+          id="roll_no"
+          name="roll_no"
+          placeholder="e.g. CS-005"
+          required
+          autofocus
+          class="obsidian-input w-full rounded-lg px-3.5 py-2.5 text-sm font-mono min-h-[44px]"
+        />
+        <p class="mt-1 text-xs obsidian-text-muted">Must be a unique student identifier across the institution.</p>
+      </div>
+
+      <div>
+        <label for="name" class="block font-label-md text-xs font-semibold uppercase tracking-wider obsidian-text-muted mb-1.5">
+          Full Name <span class="text-red-400">*</span>
+        </label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          placeholder="e.g. Eleanor Vance"
+          required
+          class="obsidian-input w-full rounded-lg px-3.5 py-2.5 text-sm min-h-[44px]"
+        />
+      </div>
+
+      <div>
+        <label for="email" class="block font-label-md text-xs font-semibold uppercase tracking-wider obsidian-text-muted mb-1.5">
+          Email Address
+        </label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="e.g. eleanor.vance@example.edu"
+          class="obsidian-input w-full rounded-lg px-3.5 py-2.5 text-sm min-h-[44px]"
+        />
+      </div>
+
+      <label for="create_login" class="obsidian-subcard flex items-start gap-3 p-3.5 rounded-lg cursor-pointer">
+        <input
+          type="checkbox"
+          id="create_login"
+          name="create_login"
+          value="1"
+          checked
+          onchange="toggleStudentLoginInputs(this.checked)"
+          class="mt-0.5 rounded border-white/25 text-blue-500 focus:ring-blue-500"
+        />
+        <span class="text-xs leading-relaxed">
+          <strong class="block obsidian-text-heading text-sm font-semibold">Create Portal Login Account</strong>
+          <span class="obsidian-text-muted">Set custom Login ID &amp; Password below (leave blank to default to roll number slug &amp; <code class="font-mono text-secondary">student123</code>).</span>
+        </span>
+      </label>
+
+      <div id="studentLoginFields" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+        <div>
+          <label for="login_username" class="block font-label-md text-xs font-semibold uppercase tracking-wider obsidian-text-muted mb-1.5">
+            Login ID (Username)
+          </label>
+          <input
+            type="text"
+            id="login_username"
+            name="login_username"
+            placeholder="e.g. eleanor_cs05"
+            autocomplete="off"
+            class="obsidian-input w-full rounded-lg px-3.5 py-2.5 text-sm font-mono min-h-[44px]"
+          />
+        </div>
+        <div>
+          <label for="login_password" class="block font-label-md text-xs font-semibold uppercase tracking-wider obsidian-text-muted mb-1.5">
+            Password
+          </label>
+          <div class="relative flex items-center">
+            <input
+              type="password"
+              id="login_password"
+              name="login_password"
+              placeholder="Default: student123"
+              autocomplete="new-password"
+              class="obsidian-input w-full rounded-lg pl-3.5 pr-11 py-2.5 text-sm min-h-[44px]"
+            />
+            <button
+              type="button"
+              onclick="toggleStuPwdVisibility('login_password', this)"
+              aria-label="Show password"
+              aria-pressed="false"
+              class="absolute right-1.5 inline-flex items-center justify-center w-9 h-9 rounded-md obsidian-text-muted hover:text-secondary"
+            >
+              <span class="material-symbols-outlined text-[18px]" aria-hidden="true">visibility</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-2.5 px-5 py-4 border-t border-white/10">
+      <button
+        type="button"
+        onclick="document.getElementById('addStudentModal').close()"
+        class="obsidian-subcard px-4 py-2 rounded-lg text-sm font-medium obsidian-text-muted hover:text-secondary min-h-[42px]"
+      >
+        Cancel
+      </button>
+      <button type="submit" class="obsidian-primary-btn px-4 py-2 rounded-lg text-sm font-semibold min-h-[42px]">
+        Register Student
+      </button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Native Modal Dialog: Manage Existing Student Login Credentials -->
+<dialog id="studentCredsModal" closedby="any" aria-labelledby="studentCredsModalLabel" class="obsidian-modal">
+  <form id="studentCredsForm" method="POST" action="" class="flex flex-col">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-white/10">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-[20px] text-secondary" aria-hidden="true">key</span>
+        <h2 id="studentCredsModalLabel" class="font-headline-sm text-headline-sm obsidian-text-heading font-semibold">
+          Student Portal Credentials
+        </h2>
+      </div>
+      <button
+        type="button"
+        onclick="document.getElementById('studentCredsModal').close()"
+        aria-label="Close credentials modal"
+        class="inline-flex items-center justify-center min-w-[40px] min-h-[40px] rounded-lg hover:bg-white/10 obsidian-text-muted transition-colors"
+      >
+        <span class="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+      </button>
+    </div>
+
+    <div class="p-5 flex flex-col gap-4">
+      <div class="obsidian-subcard rounded-lg px-3.5 py-2.5 text-xs font-mono">
+        Student: <span id="credsStudentLabel" class="text-secondary font-semibold"></span>
+      </div>
+
+      <div>
+        <label for="edit_login_username" class="block font-label-md text-xs font-semibold uppercase tracking-wider obsidian-text-muted mb-1.5">
+          Student Login ID (Username)
+        </label>
+        <input
+          type="text"
+          id="edit_login_username"
+          name="login_username"
+          placeholder="e.g. alice"
+          autocomplete="off"
+          class="obsidian-input w-full rounded-lg px-3.5 py-2.5 text-sm font-mono min-h-[44px]"
+        />
+      </div>
+
+      <div>
+        <label for="edit_login_password" class="block font-label-md text-xs font-semibold uppercase tracking-wider obsidian-text-muted mb-1.5">
+          Password
+        </label>
+        <div class="relative flex items-center">
+          <input
+            type="password"
+            id="edit_login_password"
+            name="login_password"
+            placeholder="Leave blank to keep existing password (or min 4 chars)"
+            autocomplete="new-password"
+            class="obsidian-input w-full rounded-lg pl-3.5 pr-11 py-2.5 text-sm min-h-[44px]"
+          />
+          <button
+            type="button"
+            onclick="toggleStuPwdVisibility('edit_login_password', this)"
+            aria-label="Show password"
+            aria-pressed="false"
+            class="absolute right-1.5 inline-flex items-center justify-center w-9 h-9 rounded-md obsidian-text-muted hover:text-secondary"
+          >
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">visibility</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-2.5 px-5 py-4 border-t border-white/10">
+      <button
+        type="button"
+        onclick="document.getElementById('studentCredsModal').close()"
+        class="obsidian-subcard px-4 py-2 rounded-lg text-sm font-medium obsidian-text-muted hover:text-secondary min-h-[42px]"
+      >
+        Cancel
+      </button>
+      <button type="submit" class="obsidian-primary-btn px-4 py-2 rounded-lg text-sm font-semibold min-h-[42px]">
+        Save Credentials
+      </button>
+    </div>
+  </form>
+</dialog>
 {% endblock %}
 
+{% block scripts %}
+<script>
+  function toggleStuPwdVisibility(inputId, btn) {
+    const el = document.getElementById(inputId);
+    if (!el) return;
+    const isHidden = el.type === "password";
+    el.type = isHidden ? "text" : "password";
+    btn.setAttribute("aria-pressed", isHidden ? "true" : "false");
+    btn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
+    const icon = btn.querySelector(".material-symbols-outlined");
+    if (icon) icon.textContent = isHidden ? "visibility_off" : "visibility";
+  }
+
+  function toggleStudentLoginInputs(enabled) {
+    const box = document.getElementById("studentLoginFields");
+    if (!box) return;
+    box.classList.toggle("opacity-50", !enabled);
+    box.querySelectorAll("input").forEach(function (inp) {
+      inp.disabled = !enabled;
+    });
+  }
+
+  function openStudentCredsModal(btn) {
+    const sid = btn.getAttribute("data-student-id");
+    const sname = btn.getAttribute("data-student-name") || "";
+    const sroll = btn.getAttribute("data-student-roll") || "";
+    const existingLogin = btn.getAttribute("data-login-username") || "";
+
+    const form = document.getElementById("studentCredsForm");
+    const label = document.getElementById("credsStudentLabel");
+    const unameInput = document.getElementById("edit_login_username");
+    const pwdInput = document.getElementById("edit_login_password");
+
+    if (form && sid) {
+      form.action = "/students/" + encodeURIComponent(sid) + "/credentials";
+    }
+    if (label) {
+      label.textContent = sname + " (" + sroll + ")";
+    }
+    if (unameInput) {
+      unameInput.value = existingLogin || sroll.toLowerCase().replace(/[^a-z0-9_]/g, "");
+    }
+    if (pwdInput) {
+      pwdInput.value = "";
+      pwdInput.required = !existingLogin;
+      pwdInput.placeholder = existingLogin
+        ? "Leave blank to keep existing (or min 4 chars)"
+        : "Required (minimum 4 characters)";
+    }
+    const dlg = document.getElementById("studentCredsModal");
+    if (dlg) dlg.showModal();
+  }
+
+  (function () {
+    const dlg = window.setupObsidianDialog ? window.setupObsidianDialog("addStudentModal") : document.getElementById("addStudentModal");
+    if (window.setupObsidianDialog) window.setupObsidianDialog("studentCredsModal");
+    const openBtn = document.getElementById("openAddStudentBtn");
+    if (openBtn && dlg) {
+      openBtn.addEventListener("click", function () {
+        dlg.showModal();
+      });
+    }
+  })();
+</script>
+{% endblock %}

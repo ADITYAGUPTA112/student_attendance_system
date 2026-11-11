@@ -1,0 +1,505 @@
+{% extends "obsidian_base.html" %}
+{% set is_admin = (g.user and g.user.role == 'admin') %}
+{% block title %}Course Catalogue — AttendX {{ 'Admin' if is_admin else 'Faculty' }}{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-space-lg">
+  <!-- Hero Header -->
+  <section class="obsidian-hero-banner rounded-2xl p-6 sm:p-7 flex flex-col md:flex-row md:items-center justify-between gap-space-md animate-entrance delay-1">
+    <div class="space-y-1.5">
+      <div class="flex items-center gap-2.5 flex-wrap">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono uppercase tracking-wider border obsidian-chip-blue">
+          <span class="material-symbols-outlined text-[14px]" aria-hidden="true">menu_book</span>
+          {{ 'Curriculum Registry' if is_admin else 'Academic Curriculum' }}
+        </span>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono border obsidian-chip-neutral">
+          {{ courses | length }} Active Courses
+        </span>
+      </div>
+      <h1 class="font-headline-xl-mobile sm:font-headline-xl text-headline-xl-mobile sm:text-headline-xl tracking-tight text-white">
+        Course Catalogue
+      </h1>
+      <p class="font-body-md text-body-md text-slate-300 max-w-2xl">
+        {% if is_admin %}
+          Provision courses, assign student cohorts to academic sections, and launch daily roll-call attendance sessions.
+        {% else %}
+          Browse active course offerings, inspect enrolled learner cohorts, and launch daily class roll-call sessions.
+        {% endif %}
+      </p>
+    </div>
+
+    <div class="flex items-center gap-3 shrink-0 flex-wrap">
+      {% if courses %}
+      <div class="relative">
+        <span class="material-symbols-outlined text-[18px] text-slate-300 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true">search</span>
+        <label for="courseCatalogFilter" class="sr-only">Filter courses by code or title</label>
+        <input
+          id="courseCatalogFilter"
+          type="search"
+          oninput="filterCourseCards(this.value)"
+          placeholder="Filter course code or title..."
+          class="obsidian-input rounded-xl pl-9 pr-3.5 py-2 text-xs font-mono min-h-[42px] w-56"
+        />
+      </div>
+      {% endif %}
+      {% if is_admin %}
+      <button
+        type="button"
+        id="openAddCourseBtn"
+        onclick="document.getElementById('addCourseModal').showModal()"
+        class="obsidian-primary-btn inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-label-lg text-label-lg min-h-[44px] cursor-pointer transition-all"
+      >
+        <span class="material-symbols-outlined text-[20px]" aria-hidden="true">add_circle</span>
+        <span>Add Course</span>
+      </button>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- Courses Grid -->
+  {% if courses %}
+  <section aria-label="Registered Courses" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-space-md animate-entrance delay-2">
+    {% for c in courses %}
+    <article
+      class="obsidian-card interactive-card rounded-2xl p-5 flex flex-col justify-between gap-4 course-catalog-card"
+      data-course-search="{{ c.code | lower }} {{ c.name | lower }}"
+    >
+      <div class="space-y-3">
+        <!-- Code & Count Header -->
+        <div class="flex items-center justify-between gap-2">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-mono text-xs font-semibold tracking-wider uppercase obsidian-chip-blue">
+            <span class="material-symbols-outlined text-[15px]" aria-hidden="true">terminal</span>
+            {{ c.code }}
+          </span>
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border font-mono text-[11px] font-semibold {% if c.enrolled_count > 0 %}obsidian-chip-emerald{% else %}obsidian-chip-neutral{% endif %}">
+            <span class="material-symbols-outlined text-[14px]" aria-hidden="true">groups</span>
+            {{ c.enrolled_count }} Enrolled
+          </span>
+        </div>
+
+        <!-- Course Title & Timestamp -->
+        <div>
+          <h2 class="font-headline-sm text-headline-sm obsidian-text-heading leading-snug">
+            {{ c.name }}
+          </h2>
+          <p class="mt-1 font-mono text-[11px] obsidian-text-muted flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[14px]" aria-hidden="true">calendar_today</span>
+            <span>Created {{ (c.created_at | string)[:10] }}</span>
+          </p>
+        </div>
+
+        <!-- Roster Preview Strip -->
+        <div class="obsidian-subcard rounded-xl p-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-mono text-[11px] uppercase tracking-wider obsidian-text-muted">Cohort Preview</span>
+            <span class="font-mono text-[11px] text-secondary">{{ c.enrolled_count }} Learners</span>
+          </div>
+          {% if c.roster %}
+          <div class="flex flex-wrap gap-1.5">
+            {% for member in c.roster[:4] %}
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[11px] font-mono obsidian-chip-neutral">
+              {{ member.roll_no }}
+            </span>
+            {% endfor %}
+            {% if c.roster | length > 4 %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-mono obsidian-chip-purple">
+              +{{ (c.roster | length) - 4 }} more
+            </span>
+            {% endif %}
+          </div>
+          {% else %}
+          <p class="text-xs obsidian-text-muted italic">No students enrolled yet. Open roster to assign cohort.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Card Footer Actions -->
+      <div class="pt-3 border-t border-white/10 flex items-center gap-2.5">
+        <a
+          href="{{ url_for('attendance', course_id=c.id) }}"
+          class="obsidian-primary-btn flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl font-label-md text-label-md min-h-[42px] transition-all"
+        >
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">how_to_reg</span>
+          <span>Mark Attendance</span>
+        </a>
+        <button
+          type="button"
+          onclick="document.getElementById('enrollModal{{ c.id }}').showModal()"
+          class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-white/15 bg-surface-container-low text-on-surface hover:bg-surface-container-high font-label-md text-label-md min-h-[42px] cursor-pointer transition-colors"
+        >
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">{{ 'manage_accounts' if is_admin else 'groups' }}</span>
+          <span>{{ 'Roster' if is_admin else 'View Roster' }}</span>
+        </button>
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+  {% else %}
+  <section class="obsidian-card rounded-2xl p-10 text-center space-y-3 animate-entrance delay-2">
+    <span class="material-symbols-outlined text-4xl text-secondary" aria-hidden="true">library_books</span>
+    <h2 class="font-headline-sm text-headline-sm obsidian-text-heading">No Courses Created Yet</h2>
+    <p class="font-body-md text-body-md obsidian-text-muted max-w-md mx-auto">
+      {% if is_admin %}
+        Initialize your curriculum catalogue by creating the first academic course and enrolling students.
+      {% else %}
+        No academic courses have been published yet. Contact an administrator to provision courses.
+      {% endif %}
+    </p>
+    {% if is_admin %}
+    <div class="pt-2">
+      <button
+        type="button"
+        onclick="document.getElementById('addCourseModal').showModal()"
+        class="obsidian-primary-btn inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-label-md text-label-md min-h-[44px] cursor-pointer"
+      >
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">add_circle</span>
+        <span>Create First Course</span>
+      </button>
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+</div>
+
+{% if is_admin %}
+<!-- Native Add Course Modal -->
+<dialog
+  id="addCourseModal"
+  closedby="any"
+  aria-labelledby="addCourseModalTitle"
+  class="obsidian-modal rounded-2xl p-0 w-[min(92vw,30rem)] overflow-hidden"
+>
+  <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-2.5">
+      <span class="material-symbols-outlined text-secondary text-[22px]" aria-hidden="true">add_box</span>
+      <h2 id="addCourseModalTitle" class="font-headline-sm text-headline-sm obsidian-text-heading">Create New Course</h2>
+    </div>
+    <button
+      type="button"
+      onclick="document.getElementById('addCourseModal').close()"
+      aria-label="Close Add Course dialog"
+      class="inline-flex items-center justify-center min-w-[38px] min-h-[38px] rounded-lg border border-white/15 bg-surface-container-low text-on-surface hover:bg-surface-container-high cursor-pointer"
+    >
+      <span class="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
+    </button>
+  </div>
+
+  <form method="POST" action="{{ url_for('courses') }}" class="p-5 space-y-4">
+    <div>
+      <label for="courseCodeInput" class="block font-label-md text-label-md obsidian-text-heading mb-1.5">
+        Course Code <span class="text-red-400" aria-hidden="true">*</span>
+      </label>
+      <input
+        id="courseCodeInput"
+        type="text"
+        name="code"
+        required
+        maxlength="24"
+        placeholder="e.g. CS401"
+        class="obsidian-input w-full rounded-xl px-3.5 py-2.5 text-sm font-mono uppercase focus:outline-none min-h-[44px]"
+      />
+      <p class="mt-1 text-xs obsidian-text-muted">Unique alphanumeric course identifier (auto-uppercased).</p>
+    </div>
+
+    <div>
+      <label for="courseNameInput" class="block font-label-md text-label-md obsidian-text-heading mb-1.5">
+        Course Title <span class="text-red-400" aria-hidden="true">*</span>
+      </label>
+      <input
+        id="courseNameInput"
+        type="text"
+        name="name"
+        required
+        maxlength="120"
+        placeholder="e.g. Cloud Computing Architecture"
+        class="obsidian-input w-full rounded-xl px-3.5 py-2.5 text-sm focus:outline-none min-h-[44px]"
+      />
+    </div>
+
+    <div class="pt-3 border-t border-white/10 flex items-center justify-end gap-2.5">
+      <button
+        type="button"
+        onclick="document.getElementById('addCourseModal').close()"
+        class="px-4 py-2 rounded-xl border border-white/15 bg-surface-container-low text-on-surface hover:bg-surface-container-high font-label-md text-label-md min-h-[42px] cursor-pointer"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="obsidian-primary-btn inline-flex items-center gap-1.5 px-4 py-2 rounded-xl font-label-md text-label-md min-h-[42px] cursor-pointer"
+      >
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">check_circle</span>
+        <span>Create Course</span>
+      </button>
+    </div>
+  </form>
+</dialog>
+{% endif %}
+
+<!-- Per-Course Roster & Batch Enrollment Modals -->
+{% for c in courses %}
+{% set enrolled_ids = c.roster | map(attribute='id') | list %}
+<dialog
+  id="enrollModal{{ c.id }}"
+  closedby="any"
+  aria-labelledby="enrollModalTitle{{ c.id }}"
+  class="obsidian-modal rounded-2xl p-0 w-[min(94vw,46rem)] max-h-[88vh] overflow-hidden"
+>
+  <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between gap-3">
+    <div class="min-w-0">
+      <div class="flex items-center gap-2">
+        <span class="px-2 py-0.5 rounded border font-mono text-[11px] uppercase obsidian-chip-blue">{{ c.code }}</span>
+        <span class="font-mono text-xs obsidian-text-muted">{{ c.enrolled_count }} Enrolled</span>
+      </div>
+      <h2 id="enrollModalTitle{{ c.id }}" class="font-headline-sm text-headline-sm obsidian-text-heading truncate mt-1">
+        {{ 'Manage Cohort' if is_admin else 'Course Roster' }} — {{ c.name }}
+      </h2>
+    </div>
+    <button
+      type="button"
+      onclick="document.getElementById('enrollModal{{ c.id }}').close()"
+      aria-label="Close Roster dialog for {{ c.code }}"
+      class="inline-flex items-center justify-center min-w-[38px] min-h-[38px] rounded-lg border border-white/15 bg-surface-container-low text-on-surface hover:bg-surface-container-high cursor-pointer shrink-0"
+    >
+      <span class="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
+    </button>
+  </div>
+
+  <div class="p-5 overflow-y-auto max-h-[calc(88vh-5rem)] space-y-6">
+    {% if is_admin %}
+    <!-- Batch Enrollment Form -->
+    <form method="POST" action="{{ url_for('enroll_student', course_id=c.id) }}" class="obsidian-subcard rounded-xl p-4 space-y-3">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <h3 class="font-label-lg text-label-lg obsidian-text-heading flex items-center gap-2">
+          <span class="material-symbols-outlined text-[19px] text-secondary" aria-hidden="true">person_add</span>
+          <span>Batch Enroll Students</span>
+        </h3>
+        <label class="inline-flex items-center gap-2 text-xs font-mono cursor-pointer obsidian-text-muted hover:text-on-surface">
+          <input
+            type="checkbox"
+            onchange="toggleSelectAllEnroll({{ c.id }}, this)"
+            class="rounded border-white/25 w-4 h-4 cursor-pointer"
+          />
+          <span>Select All Unenrolled</span>
+        </label>
+      </div>
+
+      {% if all_students %}
+      <div>
+        <label for="enrollSearch{{ c.id }}" class="sr-only">Filter students for {{ c.code }}</label>
+        <input
+          id="enrollSearch{{ c.id }}"
+          type="search"
+          oninput="filterEnrollModal({{ c.id }}, this.value)"
+          placeholder="Filter directory by roll number or name..."
+          class="obsidian-input w-full rounded-xl px-3.5 py-2 text-xs font-mono focus:outline-none min-h-[38px]"
+        />
+      </div>
+
+      <div id="enrollList{{ c.id }}" class="max-h-48 overflow-y-auto divide-y divide-white/10 rounded-lg border border-white/10">
+        {% for st in all_students %}
+        {% set already_in = st.id in enrolled_ids %}
+        <label
+          data-enroll-item="{{ st.roll_no | lower }} {{ st.name | lower }}"
+          class="flex items-center justify-between gap-3 px-3 py-2.5 text-sm {% if already_in %}opacity-60 cursor-not-allowed{% else %}hover:bg-white/5 cursor-pointer{% endif %}"
+        >
+          <span class="flex items-center gap-3 min-w-0">
+            <input
+              type="checkbox"
+              name="student_ids"
+              value="{{ st.id }}"
+              {% if already_in %}disabled{% else %}class="enroll-cb-{{ c.id }} rounded border-white/25 w-4 h-4 cursor-pointer"{% endif %}
+            />
+            <span class="font-mono text-xs px-2 py-0.5 rounded border obsidian-chip-neutral shrink-0">{{ st.roll_no }}</span>
+            <span class="truncate font-medium">{{ st.name }}</span>
+          </span>
+          {% if already_in %}
+          <span class="text-[11px] font-mono px-2 py-0.5 rounded border obsidian-chip-emerald shrink-0">Enrolled</span>
+          {% endif %}
+        </label>
+        {% endfor %}
+      </div>
+
+      <div class="flex justify-end">
+        <button
+          type="submit"
+          class="obsidian-primary-btn inline-flex items-center gap-1.5 px-4 py-2 rounded-xl font-label-md text-label-md min-h-[40px] cursor-pointer"
+        >
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">group_add</span>
+          <span>Enroll Selected</span>
+        </button>
+      </div>
+      {% else %}
+      <p class="text-xs obsidian-text-muted">No students registered in directory yet.</p>
+      {% endif %}
+    </form>
+    {% endif %}
+
+    <!-- Current Enrolled Roster Table -->
+    <div class="space-y-2.5">
+      <h3 class="font-label-lg text-label-lg obsidian-text-heading flex items-center gap-2">
+        <span class="material-symbols-outlined text-[19px] text-success" aria-hidden="true">fact_check</span>
+        <span>Current Roster ({{ c.enrolled_count }})</span>
+      </h3>
+
+      {% if c.roster %}
+      <div class="table-wrapper table-responsive-cards border border-white/10 rounded-xl" tabindex="0" role="region" aria-labelledby="enrollModalTitle{{ c.id }}">
+        <table>
+          <thead>
+            <tr class="text-left text-[11px] font-mono uppercase tracking-wider">
+              <th class="px-3.5 py-2.5">Roll No</th>
+              <th class="px-3.5 py-2.5">Student Name</th>
+              {% if is_admin %}
+              <th class="px-3.5 py-2.5 text-right">Action</th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/10 text-sm">
+            {% for enr in c.roster %}
+            <tr>
+              <td data-label="Roll No" class="px-3.5 py-2.5 font-mono text-xs">{{ enr.roll_no }}</td>
+              <td data-label="Student Name" class="px-3.5 py-2.5 font-medium">{{ enr.name }}</td>
+              {% if is_admin %}
+              <td data-label="Action" class="px-3.5 py-2.5 sm:text-right">
+                <button
+                  type="button"
+                  onclick="openConfirmUnenroll('{{ url_for('unenroll_student', course_id=c.id, student_id=enr.id) }}', '{{ enr.roll_no }} — {{ enr.name | e }}', '{{ c.code }}')"
+                  class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium obsidian-chip-red hover:brightness-110 cursor-pointer min-h-[34px]"
+                >
+                  <span class="material-symbols-outlined text-[15px]" aria-hidden="true">person_remove</span>
+                  <span>Remove</span>
+                </button>
+              </td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="obsidian-subcard rounded-xl p-4 text-center text-xs obsidian-text-muted">
+        No students currently enrolled in {{ c.code }}.
+      </div>
+      {% endif %}
+    </div>
+
+    {% if not is_admin %}
+    <div class="pt-3 border-t border-white/10 flex items-center justify-end gap-2.5">
+      <button
+        type="button"
+        onclick="document.getElementById('enrollModal{{ c.id }}').close()"
+        class="px-4 py-2 rounded-xl border border-white/15 bg-surface-container-low text-on-surface hover:bg-surface-container-high font-label-md text-label-md min-h-[40px] cursor-pointer"
+      >
+        Close
+      </button>
+      <a
+        href="{{ url_for('attendance', course_id=c.id) }}"
+        class="obsidian-primary-btn inline-flex items-center gap-1.5 px-4 py-2 rounded-xl font-label-md text-label-md min-h-[40px]"
+      >
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">how_to_reg</span>
+        <span>Mark Attendance</span>
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</dialog>
+{% endfor %}
+
+{% if is_admin %}
+<!-- Native Unenroll Confirmation Modal -->
+<dialog
+  id="confirmUnenrollModal"
+  closedby="any"
+  aria-labelledby="confirmUnenrollTitle"
+  class="obsidian-modal rounded-2xl p-0 w-[min(92vw,28rem)] overflow-hidden"
+>
+  <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-2.5">
+      <span class="material-symbols-outlined text-red-400 text-[22px]" aria-hidden="true">warning</span>
+      <h2 id="confirmUnenrollTitle" class="font-headline-sm text-headline-sm obsidian-text-heading">Remove Student Enrollment</h2>
+    </div>
+    <button
+      type="button"
+      onclick="document.getElementById('confirmUnenrollModal').close()"
+      aria-label="Close confirmation dialog"
+      class="inline-flex items-center justify-center min-w-[38px] min-h-[38px] rounded-lg border border-white/15 bg-surface-container-low text-on-surface hover:bg-surface-container-high cursor-pointer"
+    >
+      <span class="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
+    </button>
+  </div>
+  <form id="confirmUnenrollForm" method="POST" class="p-5 space-y-4">
+    <p id="confirmUnenrollMessage" class="font-body-md text-body-md obsidian-text-muted"></p>
+    <div class="pt-3 border-t border-white/10 flex items-center justify-end gap-2.5">
+      <button
+        type="button"
+        onclick="document.getElementById('confirmUnenrollModal').close()"
+        class="px-4 py-2 rounded-xl border border-white/15 bg-surface-container-low text-on-surface hover:bg-surface-container-high font-label-md text-label-md min-h-[40px] cursor-pointer"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border font-label-md text-label-md obsidian-chip-red hover:brightness-110 min-h-[40px] cursor-pointer"
+      >
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">delete_outline</span>
+        <span>Confirm Removal</span>
+      </button>
+    </div>
+  </form>
+</dialog>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    window.filterCourseCards = function (query) {
+      const q = (query || "").trim().toLowerCase();
+      document.querySelectorAll(".course-catalog-card").forEach(function (card) {
+        const hay = card.getAttribute("data-course-search") || "";
+        card.style.display = (!q || hay.includes(q)) ? "" : "none";
+      });
+    };
+
+    if (document.getElementById("addCourseModal")) {
+      window.setupObsidianDialog("addCourseModal");
+    }
+    if (document.getElementById("confirmUnenrollModal")) {
+      window.setupObsidianDialog("confirmUnenrollModal");
+    }
+    {% for c in courses %}
+    window.setupObsidianDialog("enrollModal{{ c.id }}");
+    {% endfor %}
+
+    window.toggleSelectAllEnroll = function (courseId, masterCheckbox) {
+      const checkboxes = document.querySelectorAll(".enroll-cb-" + courseId);
+      const checked = masterCheckbox ? masterCheckbox.checked : true;
+      checkboxes.forEach(function (cb) {
+        if (!cb.disabled && cb.closest("[data-enroll-item]").style.display !== "none") {
+          cb.checked = checked;
+        }
+      });
+    };
+
+    window.filterEnrollModal = function (courseId, query) {
+      const list = document.getElementById("enrollList" + courseId);
+      if (!list) return;
+      const q = (query || "").trim().toLowerCase();
+      list.querySelectorAll("[data-enroll-item]").forEach(function (row) {
+        const hay = row.getAttribute("data-enroll-item") || "";
+        row.style.display = (!q || hay.includes(q)) ? "" : "none";
+      });
+    };
+
+    window.openConfirmUnenroll = function (actionUrl, studentLabel, courseCode) {
+      const form = document.getElementById("confirmUnenrollForm");
+      const msg = document.getElementById("confirmUnenrollMessage");
+      const dlg = document.getElementById("confirmUnenrollModal");
+      if (!form || !msg || !dlg) return;
+      form.action = actionUrl;
+      msg.textContent = "Remove " + studentLabel + " from course " + courseCode + "? Historical attendance records remain intact unless deleted separately.";
+      dlg.showModal();
+    };
+  })();
+</script>
+{% endblock %}

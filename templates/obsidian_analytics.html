@@ -1,0 +1,649 @@
+{% extends "obsidian_base.html" %}
+{% set analytics_role_label = 'Admin' if g.user and g.user.role == 'admin' else ('Faculty' if g.user and g.user.role == 'faculty' else 'Student') %}
+{% block title %}Attendance Analytics — AttendX {{ analytics_role_label }}{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+  details.obsidian-accordion summary {
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+  }
+  details.obsidian-accordion summary::-webkit-details-marker {
+    display: none;
+  }
+  details.obsidian-accordion .accordion-chevron {
+    transition: transform 0.22s ease;
+  }
+  details.obsidian-accordion[open] .accordion-chevron {
+    transform: rotate(180deg);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    details.obsidian-accordion .accordion-chevron {
+      transition: none;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-space-lg">
+  <!-- Hero Banner & Filter Controls -->
+  <section class="obsidian-hero-banner rounded-2xl p-6 sm:p-7 flex flex-col xl:flex-row xl:items-center justify-between gap-space-md animate-entrance delay-1">
+    <div class="space-y-1.5">
+      <div class="flex items-center gap-2.5 flex-wrap">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono uppercase tracking-wider border obsidian-chip-blue">
+          <span class="material-symbols-outlined text-[14px]" aria-hidden="true">bar_chart</span>
+          Pandas + MapReduce Telemetry
+        </span>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono border obsidian-chip-emerald">
+          75% Compliance Threshold
+        </span>
+      </div>
+      <h1 class="font-headline-xl-mobile sm:font-headline-xl text-headline-xl-mobile sm:text-headline-xl tracking-tight text-white">
+        Attendance Analytics
+      </h1>
+      <p class="font-body-md text-body-md text-slate-300 max-w-2xl">
+        Institutional attendance velocity, course benchmarks, early-warning risk detection, and distributed MapReduce execution telemetry.
+      </p>
+    </div>
+
+    <!-- Course Scope Filter & CSV Export -->
+    <form method="GET" action="{{ url_for('analytics') }}" class="flex flex-col sm:flex-row items-stretch sm:items-end gap-2.5 shrink-0">
+      <div class="min-w-[14rem]">
+        <label for="courseFilter" class="block font-mono text-[11px] uppercase tracking-wider text-slate-300 mb-1">
+          Scope Filter
+        </label>
+        <select
+          id="courseFilter"
+          name="course_id"
+          onchange="this.form.submit()"
+          class="obsidian-input w-full rounded-xl px-3.5 py-2 text-sm min-h-[42px] cursor-pointer"
+        >
+          <option value="" {% if not selected_course_id %}selected{% endif %}>All Courses (Campus-Wide)</option>
+          {% for c in courses %}
+          <option value="{{ c.id }}" {% if selected_course_id == c.id %}selected{% endif %}>
+            {{ c.code }} — {{ c.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <button
+        type="submit"
+        class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 text-white font-label-md text-label-md min-h-[42px] cursor-pointer transition-colors"
+      >
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">filter_alt</span>
+        <span>Apply</span>
+      </button>
+      {% if g.user and g.user.role in ['admin', 'faculty'] %}
+      <a
+        href="{{ url_for('export_csv', course_id=selected_course_id) if selected_course_id else url_for('export_csv') }}"
+        class="obsidian-primary-btn inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl font-label-md text-label-md min-h-[42px]"
+      >
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">download</span>
+        <span>Export CSV</span>
+      </a>
+      {% else %}
+      <a
+        href="{{ url_for('student_dashboard') }}"
+        class="obsidian-primary-btn inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl font-label-md text-label-md min-h-[42px]"
+      >
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">badge</span>
+        <span>My Attendance</span>
+      </a>
+      {% endif %}
+    </form>
+  </section>
+
+  <!-- KPI Metrics Grid -->
+  {% set circ = 314.159 %}
+  {% set gauge_offset = circ * (1 - (metrics.overall_percentage / 100.0)) %}
+  <section aria-label="Key Attendance Indicators" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-md animate-entrance delay-2">
+    <!-- KPI 1: Radial Gauge -->
+    <article class="obsidian-card interactive-card rounded-2xl p-5 flex items-center gap-4">
+      <div class="relative w-24 h-24 shrink-0 flex items-center justify-center">
+        <svg class="w-24 h-24 -rotate-90" viewBox="0 0 112 112" aria-hidden="true">
+          <circle cx="56" cy="56" r="50" fill="none" stroke="rgba(148,163,184,0.22)" stroke-width="8"/>
+          <circle
+            cx="56"
+            cy="56"
+            r="50"
+            fill="none"
+            stroke="{% if metrics.overall_percentage >= 75 %}#10b981{% elif metrics.overall_percentage >= 65 %}#f59e0b{% else %}#ef4444{% endif %}"
+            stroke-width="8"
+            stroke-linecap="round"
+            stroke-dasharray="{{ circ }}"
+            stroke-dashoffset="{{ '%.3f' | format(gauge_offset) }}"
+          />
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+          <span class="font-mono text-lg font-bold obsidian-text-heading">{{ "%.2f"|format(metrics.overall_percentage) }}%</span>
+        </div>
+      </div>
+      <div class="min-w-0 space-y-1">
+        <span class="font-mono text-[11px] uppercase tracking-wider obsidian-text-muted block">Overall Turnout</span>
+        <div class="text-sm font-semibold text-on-surface">Mean Standing</div>
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full border font-mono text-[11px] {% if metrics.overall_percentage >= 75 %}obsidian-chip-emerald{% elif metrics.overall_percentage >= 65 %}obsidian-chip-amber{% else %}obsidian-chip-red{% endif %}">
+          {% if metrics.overall_percentage >= 75 %}Compliant (≥75%){% elif metrics.overall_percentage >= 65 %}Borderline{% else %}Below Policy{% endif %}
+        </span>
+      </div>
+    </article>
+
+    <!-- KPI 2: Sessions -->
+    <article class="obsidian-card interactive-card rounded-2xl p-5 flex flex-col justify-between gap-3">
+      <div class="flex items-center justify-between">
+        <span class="font-mono text-[11px] uppercase tracking-wider obsidian-text-muted">Sessions Analyzed</span>
+        <span class="material-symbols-outlined text-[22px] text-secondary" aria-hidden="true">event_available</span>
+      </div>
+      <div>
+        <div class="font-headline-xl text-headline-xl font-mono obsidian-text-heading">{{ metrics.total_sessions }}</div>
+        <p class="text-xs obsidian-text-muted mt-1">Distinct lecture session dates logged</p>
+      </div>
+    </article>
+
+    <!-- KPI 3: Total Records -->
+    <article class="obsidian-card interactive-card rounded-2xl p-5 flex flex-col justify-between gap-3">
+      <div class="flex items-center justify-between">
+        <span class="font-mono text-[11px] uppercase tracking-wider obsidian-text-muted">Attendance Marks</span>
+        <span class="material-symbols-outlined text-[22px] text-success" aria-hidden="true">dataset</span>
+      </div>
+      <div>
+        <div class="font-headline-xl text-headline-xl font-mono obsidian-text-heading">{{ metrics.total_records }}</div>
+        <p class="text-xs obsidian-text-muted mt-1">Student-session observations evaluated</p>
+      </div>
+    </article>
+
+    <!-- KPI 4: At-Risk Learners -->
+    <article class="obsidian-card interactive-card rounded-2xl p-5 flex flex-col justify-between gap-3">
+      <div class="flex items-center justify-between">
+        <span class="font-mono text-[11px] uppercase tracking-wider obsidian-text-muted">At-Risk (&lt;75%)</span>
+        <span class="material-symbols-outlined text-[22px] {% if metrics.at_risk_count > 0 %}obsidian-status-danger{% else %}text-success{% endif %}" aria-hidden="true">warning</span>
+      </div>
+      <div>
+        <div class="font-headline-xl text-headline-xl font-mono obsidian-text-heading">{{ metrics.at_risk_count }}</div>
+        <p class="text-xs obsidian-text-muted mt-1">
+          {% if metrics.at_risk_count > 0 %}Learners flagged for intervention{% else %}All tracked learners compliant{% endif %}
+        </p>
+      </div>
+    </article>
+  </section>
+
+  <!-- Dual Chart.js Canvas Section -->
+  <section aria-label="Visual Attendance Charts" class="grid grid-cols-1 lg:grid-cols-2 gap-space-md animate-entrance delay-3">
+    <article class="obsidian-card rounded-2xl p-5 space-y-4">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <h2 class="font-headline-sm text-headline-sm obsidian-text-heading">Course Attendance Comparison</h2>
+          <p class="text-xs obsidian-text-muted">Aggregate turnout percentage across active courses</p>
+        </div>
+        <span class="px-2.5 py-1 rounded-lg border font-mono text-[11px] obsidian-chip-blue">Bar Telemetry</span>
+      </div>
+      <div class="relative h-72 w-full">
+        {% if metrics.course_comparison.labels %}
+        <canvas id="courseBarChart" aria-label="Course attendance bar chart"></canvas>
+        {% else %}
+        <div class="h-full flex flex-col items-center justify-center text-center obsidian-subcard rounded-xl p-6">
+          <span class="material-symbols-outlined text-3xl obsidian-text-muted mb-2" aria-hidden="true">bar_chart_off</span>
+          <p class="text-xs obsidian-text-muted">No course comparison data recorded for this filter.</p>
+        </div>
+        {% endif %}
+      </div>
+    </article>
+
+    <article class="obsidian-card rounded-2xl p-5 space-y-4">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <h2 class="font-headline-sm text-headline-sm obsidian-text-heading">Daily Turnout Velocity</h2>
+          <p class="text-xs obsidian-text-muted">Chronological attendance rate trend over recorded sessions</p>
+        </div>
+        <span class="px-2.5 py-1 rounded-lg border font-mono text-[11px] obsidian-chip-emerald">Time Series</span>
+      </div>
+      <div class="relative h-72 w-full">
+        {% if metrics.timeline_trends.labels %}
+        <canvas id="timelineLineChart" aria-label="Daily attendance timeline chart"></canvas>
+        {% else %}
+        <div class="h-full flex flex-col items-center justify-center text-center obsidian-subcard rounded-xl p-6">
+          <span class="material-symbols-outlined text-3xl obsidian-text-muted mb-2" aria-hidden="true">show_chart</span>
+          <p class="text-xs obsidian-text-muted">Record attendance sessions across dates to view timeline trends.</p>
+        </div>
+        {% endif %}
+      </div>
+    </article>
+  </section>
+
+  {% if g.user and g.user.role in ['admin', 'faculty'] %}
+  <!-- Student Tables: At-Risk & Full Learner Standing -->
+  <section aria-label="Student Attendance Standings" class="grid grid-cols-1 xl:grid-cols-2 gap-space-md animate-entrance delay-4">
+    <!-- At-Risk Learners -->
+    <article class="obsidian-card rounded-2xl p-5 space-y-4">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <h2 id="atRiskHeading" class="font-headline-sm text-headline-sm obsidian-text-heading">At-Risk Students (&lt; 75%)</h2>
+          <p class="text-xs obsidian-text-muted">Sorted lowest percentage first for proactive advising</p>
+        </div>
+        <span class="px-2.5 py-1 rounded-full border font-mono text-[11px] {% if metrics.at_risk_students %}obsidian-chip-red{% else %}obsidian-chip-emerald{% endif %}">
+          {{ metrics.at_risk_students | length }} Flagged
+        </span>
+      </div>
+
+      {% if metrics.at_risk_students %}
+      <div class="table-wrapper table-responsive-cards max-h-80 border border-white/10 rounded-xl" tabindex="0" role="region" aria-labelledby="atRiskHeading">
+        <table>
+          <thead>
+            <tr class="text-left text-[11px] font-mono uppercase tracking-wider">
+              <th class="px-3.5 py-2.5">Roll No</th>
+              <th class="px-3.5 py-2.5">Learner</th>
+              <th class="px-3.5 py-2.5">Present / Total</th>
+              <th class="px-3.5 py-2.5 text-right">Standing</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/10 text-sm">
+            {% for st in metrics.at_risk_students %}
+            <tr>
+              <td data-label="Roll No" class="px-3.5 py-2.5 font-mono text-xs">{{ st.roll_no }}</td>
+              <td data-label="Learner" class="px-3.5 py-2.5 font-medium">{{ st.student_name }}</td>
+              <td data-label="Present / Total" class="px-3.5 py-2.5 font-mono text-xs">{{ st.present }} / {{ st.total }}</td>
+              <td data-label="Standing" class="px-3.5 py-2.5 sm:text-right">
+                <span class="px-2 py-0.5 rounded-md border font-mono text-xs font-semibold {% if st.percentage >= 65 %}obsidian-chip-amber{% else %}obsidian-chip-red{% endif %}">
+                  {{ "%.2f"|format(st.percentage) }}%
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="obsidian-subcard rounded-xl p-6 text-center text-sm obsidian-text-muted">
+        Zero learners below the 75% compliance threshold for this scope.
+      </div>
+      {% endif %}
+    </article>
+
+    <!-- Full Learner Breakdown -->
+    <article class="obsidian-card rounded-2xl p-5 space-y-4">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <h2 id="learnerBreakdownHeading" class="font-headline-sm text-headline-sm obsidian-text-heading">Learner Breakdown</h2>
+          <p class="text-xs obsidian-text-muted">Complete Pandas student-level summary across selected scope</p>
+        </div>
+        <span class="px-2.5 py-1 rounded-full border font-mono text-[11px] obsidian-chip-blue">
+          {{ metrics.student_summary | length }} Learners
+        </span>
+      </div>
+
+      {% if metrics.student_summary %}
+      <div class="table-wrapper table-responsive-cards max-h-80 border border-white/10 rounded-xl" tabindex="0" role="region" aria-labelledby="learnerBreakdownHeading">
+        <table>
+          <thead>
+            <tr class="text-left text-[11px] font-mono uppercase tracking-wider">
+              <th class="px-3.5 py-2.5">Roll No</th>
+              <th class="px-3.5 py-2.5">Learner</th>
+              <th class="px-3.5 py-2.5">Sessions</th>
+              <th class="px-3.5 py-2.5 text-right">Turnout</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/10 text-sm">
+            {% for st in metrics.student_summary %}
+            <tr>
+              <td data-label="Roll No" class="px-3.5 py-2.5 font-mono text-xs">{{ st.roll_no }}</td>
+              <td data-label="Learner" class="px-3.5 py-2.5 font-medium">{{ st.student_name }}</td>
+              <td data-label="Sessions" class="px-3.5 py-2.5 font-mono text-xs">{{ st.present }} / {{ st.total }}</td>
+              <td data-label="Turnout" class="px-3.5 py-2.5 sm:text-right">
+                <span class="px-2 py-0.5 rounded-md border font-mono text-xs font-semibold {% if st.percentage >= 75 %}obsidian-chip-emerald{% elif st.percentage >= 65 %}obsidian-chip-amber{% else %}obsidian-chip-red{% endif %}">
+                  {{ "%.2f"|format(st.percentage) }}%
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="obsidian-subcard rounded-xl p-6 text-center text-sm obsidian-text-muted">
+        No attendance logs found to compute learner breakdown.
+      </div>
+      {% endif %}
+    </article>
+  </section>
+  {% else %}
+  <!-- Student Privacy Isolation Notice (CA-10) -->
+  <section aria-label="Student Privacy Notice" class="obsidian-card rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-entrance delay-4">
+    <div class="flex items-start gap-3">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center border obsidian-chip-emerald shrink-0">
+        <span class="material-symbols-outlined text-[20px]" aria-hidden="true">verified_user</span>
+      </div>
+      <div>
+        <h2 class="font-headline-sm text-headline-sm obsidian-text-heading">Privacy-Isolated Course Telemetry</h2>
+        <p class="text-xs obsidian-text-muted mt-0.5">
+          Individual peer records and roll numbers are hidden under CA-10 Student Privacy Controls. Visit your personal dashboard for course-by-course breakdowns and your 75% exam eligibility simulator.
+        </p>
+      </div>
+    </div>
+    <a href="{{ url_for('student_dashboard') }}" class="obsidian-primary-btn inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl font-label-md text-label-md shrink-0">
+      <span class="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_back</span>
+      <span>Return to My Attendance</span>
+    </a>
+  </section>
+  {% endif %}
+
+  <!-- Cloud MapReduce Engine Panel -->
+  <section class="obsidian-card rounded-2xl p-5 sm:p-6 space-y-5 animate-entrance delay-5" aria-label="Cloud MapReduce Engine">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/10">
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[22px] text-secondary" aria-hidden="true">hub</span>
+          <h2 class="font-headline-lg text-headline-lg obsidian-text-heading">MapReduce Engine</h2>
+        </div>
+        <p class="text-xs obsidian-text-muted">
+          Distributed <span class="font-mono">Map -&gt; Shuffle &amp; Sort -&gt; Reduce</span> pipeline computed over raw SQLite logs.
+        </p>
+      </div>
+      <div class="flex items-center gap-2.5 flex-wrap">
+        <span class="px-3 py-1 rounded-full border font-mono text-xs obsidian-chip-purple">
+          {{ mapreduce_metrics.telemetry.num_workers }} Partition Workers
+        </span>
+        <a
+          href="{{ url_for('api_mapreduce', course_id=selected_course_id) if selected_course_id else url_for('api_mapreduce') }}"
+          target="_blank"
+          rel="noopener"
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-white/15 bg-surface-container-low text-on-surface hover:bg-surface-container-high font-mono text-xs min-h-[38px]"
+        >
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">data_object</span>
+          <span>JSON API</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- 4 Stage Telemetry Metrics -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+      <div class="obsidian-subcard rounded-xl p-4 space-y-1">
+        <span class="font-mono text-[11px] uppercase tracking-wider obsidian-text-muted">1. Map Phase</span>
+        <div class="font-mono text-xl font-bold obsidian-text-heading">{{ mapreduce_metrics.telemetry.num_records }} Pairs</div>
+        <div class="font-mono text-xs text-secondary">{{ mapreduce_metrics.telemetry.get('map_duration_ms', 0.0) }} ms</div>
+      </div>
+      <div class="obsidian-subcard rounded-xl p-4 space-y-1">
+        <span class="font-mono text-[11px] uppercase tracking-wider obsidian-text-muted">2. Shuffle &amp; Sort</span>
+        <div class="font-mono text-xl font-bold obsidian-text-heading">{{ mapreduce_metrics.telemetry.shuffled_keys_count }} Keys</div>
+        <div class="font-mono text-xs text-secondary">{{ mapreduce_metrics.telemetry.get('shuffle_duration_ms', 0.0) }} ms</div>
+      </div>
+      <div class="obsidian-subcard rounded-xl p-4 space-y-1">
+        <span class="font-mono text-[11px] uppercase tracking-wider obsidian-text-muted">3. Reduce Phase</span>
+        <div class="font-mono text-xl font-bold obsidian-text-heading">{{ (mapreduce_metrics.course_totals | length) + (mapreduce_metrics.daily_totals | length) }} Partitions</div>
+        <div class="font-mono text-xs text-secondary">{{ mapreduce_metrics.telemetry.get('reduce_duration_ms', 0.0) }} ms</div>
+      </div>
+      <div class="obsidian-subcard rounded-xl p-4 space-y-1">
+        <span class="font-mono text-[11px] uppercase tracking-wider obsidian-text-muted">Total Pipeline</span>
+        <div class="font-mono text-xl font-bold text-success">{{ mapreduce_metrics.telemetry.execution_time_ms }} ms</div>
+        <div class="font-mono text-xs obsidian-text-muted">End-to-end execution</div>
+      </div>
+    </div>
+
+    {% if mapreduce_metrics.telemetry.map_samples %}
+    <div class="obsidian-subcard rounded-xl p-4 space-y-2">
+      <span class="font-mono text-[11px] uppercase tracking-wider obsidian-text-muted block">Sample Emitted Mapper Tuples</span>
+      <div class="flex flex-wrap gap-2">
+        {% for pair in mapreduce_metrics.telemetry.map_samples %}
+        <code class="px-2.5 py-1 rounded-lg border font-mono text-xs obsidian-chip-blue">("{{ pair.key }}", {{ pair.value }})</code>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- MapReduce Aggregated Output Tables -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-space-md">
+      <div class="space-y-2.5">
+        <h3 id="mrCourseHeading" class="font-label-lg text-label-lg obsidian-text-heading">Course-Wise Totals (MapReduce)</h3>
+        {% if mapreduce_metrics.course_totals %}
+        <div class="table-wrapper table-responsive-cards max-h-72 border border-white/10 rounded-xl" tabindex="0" role="region" aria-labelledby="mrCourseHeading">
+          <table>
+            <thead>
+              <tr class="text-left text-[11px] font-mono uppercase tracking-wider">
+                <th class="px-3.5 py-2.5">Course Key</th>
+                <th class="px-3.5 py-2.5">Present</th>
+                <th class="px-3.5 py-2.5">Total</th>
+                <th class="px-3.5 py-2.5 text-right">Reduced %</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/10 text-sm">
+              {% for ct in mapreduce_metrics.course_totals %}
+              <tr>
+                <td data-label="Course Key" class="px-3.5 py-2.5 font-mono text-xs font-semibold">{{ ct.key }}</td>
+                <td data-label="Present" class="px-3.5 py-2.5 font-mono text-xs">{{ ct.present_count }}</td>
+                <td data-label="Total" class="px-3.5 py-2.5 font-mono text-xs">{{ ct.total_sessions }}</td>
+                <td data-label="Reduced %" class="px-3.5 py-2.5 sm:text-right">
+                  <span class="px-2 py-0.5 rounded-md border font-mono text-xs font-semibold {% if ct.percentage >= 75 %}obsidian-chip-emerald{% elif ct.percentage >= 65 %}obsidian-chip-amber{% else %}obsidian-chip-red{% endif %}">
+                    {{ "%.2f"|format(ct.percentage) }}%
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="obsidian-subcard rounded-xl p-4 text-xs obsidian-text-muted">No course MapReduce aggregates available.</div>
+        {% endif %}
+      </div>
+
+      <div class="space-y-2.5">
+        <h3 id="mrDailyHeading" class="font-label-lg text-label-lg obsidian-text-heading">Daily Totals (MapReduce)</h3>
+        {% if mapreduce_metrics.daily_totals %}
+        <div class="table-wrapper table-responsive-cards max-h-72 border border-white/10 rounded-xl" tabindex="0" role="region" aria-labelledby="mrDailyHeading">
+          <table>
+            <thead>
+              <tr class="text-left text-[11px] font-mono uppercase tracking-wider">
+                <th class="px-3.5 py-2.5">Date Key</th>
+                <th class="px-3.5 py-2.5">Present</th>
+                <th class="px-3.5 py-2.5">Total</th>
+                <th class="px-3.5 py-2.5 text-right">Reduced %</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/10 text-sm">
+              {% for dt in mapreduce_metrics.daily_totals %}
+              <tr>
+                <td data-label="Date Key" class="px-3.5 py-2.5 font-mono text-xs font-semibold">{{ dt.key }}</td>
+                <td data-label="Present" class="px-3.5 py-2.5 font-mono text-xs">{{ dt.present_count }}</td>
+                <td data-label="Total" class="px-3.5 py-2.5 font-mono text-xs">{{ dt.total_sessions }}</td>
+                <td data-label="Reduced %" class="px-3.5 py-2.5 sm:text-right">
+                  <span class="px-2 py-0.5 rounded-md border font-mono text-xs font-semibold {% if dt.percentage >= 75 %}obsidian-chip-emerald{% elif dt.percentage >= 65 %}obsidian-chip-amber{% else %}obsidian-chip-red{% endif %}">
+                    {{ "%.2f"|format(dt.percentage) }}%
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="obsidian-subcard rounded-xl p-4 text-xs obsidian-text-muted">No daily MapReduce aggregates available.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Accessible Disclosure Guide (no headings inside summary) -->
+    <details class="obsidian-accordion obsidian-subcard rounded-xl p-4">
+      <summary class="flex items-center justify-between gap-3 font-label-md text-label-md obsidian-text-heading min-h-[36px]">
+        <span class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[18px] text-secondary" aria-hidden="true">menu_book</span>
+          <span>Distributed MapReduce Paradigm Walkthrough (Viva Reference)</span>
+        </span>
+        <span class="material-symbols-outlined text-[20px] accordion-chevron obsidian-text-muted" aria-hidden="true">expand_more</span>
+      </summary>
+      <div class="pt-3 mt-3 border-t border-white/10 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs obsidian-text-muted">
+        <div class="space-y-1">
+          <div class="font-mono font-semibold text-on-surface">Step 1: Map</div>
+          <p>Each attendance tuple emits intermediate <code class="font-mono">(key, (is_present, 1))</code> pairs across simulated partition workers.</p>
+        </div>
+        <div class="space-y-1">
+          <div class="font-mono font-semibold text-on-surface">Step 2: Shuffle &amp; Sort</div>
+          <p>Pairs are partitioned and deterministically sorted by course code, session date, and learner key before reduction.</p>
+        </div>
+        <div class="space-y-1">
+          <div class="font-mono font-semibold text-on-surface">Step 3: Reduce</div>
+          <p>Reducers sum present counts and total observations per partition key to yield accurate attendance percentages.</p>
+        </div>
+      </div>
+    </details>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    const courseData = {{ metrics.course_comparison | tojson }};
+    const timelineData = {{ metrics.timeline_trends | tojson }};
+    let barChartInstance = null;
+    let lineChartInstance = null;
+
+    function getThemePalette() {
+      const isDark = document.documentElement.classList.contains("dark");
+      return {
+        isDark: isDark,
+        textColor: isDark ? "#cbd5e1" : "#334155",
+        gridColor: isDark ? "rgba(148, 163, 184, 0.14)" : "rgba(15, 23, 42, 0.08)",
+        tooltipBg: isDark ? "#0f172a" : "#ffffff",
+        tooltipTitle: isDark ? "#f8fafc" : "#0f172a",
+        tooltipBody: isDark ? "#cbd5e1" : "#334155",
+        tooltipBorder: isDark ? "rgba(255, 255, 255, 0.16)" : "#cbd5e1",
+        lineStroke: isDark ? "#60a5fa" : "#2563eb",
+        lineFillStart: isDark ? "rgba(96, 165, 250, 0.34)" : "rgba(37, 99, 235, 0.24)",
+        lineFillEnd: "rgba(37, 99, 235, 0.01)"
+      };
+    }
+
+    function renderAnalyticsCharts() {
+      if (typeof Chart === "undefined") return;
+      const palette = getThemePalette();
+
+      const barCanvas = document.getElementById("courseBarChart");
+      if (barCanvas && courseData.labels && courseData.labels.length > 0) {
+        if (barChartInstance) barChartInstance.destroy();
+        const barColors = courseData.percentages.map(function (pct) {
+          if (pct >= 75) return "rgba(16, 185, 129, 0.78)";
+          if (pct >= 65) return "rgba(245, 158, 11, 0.78)";
+          return "rgba(239, 68, 68, 0.78)";
+        });
+        const barBorders = courseData.percentages.map(function (pct) {
+          if (pct >= 75) return "#10b981";
+          if (pct >= 65) return "#f59e0b";
+          return "#ef4444";
+        });
+
+        barChartInstance = new Chart(barCanvas.getContext("2d"), {
+          type: "bar",
+          data: {
+            labels: courseData.labels,
+            datasets: [{
+              label: "Attendance %",
+              data: courseData.percentages,
+              backgroundColor: barColors,
+              borderColor: barBorders,
+              borderWidth: 1.5,
+              borderRadius: 8,
+              maxBarThickness: 46
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: palette.tooltipBg,
+                titleColor: palette.tooltipTitle,
+                bodyColor: palette.tooltipBody,
+                borderColor: palette.tooltipBorder,
+                borderWidth: 1,
+                callbacks: {
+                  afterLabel: function (ctx) {
+                    const i = ctx.dataIndex;
+                    const pres = courseData.present_counts ? courseData.present_counts[i] : 0;
+                    const tot = courseData.total_counts ? courseData.total_counts[i] : 0;
+                    return "Present: " + pres + " / " + tot;
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                min: 0,
+                max: 100,
+                ticks: { color: palette.textColor, callback: function (v) { return v + "%"; } },
+                grid: { color: palette.gridColor }
+              },
+              x: {
+                ticks: { color: palette.textColor },
+                grid: { display: false }
+              }
+            }
+          }
+        });
+      }
+
+      const lineCanvas = document.getElementById("timelineLineChart");
+      if (lineCanvas && timelineData.labels && timelineData.labels.length > 0) {
+        if (lineChartInstance) lineChartInstance.destroy();
+        const ctx = lineCanvas.getContext("2d");
+        const grad = ctx.createLinearGradient(0, 0, 0, 260);
+        grad.addColorStop(0, palette.lineFillStart);
+        grad.addColorStop(1, palette.lineFillEnd);
+
+        lineChartInstance = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: timelineData.labels,
+            datasets: [{
+              label: "Daily Turnout %",
+              data: timelineData.percentages,
+              borderColor: palette.lineStroke,
+              backgroundColor: grad,
+              fill: true,
+              tension: 0.35,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              borderWidth: 2.5
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: palette.tooltipBg,
+                titleColor: palette.tooltipTitle,
+                bodyColor: palette.tooltipBody,
+                borderColor: palette.tooltipBorder,
+                borderWidth: 1,
+                callbacks: {
+                  label: function (ctx) {
+                    return "Turnout: " + ctx.parsed.y + "%";
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                min: 0,
+                max: 100,
+                ticks: { color: palette.textColor, callback: function (v) { return v + "%"; } },
+                grid: { color: palette.gridColor }
+              },
+              x: {
+                ticks: { color: palette.textColor },
+                grid: { display: false }
+              }
+            }
+          }
+        });
+      }
+    }
+
+    renderAnalyticsCharts();
+    window.addEventListener("themeChanged", renderAnalyticsCharts);
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,399 @@
+{% extends "obsidian_admin_base.html" %}
+
+{% block title %}Teachers Directory — AttendX{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="animate-entrance delay-1 flex flex-col md:flex-row md:items-end justify-between gap-space-md">
+  <div class="flex flex-col gap-space-xxs">
+    <div class="flex items-center gap-space-xs font-label-sm obsidian-text-muted font-mono tracking-wider">
+      <span>SYS</span>
+      <span aria-hidden="true">//</span>
+      <span>DIRECTORY</span>
+      <span aria-hidden="true">//</span>
+      <span class="text-secondary font-semibold">FACULTY ACCOUNTS</span>
+    </div>
+    <h1 class="font-headline-xl text-headline-xl-mobile sm:text-headline-xl obsidian-text-heading font-bold">
+      Teachers Directory
+    </h1>
+    <p class="font-body-md obsidian-text-muted">
+      Add teacher accounts with custom login IDs and passwords, or reset existing faculty credentials.
+    </p>
+  </div>
+
+  <div class="flex items-center gap-space-sm shrink-0">
+    <button
+      type="button"
+      id="openAddTeacherBtn"
+      class="obsidian-primary-btn inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-label-md font-semibold transition-all active:scale-95 min-h-[44px]"
+    >
+      <span class="material-symbols-outlined text-[20px]" aria-hidden="true">person_add</span>
+      <span>Add New Teacher</span>
+    </button>
+  </div>
+</div>
+
+<!-- Search & Filter Controls -->
+<div class="animate-entrance delay-2 obsidian-card p-space-md rounded-xl">
+  <form method="GET" action="{{ url_for('teachers') }}" class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+    <div class="relative flex-1">
+      <label for="teacherSearchInput" class="sr-only">Search teachers by login ID</label>
+      <span class="material-symbols-outlined text-[20px] obsidian-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true">search</span>
+      <input
+        id="teacherSearchInput"
+        type="text"
+        name="q"
+        value="{{ query or '' }}"
+        placeholder="Search by teacher login ID (e.g. prof_smith)..."
+        class="obsidian-input w-full rounded-lg pl-10 pr-4 py-2.5 text-sm min-h-[44px]"
+      />
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+      <button type="submit" class="obsidian-primary-btn px-5 py-2.5 rounded-lg text-sm font-semibold min-h-[44px] flex-1 sm:flex-none">
+        Search
+      </button>
+      {% if query %}
+        <a
+          href="{{ url_for('teachers') }}"
+          title="Clear search"
+          aria-label="Clear search"
+          class="obsidian-subcard inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-lg obsidian-text-muted hover:text-secondary transition-colors"
+        >
+          <span class="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+        </a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Registered Teachers Table -->
+<div class="animate-entrance delay-3 obsidian-card p-space-lg rounded-xl flex flex-col gap-space-md">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <div class="flex items-center gap-2.5">
+      <h2 id="teachers-table-heading" class="font-headline-sm text-headline-sm obsidian-text-heading font-semibold">
+        Registered Faculty Accounts
+      </h2>
+      <span class="obsidian-subcard px-2.5 py-0.5 rounded-full font-mono text-label-sm text-secondary font-semibold">
+        {{ teachers|length }}
+      </span>
+    </div>
+    <span class="font-mono text-label-sm obsidian-text-muted">
+      Total Roll-Call Marks: {{ teachers|sum(attribute='marked_count') }}
+    </span>
+  </div>
+
+  {% if teachers %}
+    <div tabindex="0" role="region" aria-labelledby="teachers-table-heading" class="table-wrapper table-responsive-cards border border-white/10">
+      <table class="text-left text-sm">
+        <thead>
+          <tr class="font-mono text-label-sm uppercase tracking-wider">
+            <th class="px-4 py-3">Teacher Login ID</th>
+            <th class="px-4 py-3">Portal Role</th>
+            <th class="px-4 py-3">Attendance Activity</th>
+            <th class="px-4 py-3">Created Date</th>
+            <th class="px-4 py-3 text-right">Credentials</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/10">
+          {% for t in teachers %}
+            <tr class="transition-colors">
+              <td data-label="Teacher Login ID" class="px-4 py-3.5">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-full obsidian-primary-btn flex items-center justify-center font-bold text-xs uppercase shrink-0" aria-hidden="true">
+                    {{ t.username[:2]|upper }}
+                  </div>
+                  <div>
+                    <div class="font-mono font-semibold obsidian-text-heading">@{{ t.username }}</div>
+                    <div class="font-mono text-xs obsidian-text-muted">User #{{ t.id }}</div>
+                  </div>
+                </div>
+              </td>
+              <td data-label="Portal Role" class="px-4 py-3.5 whitespace-nowrap">
+                <span class="obsidian-chip-blue inline-flex items-center gap-1 px-2.5 py-1 rounded-md font-mono font-semibold text-xs border">
+                  <span class="material-symbols-outlined text-[14px]" aria-hidden="true">co_present</span>
+                  <span>Faculty</span>
+                </span>
+              </td>
+              <td data-label="Attendance Activity" class="px-4 py-3.5 whitespace-nowrap">
+                <span class="obsidian-chip-emerald inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono border">
+                  <span class="material-symbols-outlined text-[14px]" aria-hidden="true">how_to_reg</span>
+                  <span>{{ t.marked_count or 0 }} Marks ({{ t.courses_marked or 0 }} Courses)</span>
+                </span>
+              </td>
+              <td data-label="Created Date" class="px-4 py-3.5 whitespace-nowrap font-mono text-xs obsidian-text-muted">
+                {% if t.created_at and t.created_at.strftime is defined %}
+                  {{ t.created_at.strftime('%Y-%m-%d') }}
+                {% else %}
+                  {{ (t.created_at|string)[:10] if t.created_at else 'N/A' }}
+                {% endif %}
+              </td>
+              <td data-label="Credentials" class="px-4 py-3.5 whitespace-nowrap sm:text-right">
+                <button
+                  type="button"
+                  data-teacher-id="{{ t.id }}"
+                  data-teacher-username="{{ t.username }}"
+                  onclick="openResetTeacherModal(this)"
+                  class="obsidian-subcard inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold hover:text-secondary border border-white/15 min-h-[38px] transition-colors"
+                >
+                  <span class="material-symbols-outlined text-[16px]" aria-hidden="true">key</span>
+                  <span>Reset Password</span>
+                </button>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="obsidian-subcard rounded-xl p-10 text-center flex flex-col items-center gap-2">
+      <span class="material-symbols-outlined text-[40px] text-secondary" aria-hidden="true">co_present</span>
+      <p class="font-label-lg obsidian-text-heading">
+        {% if query %}
+          No teacher accounts match "{{ query }}".
+        {% else %}
+          No teacher accounts found yet.
+        {% endif %}
+      </p>
+      {% if not query %}
+        <p class="font-body-sm obsidian-text-muted mb-2">Create a faculty login ID and password so teachers can sign in and record attendance.</p>
+        <button type="button" onclick="document.getElementById('addTeacherModal').showModal()" class="obsidian-primary-btn inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold min-h-[44px]">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">add</span>Add Teacher
+        </button>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+<!-- Native Modal Dialog: Add New Teacher -->
+<dialog id="addTeacherModal" closedby="any" aria-labelledby="addTeacherModalLabel" class="obsidian-modal">
+  <form method="POST" action="{{ url_for('teachers') }}" class="flex flex-col">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-white/10">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-[20px] text-secondary" aria-hidden="true">co_present</span>
+        <h2 id="addTeacherModalLabel" class="font-headline-sm text-headline-sm obsidian-text-heading font-semibold">
+          Create Teacher Account
+        </h2>
+      </div>
+      <button
+        type="button"
+        onclick="document.getElementById('addTeacherModal').close()"
+        aria-label="Close add teacher modal"
+        class="inline-flex items-center justify-center min-w-[40px] min-h-[40px] rounded-lg hover:bg-white/10 obsidian-text-muted transition-colors"
+      >
+        <span class="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+      </button>
+    </div>
+
+    <div class="p-5 flex flex-col gap-4">
+      <div>
+        <label for="teacherUsername" class="block font-label-md text-xs font-semibold uppercase tracking-wider obsidian-text-muted mb-1.5">
+          Teacher Login ID (Username) <span class="text-red-400">*</span>
+        </label>
+        <input
+          type="text"
+          id="teacherUsername"
+          name="username"
+          placeholder="e.g. prof_jones"
+          required
+          autofocus
+          autocomplete="off"
+          class="obsidian-input w-full rounded-lg px-3.5 py-2.5 text-sm font-mono min-h-[44px]"
+        />
+        <p class="mt-1 text-xs obsidian-text-muted">Unique faculty username used to sign in (no spaces).</p>
+      </div>
+
+      <div>
+        <label for="teacherPassword" class="block font-label-md text-xs font-semibold uppercase tracking-wider obsidian-text-muted mb-1.5">
+          Password <span class="text-red-400">*</span>
+        </label>
+        <div class="relative flex items-center">
+          <input
+            type="password"
+            id="teacherPassword"
+            name="password"
+            placeholder="Minimum 4 characters"
+            required
+            minlength="4"
+            autocomplete="new-password"
+            class="obsidian-input w-full rounded-lg pl-3.5 pr-11 py-2.5 text-sm min-h-[44px]"
+          />
+          <button
+            type="button"
+            onclick="togglePwdVisibility('teacherPassword', this)"
+            aria-label="Show password"
+            aria-pressed="false"
+            class="absolute right-1.5 inline-flex items-center justify-center w-9 h-9 rounded-md obsidian-text-muted hover:text-secondary"
+          >
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">visibility</span>
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label for="teacherConfirmPassword" class="block font-label-md text-xs font-semibold uppercase tracking-wider obsidian-text-muted mb-1.5">
+          Confirm Password <span class="text-red-400">*</span>
+        </label>
+        <div class="relative flex items-center">
+          <input
+            type="password"
+            id="teacherConfirmPassword"
+            name="confirm_password"
+            placeholder="Re-enter password"
+            required
+            minlength="4"
+            autocomplete="new-password"
+            class="obsidian-input w-full rounded-lg pl-3.5 pr-11 py-2.5 text-sm min-h-[44px]"
+          />
+          <button
+            type="button"
+            onclick="togglePwdVisibility('teacherConfirmPassword', this)"
+            aria-label="Show confirm password"
+            aria-pressed="false"
+            class="absolute right-1.5 inline-flex items-center justify-center w-9 h-9 rounded-md obsidian-text-muted hover:text-secondary"
+          >
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">visibility</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-2.5 px-5 py-4 border-t border-white/10">
+      <button
+        type="button"
+        onclick="document.getElementById('addTeacherModal').close()"
+        class="obsidian-subcard px-4 py-2 rounded-lg text-sm font-medium obsidian-text-muted hover:text-secondary min-h-[42px]"
+      >
+        Cancel
+      </button>
+      <button type="submit" class="obsidian-primary-btn px-4 py-2 rounded-lg text-sm font-semibold min-h-[42px]">
+        Create Teacher Account
+      </button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Native Modal Dialog: Reset Teacher Password -->
+<dialog id="resetTeacherPwdModal" closedby="any" aria-labelledby="resetTeacherPwdLabel" class="obsidian-modal">
+  <form id="resetTeacherPwdForm" method="POST" action="" class="flex flex-col">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-white/10">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-[20px] text-secondary" aria-hidden="true">key</span>
+        <h2 id="resetTeacherPwdLabel" class="font-headline-sm text-headline-sm obsidian-text-heading font-semibold">
+          Reset Teacher Password
+        </h2>
+      </div>
+      <button
+        type="button"
+        onclick="document.getElementById('resetTeacherPwdModal').close()"
+        aria-label="Close reset password modal"
+        class="inline-flex items-center justify-center min-w-[40px] min-h-[40px] rounded-lg hover:bg-white/10 obsidian-text-muted transition-colors"
+      >
+        <span class="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+      </button>
+    </div>
+
+    <div class="p-5 flex flex-col gap-4">
+      <div class="obsidian-subcard rounded-lg px-3.5 py-2.5 text-xs font-mono">
+        Account: <span id="resetTargetTeacherLabel" class="text-secondary font-semibold"></span>
+      </div>
+
+      <div>
+        <label for="resetTeacherPwdInput" class="block font-label-md text-xs font-semibold uppercase tracking-wider obsidian-text-muted mb-1.5">
+          New Password <span class="text-red-400">*</span>
+        </label>
+        <div class="relative flex items-center">
+          <input
+            type="password"
+            id="resetTeacherPwdInput"
+            name="password"
+            placeholder="Minimum 4 characters"
+            required
+            minlength="4"
+            autocomplete="new-password"
+            class="obsidian-input w-full rounded-lg pl-3.5 pr-11 py-2.5 text-sm min-h-[44px]"
+          />
+          <button
+            type="button"
+            onclick="togglePwdVisibility('resetTeacherPwdInput', this)"
+            aria-label="Show new password"
+            aria-pressed="false"
+            class="absolute right-1.5 inline-flex items-center justify-center w-9 h-9 rounded-md obsidian-text-muted hover:text-secondary"
+          >
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">visibility</span>
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label for="resetTeacherConfirmInput" class="block font-label-md text-xs font-semibold uppercase tracking-wider obsidian-text-muted mb-1.5">
+          Confirm New Password <span class="text-red-400">*</span>
+        </label>
+        <input
+          type="password"
+          id="resetTeacherConfirmInput"
+          name="confirm_password"
+          placeholder="Re-enter new password"
+          required
+          minlength="4"
+          autocomplete="new-password"
+          class="obsidian-input w-full rounded-lg px-3.5 py-2.5 text-sm min-h-[44px]"
+        />
+      </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-2.5 px-5 py-4 border-t border-white/10">
+      <button
+        type="button"
+        onclick="document.getElementById('resetTeacherPwdModal').close()"
+        class="obsidian-subcard px-4 py-2 rounded-lg text-sm font-medium obsidian-text-muted hover:text-secondary min-h-[42px]"
+      >
+        Cancel
+      </button>
+      <button type="submit" class="obsidian-primary-btn px-4 py-2 rounded-lg text-sm font-semibold min-h-[42px]">
+        Update Password
+      </button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function togglePwdVisibility(inputId, btn) {
+    const el = document.getElementById(inputId);
+    if (!el) return;
+    const isHidden = el.type === "password";
+    el.type = isHidden ? "text" : "password";
+    btn.setAttribute("aria-pressed", isHidden ? "true" : "false");
+    btn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
+    const icon = btn.querySelector(".material-symbols-outlined");
+    if (icon) icon.textContent = isHidden ? "visibility_off" : "visibility";
+  }
+
+  function openResetTeacherModal(btn) {
+    const teacherId = btn.getAttribute("data-teacher-id");
+    const username = btn.getAttribute("data-teacher-username") || "";
+    const form = document.getElementById("resetTeacherPwdForm");
+    const label = document.getElementById("resetTargetTeacherLabel");
+    if (form && teacherId) {
+      form.action = "/teachers/" + encodeURIComponent(teacherId) + "/password";
+    }
+    if (label) {
+      label.textContent = "@" + username;
+    }
+    const dlg = document.getElementById("resetTeacherPwdModal");
+    if (dlg) dlg.showModal();
+  }
+
+  (function () {
+    const addDlg = window.setupObsidianDialog ? window.setupObsidianDialog("addTeacherModal") : document.getElementById("addTeacherModal");
+    if (window.setupObsidianDialog) window.setupObsidianDialog("resetTeacherPwdModal");
+    const openBtn = document.getElementById("openAddTeacherBtn");
+    if (openBtn && addDlg) {
+      openBtn.addEventListener("click", function () {
+        addDlg.showModal();
+      });
+    }
+  })();
+</script>
+{% endblock %}

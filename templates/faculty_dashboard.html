@@ -1,0 +1,464 @@
+{% extends "obsidian_base.html" %}
+
+{% block title %}Faculty Portal — AttendX{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-space-lg">
+  <!-- Top Faculty Header -->
+  <section class="animate-entrance delay-1 flex flex-col xl:flex-row xl:items-end justify-between gap-space-md pb-space-xs">
+    <div class="flex flex-col gap-space-xxs">
+      <div class="flex items-center gap-space-xs font-label-sm text-label-sm obsidian-text-muted font-mono tracking-wider">
+        <span>FACULTY</span>
+        <span aria-hidden="true">//</span>
+        <span>ACADEMIC WORKSPACE</span>
+        <span aria-hidden="true">//</span>
+        <span class="text-secondary font-semibold">CLASSROOM TELEMETRY</span>
+      </div>
+      <h1 class="font-headline-xl text-headline-xl-mobile sm:text-headline-xl obsidian-text-heading tracking-tight font-bold">
+        Faculty Portal
+      </h1>
+      <p class="font-body-md text-body-md obsidian-text-muted">
+        Signed in as <strong class="text-on-surface font-mono">{{ g.user.username }}</strong>
+        <span aria-hidden="true">•</span>
+        <span class="font-mono text-xs text-secondary uppercase">Faculty Access</span>
+      </p>
+    </div>
+
+    <div class="flex items-center flex-wrap gap-space-xs sm:gap-space-sm">
+      <div class="obsidian-subcard inline-flex items-center gap-space-xs px-space-sm py-space-xs rounded-lg">
+        <span class="material-symbols-outlined text-[16px] text-secondary" aria-hidden="true">calendar_today</span>
+        <span class="font-label-md text-label-md font-medium font-mono">{{ stats.today_iso }}</span>
+      </div>
+
+      <div class="obsidian-subcard inline-flex items-center gap-space-xs px-space-sm py-space-xs rounded-lg obsidian-text-muted font-mono text-label-sm">
+        <span class="w-1.5 h-1.5 rounded-full bg-success telemetry-radar-dot" aria-hidden="true"></span>
+        <time id="liveFacultyClock">--:--:--</time>
+      </div>
+
+      <a href="{{ url_for('attendance') }}" class="obsidian-primary-btn inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-label-md text-label-md min-h-[40px]">
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">how_to_reg</span>
+        <span>Take Attendance</span>
+      </a>
+
+      <a href="{{ url_for('analytics') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-white/15 bg-surface-container-low text-on-surface hover:bg-surface-container-high font-label-md text-label-md min-h-[40px] transition-colors">
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">analytics</span>
+        <span>Analytics</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- 4 Faculty KPI Metric Cards -->
+  <section aria-label="Faculty Teaching Metrics" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-md">
+    <!-- KPI 1: My Recorded Marks -->
+    <article class="animate-entrance delay-2 interactive-card obsidian-card p-space-lg rounded-xl flex flex-col justify-between">
+      <div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary shadow-[0_0_12px_rgba(96,165,250,0.8)]" aria-hidden="true"></div>
+      <div class="flex items-center justify-between gap-space-xs">
+        <span class="font-label-sm text-label-sm obsidian-text-muted uppercase tracking-wider font-mono">My Submitted Marks</span>
+        <span class="inline-flex items-center gap-1 font-label-sm px-space-xs py-0.5 rounded border font-mono obsidian-chip-blue">
+          {{ faculty_stats.sessions_by_me }} Sessions
+        </span>
+      </div>
+      <div class="my-space-sm">
+        <div class="font-headline-xl text-headline-xl obsidian-text-heading font-mono tracking-tight font-bold">
+          <span class="counter-val" data-format="comma" data-target="{{ faculty_stats.marks_by_me }}">{{ faculty_stats.marks_by_me }}</span>
+        </div>
+        <div class="font-body-sm text-body-sm obsidian-text-muted mt-0.5">
+          {% if faculty_stats.last_marked_course_code %}
+            Last roll: {{ faculty_stats.last_marked_course_code }} ({{ faculty_stats.last_marked_date }})
+          {% else %}
+            Ready for first class roll submission
+          {% endif %}
+        </div>
+      </div>
+      <div aria-hidden="true" class="flex items-end gap-1 h-6 w-full pt-1">
+        {% for h in stats.sparks.sessions %}
+          <div class="flex-1 rounded-t transition-all {% if loop.last %}bg-secondary shadow-[0_0_8px_rgba(96,165,250,0.6)]{% else %}bg-surface-container-high{% endif %}" style="height: {{ h }}%;"></div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <!-- KPI 2: Courses Offered -->
+    <article class="animate-entrance delay-3 interactive-card obsidian-card p-space-lg rounded-xl flex flex-col justify-between">
+      <div class="absolute left-0 top-0 bottom-0 w-1 bg-on-tertiary-container shadow-[0_0_12px_rgba(255,140,66,0.8)]" aria-hidden="true"></div>
+      <div class="flex items-center justify-between gap-space-xs">
+        <span class="font-label-sm text-label-sm obsidian-text-muted uppercase tracking-wider font-mono">Courses Offered</span>
+        <span class="font-label-sm obsidian-text-muted font-mono obsidian-subcard px-space-xs py-0.5 rounded">
+          {{ stats.courses_with_records }} Logged
+        </span>
+      </div>
+      <div class="my-space-sm">
+        <div class="font-headline-xl text-headline-xl obsidian-text-heading font-mono tracking-tight font-bold">
+          <span class="counter-val" data-target="{{ stats.course_count }}">{{ stats.course_count }}</span>
+        </div>
+        <div class="font-body-sm text-body-sm obsidian-text-muted mt-0.5">{{ stats.enrollment_count }} active student enrollments</div>
+      </div>
+      <div aria-hidden="true" class="flex items-end gap-1 h-6 w-full pt-1">
+        {% for h in stats.sparks.courses %}
+          <div class="flex-1 rounded-t transition-all {% if loop.last %}bg-on-tertiary-container shadow-[0_0_8px_rgba(255,140,66,0.6)]{% else %}bg-surface-container-high{% endif %}" style="height: {{ h }}%;"></div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <!-- KPI 3: Campus Attendance Rate -->
+    <article class="animate-entrance delay-4 interactive-card obsidian-card p-space-lg rounded-xl flex flex-col justify-between">
+      <div class="absolute left-0 top-0 bottom-0 w-1 bg-success shadow-[0_0_12px_rgba(16,185,129,0.8)]" aria-hidden="true"></div>
+      <div class="flex items-center justify-between gap-space-xs">
+        <span class="font-label-sm text-label-sm obsidian-text-muted uppercase tracking-wider font-mono">Mean Turnout</span>
+        <span class="font-label-sm text-success font-mono bg-success-soft px-space-xs py-0.5 rounded border border-emerald-500/30">
+          {{ stats.attendance_count }} Marks
+        </span>
+      </div>
+      <div class="my-space-sm">
+        <div class="font-headline-xl text-headline-xl obsidian-text-heading font-mono tracking-tight font-bold">
+          {{ "%.1f"|format(stats.overall_percentage) }}%
+        </div>
+        <div class="font-body-sm text-body-sm obsidian-text-muted mt-0.5">Across {{ stats.total_sessions }} distinct lecture dates</div>
+      </div>
+      <div aria-hidden="true" class="flex items-end gap-1 h-6 w-full pt-1">
+        {% for h in stats.sparks.sessions %}
+          <div class="flex-1 rounded-t transition-all {% if loop.last %}bg-success shadow-[0_0_8px_rgba(16,185,129,0.6)]{% else %}bg-surface-container-high{% endif %}" style="height: {{ h }}%;"></div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <!-- KPI 4: At-Risk Learners Alert -->
+    <article class="animate-entrance delay-5 interactive-card obsidian-card p-space-lg rounded-xl flex flex-col justify-between">
+      <div class="absolute left-0 top-0 bottom-0 w-1 {% if stats.at_risk_count > 0 %}bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.8)]{% else %}bg-success shadow-[0_0_12px_rgba(16,185,129,0.8)]{% endif %}" aria-hidden="true"></div>
+      <div class="flex items-center justify-between gap-space-xs">
+        <span class="font-label-sm text-label-sm obsidian-text-muted uppercase tracking-wider font-mono">At-Risk (&lt;75%)</span>
+        <span class="font-label-sm font-mono px-space-xs py-0.5 rounded border {% if stats.at_risk_count > 0 %}obsidian-chip-red{% else %}obsidian-chip-emerald{% endif %}">
+          {% if stats.at_risk_count > 0 %}Action Needed{% else %}Compliant{% endif %}
+        </span>
+      </div>
+      <div class="my-space-sm">
+        <div class="font-headline-xl text-headline-xl obsidian-text-heading font-mono tracking-tight font-bold">
+          <span class="counter-val" data-target="{{ stats.at_risk_count }}">{{ stats.at_risk_count }}</span>
+        </div>
+        <div class="font-body-sm text-body-sm obsidian-text-muted mt-0.5">Out of {{ stats.student_count }} enrolled learners</div>
+      </div>
+      <div aria-hidden="true" class="flex items-end gap-1 h-6 w-full pt-1">
+        {% for h in stats.sparks.students %}
+          <div class="flex-1 rounded-t transition-all {% if loop.last %}bg-primary shadow-[0_0_8px_rgba(197,210,220,0.6)]{% else %}bg-surface-container-high{% endif %}" style="height: {{ h }}%;"></div>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+
+  <!-- Live Academic Session Spotlight Banner -->
+  {% if latest_session %}
+  <section class="obsidian-hero-banner rounded-2xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4 animate-entrance delay-3" aria-label="Classroom Session Spotlight">
+    <div class="flex items-start sm:items-center gap-3.5">
+      <span class="relative flex h-3.5 w-3.5 shrink-0 mt-1 sm:mt-0" aria-hidden="true">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-400 telemetry-radar-dot"></span>
+      </span>
+      <div class="space-y-1">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="px-2 py-0.5 rounded font-mono text-[11px] uppercase tracking-wider border obsidian-chip-emerald">
+            {% if latest_session.has_logs %}Recent Recorded Session{% else %}Ready For Roll-Call{% endif %}
+          </span>
+          <span class="font-mono text-xs text-slate-300">{{ latest_session.attendance_date }}</span>
+        </div>
+        <h2 class="font-headline-lg text-headline-lg text-white font-semibold">
+          {{ latest_session.course_code }} — {{ latest_session.course_name }}
+        </h2>
+        <p class="font-body-sm text-body-sm text-slate-300">
+          {% if latest_session.has_logs %}
+            Marked by <strong class="text-white font-mono">{{ latest_session.marked_by_username }}</strong> •
+            {{ latest_session.present_count }}/{{ latest_session.total_count }} Present ({{ "%.1f"|format(latest_session.percentage) }}%)
+          {% else %}
+            {{ latest_session.total_count }} enrolled learner(s) awaiting roll-call on {{ latest_session.attendance_date }}
+          {% endif %}
+        </p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2.5 shrink-0">
+      <a
+        href="{{ url_for('attendance', course_id=latest_session.course_id, date=latest_session.attendance_date) }}"
+        class="obsidian-primary-btn inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-label-md text-label-md min-h-[42px]"
+      >
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">check_circle</span>
+        <span>Mark This Session</span>
+      </a>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Faculty Quick Actions Row -->
+  <section aria-label="Faculty Quick Actions" class="animate-entrance delay-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+    <a href="{{ url_for('attendance') }}" class="interactive-action group p-space-md rounded-xl flex items-center justify-between">
+      <div class="flex items-center gap-space-sm">
+        <div class="action-icon obsidian-subcard w-10 h-10 rounded-lg text-secondary group-hover:bg-blue-600 group-hover:text-white transition-colors flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-[22px]" aria-hidden="true">how_to_reg</span>
+        </div>
+        <div>
+          <div class="font-label-lg text-label-lg obsidian-text-heading group-hover:text-secondary transition-colors">Mark Attendance</div>
+          <div class="font-body-sm text-body-sm obsidian-text-muted">Record daily class roll</div>
+        </div>
+      </div>
+      <span class="px-space-xs py-0.5 rounded text-label-sm font-mono obsidian-subcard obsidian-text-muted">Roll-call</span>
+    </a>
+
+    <a href="{{ url_for('courses') }}" class="interactive-action group p-space-md rounded-xl flex items-center justify-between">
+      <div class="flex items-center gap-space-sm">
+        <div class="action-icon obsidian-subcard w-10 h-10 rounded-lg text-secondary group-hover:bg-blue-600 group-hover:text-white transition-colors flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-[22px]" aria-hidden="true">menu_book</span>
+        </div>
+        <div>
+          <div class="font-label-lg text-label-lg obsidian-text-heading group-hover:text-secondary transition-colors">Course Catalogue</div>
+          <div class="font-body-sm text-body-sm obsidian-text-muted">Inspect rosters &amp; sections</div>
+        </div>
+      </div>
+      <span class="px-space-xs py-0.5 rounded text-label-sm font-mono obsidian-subcard obsidian-text-muted">Courses</span>
+    </a>
+
+    <a href="{{ url_for('analytics') }}" class="interactive-action group p-space-md rounded-xl flex items-center justify-between">
+      <div class="flex items-center gap-space-sm">
+        <div class="action-icon obsidian-subcard w-10 h-10 rounded-lg text-secondary group-hover:bg-blue-600 group-hover:text-white transition-colors flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-[22px]" aria-hidden="true">analytics</span>
+        </div>
+        <div>
+          <div class="font-label-lg text-label-lg obsidian-text-heading group-hover:text-secondary transition-colors">Class Analytics</div>
+          <div class="font-body-sm text-body-sm obsidian-text-muted">Trends &amp; 75% risk table</div>
+        </div>
+      </div>
+      <span class="px-space-xs py-0.5 rounded text-label-sm font-mono obsidian-subcard obsidian-text-muted">Charts</span>
+    </a>
+
+    <a href="{{ url_for('export_csv') }}" class="interactive-action group p-space-md rounded-xl flex items-center justify-between">
+      <div class="flex items-center gap-space-sm">
+        <div class="action-icon obsidian-subcard w-10 h-10 rounded-lg text-secondary group-hover:bg-blue-600 group-hover:text-white transition-colors flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-[22px]" aria-hidden="true">download</span>
+        </div>
+        <div>
+          <div class="font-label-lg text-label-lg obsidian-text-heading group-hover:text-secondary transition-colors">Export CSV</div>
+          <div class="font-body-sm text-body-sm obsidian-text-muted">Download attendance report</div>
+        </div>
+      </div>
+      <span class="px-space-xs py-0.5 rounded text-label-sm font-mono obsidian-subcard obsidian-text-muted">CSV</span>
+    </a>
+  </section>
+
+  <!-- Two-Column Workspace: Course Index (Left) + Velocity & Classroom Feed (Right) -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+    <!-- Left Column: Course Curriculum & Quick Roll (7 Cols) -->
+    <section class="animate-entrance delay-4 lg:col-span-7 obsidian-card obsidian-sheen p-space-lg rounded-xl flex flex-col gap-space-md" aria-label="Course Curriculum Roster">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="font-headline-sm text-headline-sm obsidian-text-heading font-semibold">Course Curriculum &amp; Turnout</h2>
+          <p class="font-body-sm text-body-sm obsidian-text-muted">Click any course to jump directly into attendance entry</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <label for="facultyCourseFilter" class="sr-only">Filter courses</label>
+          <input
+            id="facultyCourseFilter"
+            type="search"
+            oninput="filterFacultyCourses(this.value)"
+            placeholder="Filter courses..."
+            class="obsidian-input rounded-lg px-3 py-1.5 text-xs font-mono w-40 min-h-[36px]"
+          />
+          <a href="{{ url_for('courses') }}" class="font-label-sm text-secondary hover:underline font-mono whitespace-nowrap">
+            All &rarr;
+          </a>
+        </div>
+      </div>
+
+      {% if course_index %}
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
+        {% for c in course_index %}
+          {% if c.record_count == 0 %}
+            {% set status_text_cls = 'obsidian-text-muted' %}
+            {% set prog_cls = 'obsidian-progress-muted' %}
+            {% set status_icon = 'schedule' %}
+          {% elif c.percentage >= 75.0 %}
+            {% set status_text_cls = 'text-success' %}
+            {% set prog_cls = 'obsidian-progress-safe' %}
+            {% set status_icon = 'check_circle' %}
+          {% elif c.percentage >= 65.0 %}
+            {% set status_text_cls = 'obsidian-status-warn' %}
+            {% set prog_cls = 'obsidian-progress-warn' %}
+            {% set status_icon = 'warning' %}
+          {% else %}
+            {% set status_text_cls = 'obsidian-status-danger' %}
+            {% set prog_cls = 'obsidian-progress-danger' %}
+            {% set status_icon = 'error' %}
+          {% endif %}
+
+          <article
+            class="obsidian-subcard p-space-md rounded-xl flex flex-col gap-2.5 faculty-course-item hover:border-blue-400/40 transition-colors"
+            data-course-filter="{{ c.code | lower }} {{ c.name | lower }}"
+          >
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <span class="font-mono text-label-sm text-secondary uppercase tracking-wider">{{ c.code }}</span>
+                <div class="font-label-md obsidian-text-heading font-semibold truncate">{{ c.name }}</div>
+              </div>
+              <span class="inline-flex items-center gap-1 font-mono font-bold text-label-md shrink-0 {{ status_text_cls }}">
+                <span class="material-symbols-outlined text-[15px]" aria-hidden="true">{{ status_icon }}</span>
+                <span>{{ "%.1f"|format(c.percentage) }}%</span>
+              </span>
+            </div>
+
+            <progress
+              class="obsidian-progress {{ prog_cls }}"
+              value="{{ c.percentage if c.record_count > 0 else 0 }}"
+              max="100"
+              aria-label="{{ c.code }} attendance turnout {{ '%.1f'|format(c.percentage) }} percent"
+            ></progress>
+
+            <div class="flex items-center justify-between pt-0.5 text-xs font-mono">
+              <span class="obsidian-text-muted">{{ c.enrolled_count }} Enrolled • {{ c.present_count }}/{{ c.record_count }} Present</span>
+              <a href="{{ url_for('attendance', course_id=c.id) }}" class="text-secondary hover:underline font-semibold">
+                Mark &rarr;
+              </a>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="obsidian-subcard p-space-lg rounded-lg text-center obsidian-text-muted">
+        No courses available yet in the catalogue.
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- Right Column: Velocity Chart & Recent Classroom Activity (5 Cols) -->
+    <div class="animate-entrance delay-5 lg:col-span-5 flex flex-col gap-space-md">
+      <!-- Daily Velocity -->
+      <section class="obsidian-card obsidian-sheen p-space-lg rounded-xl flex flex-col gap-space-sm" aria-label="Daily Turnout Velocity">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h2 class="font-headline-sm text-headline-sm obsidian-text-heading font-semibold">Daily Turnout Velocity</h2>
+            <p class="font-body-sm text-body-sm obsidian-text-muted">Recent lecture dates distribution</p>
+          </div>
+          <div class="flex items-center gap-2 text-[11px] font-mono">
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-blue-500"></span>P</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-red-500"></span>A</span>
+          </div>
+        </div>
+
+        {% if daily_velocity %}
+        <div class="obsidian-subcard grid gap-2 items-end h-40 w-full rounded-lg p-3" style="grid-template-columns: repeat({{ daily_velocity|length }}, minmax(0, 1fr));">
+          {% for d in daily_velocity %}
+          <div tabindex="0" class="chart-bar-col relative flex flex-col items-center gap-1 h-full justify-end cursor-pointer">
+            <div class="chart-tooltip absolute -top-6 px-2 py-0.5 rounded obsidian-card text-[10px] font-mono whitespace-nowrap z-10">
+              {{ d.present_count }}P / {{ d.absent_count }}A
+            </div>
+            <div class="font-mono text-[10px] {% if d.is_peak %}text-secondary font-semibold{% else %}obsidian-text-muted{% endif %}">{{ d.present_pct }}%</div>
+            <div class="w-full max-w-[32px] flex flex-col gap-0.5 items-center justify-end h-20">
+              {% if d.absent_pct > 0 %}
+                <div class="w-full bg-red-500/85 rounded-t-sm" style="height: {{ d.absent_pct }}%;"></div>
+              {% endif %}
+              <div class="w-full rounded-t-sm {% if d.is_peak %}bg-secondary shadow-[0_0_8px_rgba(96,165,250,0.6)]{% else %}bg-blue-500/80{% endif %}" style="height: {{ [d.present_pct, 6]|max }}%;"></div>
+            </div>
+            <span class="font-mono text-[10px] obsidian-text-muted">{{ d.short_date }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="obsidian-subcard rounded-lg p-5 text-center text-xs obsidian-text-muted">
+          No recorded sessions yet. Submit a class roll to view daily velocity.
+        </div>
+        {% endif %}
+      </section>
+
+      <!-- Recent Classroom Activity -->
+      <section class="obsidian-card obsidian-sheen p-space-lg rounded-xl flex flex-col gap-space-md" aria-label="Recent Classroom Activity">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[20px] text-secondary" aria-hidden="true">history</span>
+            <h2 class="font-headline-sm text-headline-sm obsidian-text-heading font-semibold">Recent Classroom Activity</h2>
+          </div>
+          <a href="{{ url_for('analytics') }}" class="font-label-sm text-secondary hover:underline font-mono">
+            Analytics &rarr;
+          </a>
+        </div>
+
+        {% if recent_activity %}
+        <div class="flex flex-col gap-2.5">
+          {% for act in recent_activity %}
+            {% set act_up = act.action|upper %}
+            {% if 'MARK' in act_up %}
+              {% set tag_label = 'Roll' %}
+              {% set tag_cls = 'obsidian-chip-blue' %}
+            {% elif 'EXPORT' in act_up %}
+              {% set tag_label = 'Export' %}
+              {% set tag_cls = 'obsidian-chip-emerald' %}
+            {% elif 'COURSE' in act_up or 'ENROLL' in act_up %}
+              {% set tag_label = 'Course' %}
+              {% set tag_cls = 'obsidian-chip-purple' %}
+            {% else %}
+              {% set tag_label = 'Activity' %}
+              {% set tag_cls = 'obsidian-chip-neutral' %}
+            {% endif %}
+            <div class="ledger-row obsidian-subcard p-3 rounded-lg flex items-start gap-2.5">
+              <span class="px-2 py-0.5 rounded border text-[11px] font-mono shrink-0 {{ tag_cls }}">{{ tag_label }}</span>
+              <div class="flex-1 min-w-0">
+                <div class="text-xs font-semibold obsidian-text-heading truncate">{{ act.detail }}</div>
+                <div class="text-[11px] font-mono obsidian-text-muted mt-0.5">
+                  {{ act.action }}{% if act.username %} • {{ act.username }}{% endif %}
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="obsidian-subcard p-space-md rounded-lg text-center text-xs obsidian-text-muted">
+          No classroom activity logged yet.
+        </div>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    function updateFacultyClock() {
+      const el = document.getElementById("liveFacultyClock");
+      if (el) {
+        const now = new Date();
+        el.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      }
+      setTimeout(updateFacultyClock, 1000);
+    }
+
+    function animateCounters() {
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      document.querySelectorAll(".counter-val").forEach(function (counter) {
+        const target = parseInt(counter.getAttribute("data-target"), 10) || 0;
+        const formatComma = counter.getAttribute("data-format") === "comma";
+        if (prefersReducedMotion || target === 0) {
+          counter.textContent = formatComma ? target.toLocaleString() : String(target);
+          return;
+        }
+        const duration = 800;
+        const startTime = performance.now();
+        function step(now) {
+          const progress = Math.min((now - startTime) / duration, 1);
+          const easeOut = 1 - Math.pow(1 - progress, 3);
+          const val = Math.floor(easeOut * target);
+          counter.textContent = formatComma ? val.toLocaleString() : String(val);
+          if (progress < 1) requestAnimationFrame(step);
+          else counter.textContent = formatComma ? target.toLocaleString() : String(target);
+        }
+        requestAnimationFrame(step);
+      });
+    }
+
+    window.filterFacultyCourses = function (query) {
+      const q = (query || "").trim().toLowerCase();
+      document.querySelectorAll(".faculty-course-item").forEach(function (item) {
+        const hay = item.getAttribute("data-course-filter") || "";
+        item.style.display = (!q || hay.includes(q)) ? "" : "none";
+      });
+    };
+
+    updateFacultyClock();
+    animateCounters();
+  })();
+</script>
+{% endblock %}

@@ -1,539 +1,870 @@
-{% extends "base.html" %}
+{% extends "obsidian_base.html" %}
+{% block title %}My Attendance Dashboard — AttendX Student Portal{% endblock %}
 
-{% block title %}My Attendance — CloudAttend{% endblock %}
+{% block head %}
+<style>
+  /* Student Portal Interactive 3D Credential Card */
+  #studentHoloContainer {
+    perspective: 1100px;
+  }
+
+  #studentHoloCard {
+    --pointer-x: 50%;
+    --pointer-y: 50%;
+    --rx: 0deg;
+    --ry: 0deg;
+    position: relative;
+    overflow: hidden;
+    transform-style: preserve-3d;
+    transform: rotateX(var(--rx)) rotateY(var(--ry));
+    transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s ease;
+  }
+
+  #studentHoloCard::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      circle at var(--pointer-x) var(--pointer-y),
+      rgba(96, 165, 250, 0.16) 0%,
+      rgba(16, 185, 129, 0.06) 28%,
+      transparent 62%
+    );
+    opacity: 0.9;
+    transition: opacity 0.25s ease;
+  }
+
+  html:not(.dark) #studentHoloCard::before {
+    background: radial-gradient(
+      circle at var(--pointer-x) var(--pointer-y),
+      rgba(37, 99, 235, 0.1) 0%,
+      rgba(16, 185, 129, 0.05) 30%,
+      transparent 64%
+    );
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #studentHoloCard {
+      transform: none !important;
+      transition: none !important;
+    }
+  }
+
+  /* 75% Compliance Cutoff Marker Overlay for Semantic Course Progress */
+  .course-progress-shell {
+    position: relative;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .course-cutoff-pin {
+    position: absolute;
+    left: 75%;
+    top: -1px;
+    bottom: -1px;
+    width: 2px;
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  html.dark .course-cutoff-pin {
+    background: rgba(251, 191, 36, 0.9);
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.55);
+  }
+
+  html:not(.dark) .course-cutoff-pin {
+    background: #d97706;
+    box-shadow: 0 0 4px rgba(217, 119, 6, 0.35);
+  }
+
+  /* 35-Day Attendance Calendar Heatmap Cells (Dual-Theme Accessible Contrast) */
+  .heatmap-cell {
+    position: relative;
+    min-height: 2.35rem;
+    border-radius: 0.55rem;
+    border: 1px solid transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.16s ease, border-color 0.16s ease;
+  }
+
+  .heatmap-cell:hover,
+  .heatmap-cell:focus-visible {
+    transform: translateY(-2px);
+    outline: 2px solid #60a5fa;
+    outline-offset: 2px;
+  }
+
+  html.dark .heatmap-empty {
+    background: rgba(15, 23, 42, 0.6);
+    border-color: rgba(148, 163, 184, 0.14);
+    color: #64748b;
+  }
+  html:not(.dark) .heatmap-empty {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #475569;
+  }
+
+  html.dark .heatmap-present {
+    background: rgba(16, 185, 129, 0.22);
+    border-color: rgba(52, 211, 153, 0.48);
+    color: #6ee7b7;
+  }
+  html:not(.dark) .heatmap-present {
+    background: #d1fae5;
+    border-color: #34d399;
+    color: #065f46;
+  }
+
+  html.dark .heatmap-mixed {
+    background: rgba(245, 158, 11, 0.22);
+    border-color: rgba(251, 191, 36, 0.48);
+    color: #fcd34d;
+  }
+  html:not(.dark) .heatmap-mixed {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #92400e;
+  }
+
+  html.dark .heatmap-absent {
+    background: rgba(239, 68, 68, 0.22);
+    border-color: rgba(248, 113, 113, 0.48);
+    color: #fca5a5;
+  }
+  html:not(.dark) .heatmap-absent {
+    background: #fee2e2;
+    border-color: #f87171;
+    color: #991b1b;
+  }
+
+  .heatmap-today {
+    box-shadow: 0 0 0 2px #3b82f6;
+  }
+
+  @media (forced-colors: active) {
+    .heatmap-cell {
+      border: 1px solid CanvasText !important;
+    }
+    .course-cutoff-pin {
+      background: Highlight !important;
+    }
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="mb-4">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-        <div class="d-flex align-items-center gap-3">
-            <div class="student-avatar {% if overall_pct >= 75.0 %}avatar-halo-safe{% elif overall_pct >= 65.0 %}avatar-halo-warning{% else %}avatar-halo-danger{% endif %}" 
-                 style="width: 52px; height: 52px; font-size: 1.15rem; background: #DBEAFE; color: #1D4ED8;">
-                {{ student.name[:2]|upper }}
-            </div>
-            <div>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb small text-muted mb-1">
-                        <li class="breadcrumb-item"><a href="{{ url_for('student_dashboard') }}" class="text-decoration-none text-muted">Student</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">My Attendance Dashboard</li>
-                    </ol>
-                </nav>
-                <h1 class="h3 fw-bold mb-0">{{ student.name }}</h1>
-                <p class="text-muted small mb-0">
-                    Roll Number: <span class="badge bg-light text-primary border font-monospace">{{ student.roll_no }}</span>
-                    &bull; Email: <span class="text-dark">{{ student.email or 'Not specified' }}</span>
-                </p>
-            </div>
+{% set pct_val = overall_pct if overall_pct is defined and overall_pct is not none else 0 %}
+{% set circ = 314.159 %}
+{% set radial_offset = circ * (1 - (pct_val / 100.0)) %}
+{% set is_eligible = total_sessions > 0 and pct_val >= 75 %}
+{% set is_borderline = total_sessions > 0 and pct_val >= 65 and pct_val < 75 %}
+{% set standing_label = 'Pending Sessions' if total_sessions == 0 else ('Exam Eligible' if is_eligible else ('Borderline Standing' if is_borderline else 'Below 75% Warning')) %}
+{% set standing_chip = 'obsidian-chip-blue' if total_sessions == 0 else ('obsidian-chip-emerald' if is_eligible else ('obsidian-chip-amber' if is_borderline else 'obsidian-chip-red')) %}
+{% set stroke_color = '#60a5fa' if total_sessions == 0 else ('#10b981' if is_eligible else ('#f59e0b' if is_borderline else '#ef4444')) %}
+
+<div class="flex flex-col gap-space-lg">
+  <!-- Hero Welcome Banner -->
+  <section aria-label="Student Overview Header" class="obsidian-hero-banner rounded-2xl p-6 sm:p-7 flex flex-col xl:flex-row xl:items-center justify-between gap-space-md animate-entrance delay-1">
+    <div class="flex items-start gap-4">
+      <div class="w-14 h-14 rounded-2xl bg-white/10 border border-white/25 flex items-center justify-center text-xl font-bold tracking-tight text-white shrink-0 shadow-lg" aria-hidden="true">
+        {{ (student.name[:2] if student.name else g.user.username[:2]) | upper }}
+      </div>
+      <div class="space-y-1.5">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono uppercase tracking-wider border obsidian-chip-blue">
+            <span class="material-symbols-outlined text-[14px]" aria-hidden="true">badge</span>
+            {{ student.roll_no }}
+          </span>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono border {{ standing_chip }}">
+            {{ standing_label }}
+          </span>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono border border-white/20 bg-white/10 text-slate-200">
+            {{ course_summaries | length }} Enrolled Course{{ '' if (course_summaries | length) == 1 else 's' }}
+          </span>
         </div>
-        <div>
-            {% if overall_pct >= 75.0 %}
-                <span class="badge-present fs-6 px-3 py-2">
-                    Good Standing ({{ "%.1f"|format(overall_pct) }}%)
-                </span>
-            {% elif overall_pct >= 65.0 %}
-                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fs-6 px-3 py-2 rounded-pill font-monospace fw-bold">
-                    <i class="bi bi-exclamation-circle-fill me-1"></i> Borderline Risk ({{ "%.1f"|format(overall_pct) }}%)
-                </span>
+        <h1 class="font-headline-xl-mobile sm:font-headline-xl text-headline-xl-mobile sm:text-headline-xl tracking-tight text-white">
+          My Attendance Dashboard
+        </h1>
+        <p class="font-body-md text-body-md text-slate-300 max-w-2xl">
+          Welcome back, <span class="font-semibold text-white">{{ student.name }}</span>
+          {% if student.email %}
+            <span class="text-slate-400"> • </span><span class="font-mono text-xs text-slate-200">{{ student.email }}</span>
+          {% endif %}
+          <span class="text-slate-400"> • </span>Track your 75% exam eligibility threshold and recent sessions.
+        </p>
+      </div>
+    </div>
+
+    <!-- Section Shortcuts -->
+    <div class="flex items-center gap-2.5 flex-wrap shrink-0">
+      <a href="#eligibilityCalculatorSection" class="obsidian-primary-btn inline-flex items-center gap-1.5 px-4 py-2 rounded-xl font-label-md text-label-md">
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">calculate</span>
+        <span>Safety Simulator</span>
+      </a>
+      <a href="#courseStandingSection" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 text-white font-label-md text-label-md transition-colors">
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">menu_book</span>
+        <span>My Courses</span>
+      </a>
+      <a href="#heatmapSection" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 text-white font-label-md text-label-md transition-colors">
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">calendar_month</span>
+        <span>Heatmap</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Row 1: 3D Credential ID Card + KPI Metrics Grid & Immediate Eligibility Insight -->
+  <section aria-label="Student Credential and Overall Standing" class="grid grid-cols-1 xl:grid-cols-12 gap-space-md animate-entrance delay-2">
+    <!-- Left 5 cols: 3D Interactive Student ID Credential -->
+    <div id="studentHoloContainer" class="xl:col-span-5">
+      <article id="studentHoloCard" class="obsidian-card rounded-2xl p-6 h-full flex flex-col justify-between gap-5">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <img src="{{ url_for('static', filename='images/attendx-icon.jpg') }}" alt="" width="1024" height="1024" aria-hidden="true" class="w-5 h-5 rounded-md object-cover border border-white/20"/>
+            <span class="font-mono text-[11px] uppercase tracking-wider obsidian-text-muted">AttendX Digital ID</span>
+          </div>
+          <span class="px-2.5 py-0.5 rounded-full border font-mono text-[11px] {{ standing_chip }}">
+            {{ 'ELIGIBLE' if is_eligible else ('BORDERLINE' if is_borderline else ('AT RISK' if total_sessions > 0 else 'NO DATA')) }}
+          </span>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+          <div class="space-y-2 min-w-0">
+            <div class="font-mono text-xs text-secondary uppercase tracking-wider">{{ student.roll_no }}</div>
+            <h2 class="font-headline-lg text-headline-lg obsidian-text-heading truncate">{{ student.name }}</h2>
+            <p class="font-mono text-xs obsidian-text-muted truncate">
+              {{ student.email if student.email else (g.user.username ~ '@attendx.local') }}
+            </p>
+            <div class="pt-1 flex items-center gap-2 flex-wrap">
+              <span class="px-2 py-0.5 rounded-md border obsidian-chip-neutral font-mono text-[11px]">
+                Cutoff: 75.0%
+              </span>
+              <span class="px-2 py-0.5 rounded-md border obsidian-chip-blue font-mono text-[11px]">
+                {{ course_summaries | length }} Subjects
+              </span>
+            </div>
+          </div>
+
+          <!-- Radial Gauge -->
+          <div class="relative w-28 h-28 shrink-0 flex items-center justify-center self-center sm:self-auto">
+            <svg class="w-28 h-28 -rotate-90" viewBox="0 0 116 116" aria-hidden="true">
+              <circle cx="58" cy="58" r="50" fill="none" stroke="rgba(148, 163, 184, 0.2)" stroke-width="10"/>
+              <circle
+                id="studentRadialIndicator"
+                cx="58"
+                cy="58"
+                r="50"
+                fill="none"
+                stroke="{{ stroke_color }}"
+                stroke-width="10"
+                stroke-linecap="round"
+                stroke-dasharray="314.159"
+                stroke-dashoffset="{{ '%.2f' % radial_offset }}"
+                style="transition: stroke-dashoffset 0.8s ease;"
+              />
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+              <span class="font-mono text-xl font-bold obsidian-text-heading">{{ "%.2f"|format(pct_val) }}%</span>
+              <span class="font-mono text-[10px] uppercase tracking-wider obsidian-text-muted">Overall</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="obsidian-subcard rounded-xl px-4 py-3 flex items-center justify-between gap-3 text-xs font-mono">
+          <span class="obsidian-text-muted">RECORD RATIO</span>
+          <span class="obsidian-text-heading font-semibold">{{ present_count }} Present / {{ total_sessions }} Sessions</span>
+        </div>
+      </article>
+    </div>
+
+    <!-- Right 7 cols: 3 KPI Sparkline Cards + Compliance Summary Banner -->
+    <div class="xl:col-span-7 flex flex-col justify-between gap-space-md">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md">
+        <!-- Present KPI -->
+        <article class="obsidian-card interactive-card rounded-2xl p-5 flex flex-col justify-between gap-3">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-mono text-[11px] uppercase tracking-wider obsidian-text-muted">Present</span>
+            <span class="w-8 h-8 rounded-lg flex items-center justify-center border obsidian-chip-emerald">
+              <span class="material-symbols-outlined text-[18px]" aria-hidden="true">check_circle</span>
+            </span>
+          </div>
+          <div class="font-mono text-3xl font-bold obsidian-text-heading">{{ present_count }}</div>
+          <div class="space-y-1.5">
+            <progress
+              class="obsidian-progress obsidian-progress-safe"
+              max="{{ total_sessions if total_sessions > 0 else 1 }}"
+              value="{{ present_count }}"
+              aria-label="Present sessions proportion"
+            ></progress>
+            <div class="text-[11px] font-mono obsidian-text-muted">
+              {{ "%.2f"|format((present_count / total_sessions) * 100) if total_sessions > 0 else "0.00" }}% verified present
+            </div>
+          </div>
+        </article>
+
+        <!-- Absent KPI -->
+        <article class="obsidian-card interactive-card rounded-2xl p-5 flex flex-col justify-between gap-3">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-mono text-[11px] uppercase tracking-wider obsidian-text-muted">Absent</span>
+            <span class="w-8 h-8 rounded-lg flex items-center justify-center border obsidian-chip-red">
+              <span class="material-symbols-outlined text-[18px]" aria-hidden="true">cancel</span>
+            </span>
+          </div>
+          <div class="font-mono text-3xl font-bold obsidian-text-heading">{{ absent_count }}</div>
+          <div class="space-y-1.5">
+            <progress
+              class="obsidian-progress obsidian-progress-danger"
+              max="{{ total_sessions if total_sessions > 0 else 1 }}"
+              value="{{ absent_count }}"
+              aria-label="Absent sessions proportion"
+            ></progress>
+            <div class="text-[11px] font-mono obsidian-text-muted">
+              {{ "%.2f"|format((absent_count / total_sessions) * 100) if total_sessions > 0 else "0.00" }}% missed classes
+            </div>
+          </div>
+        </article>
+
+        <!-- Total Sessions KPI -->
+        <article class="obsidian-card interactive-card rounded-2xl p-5 flex flex-col justify-between gap-3">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-mono text-[11px] uppercase tracking-wider obsidian-text-muted">Total</span>
+            <span class="w-8 h-8 rounded-lg flex items-center justify-center border obsidian-chip-blue">
+              <span class="material-symbols-outlined text-[18px]" aria-hidden="true">event_note</span>
+            </span>
+          </div>
+          <div class="font-mono text-3xl font-bold obsidian-text-heading">{{ total_sessions }}</div>
+          <div class="space-y-1.5">
+            <progress
+              class="obsidian-progress"
+              max="100"
+              value="{{ pct_val }}"
+              aria-label="Overall standing percentage"
+            ></progress>
+            <div class="text-[11px] font-mono obsidian-text-muted">
+              Across {{ course_summaries | length }} enrolled course{{ '' if (course_summaries | length) == 1 else 's' }}
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <!-- Automated Standing Policy Advisor -->
+      {% set safe_misses = ((present_count - (0.75 * total_sessions)) / 0.75) | int if total_sessions > 0 and pct_val >= 75 else 0 %}
+      {% set recover_needed = [1, (3 * total_sessions) - (4 * present_count)] | max if total_sessions > 0 and pct_val < 75 else 0 %}
+      <article class="obsidian-card rounded-2xl p-5 flex items-start gap-3.5">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 {{ standing_chip }}">
+          <span class="material-symbols-outlined text-[20px]" aria-hidden="true">
+            {{ 'verified' if is_eligible else ('hourglass_empty' if total_sessions == 0 else 'warning') }}
+          </span>
+        </div>
+        <div class="space-y-1">
+          <h2 class="font-headline-sm text-headline-sm obsidian-text-heading">75% Exam Eligibility Advisory</h2>
+          <p class="text-sm obsidian-text-muted leading-relaxed">
+            {% if total_sessions == 0 %}
+              No attendance sessions have been recorded for your account yet. Once faculty record roll-call, your 75% exam eligibility buffer will calculate automatically.
+            {% elif pct_val >= 75 %}
+              You are currently <span class="font-semibold obsidian-text-heading">Eligible</span> at <span class="font-mono font-semibold">{{ "%.2f"|format(pct_val) }}%</span>.
+              {% if safe_misses > 0 %}
+                You can miss up to <span class="font-mono font-semibold">{{ safe_misses }}</span> consecutive upcoming class{{ '' if safe_misses == 1 else 'es' }} and stay above the 75% requirement.
+              {% else %}
+                You are right on the 75% margin — attending the next session is strongly recommended to build a safety buffer.
+              {% endif %}
             {% else %}
-                <span class="badge-absent fs-6 px-3 py-2">
-                    Attendance Warning ({{ "%.1f"|format(overall_pct) }}%)
-                </span>
+              You are at <span class="font-mono font-semibold">{{ "%.2f"|format(pct_val) }}%</span>, which is below the 75% minimum exam cutoff. Attend at least <span class="font-mono font-semibold">{{ recover_needed }}</span> consecutive class{{ '' if recover_needed == 1 else 'es' }} without absences to regain eligibility.
             {% endif %}
+          </p>
         </div>
+      </article>
     </div>
-</div>
+  </section>
 
-<!-- 3D Hologram Identity Card & KPI Radial Progress Row -->
-<div class="row g-3 mb-4 align-items-stretch">
-    <!-- Innovation: 3D Holographic Virtual Student Identity Card -->
-    <div class="col-12 col-lg-5">
-        <div class="hologram-card-container h-100" id="studentHoloContainer">
-            <div class="hologram-id-card h-100 d-flex flex-column justify-content-between" id="studentHoloCard">
-                <!-- Header: Institution & Chip -->
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="rounded-2 p-1.5" style="background: rgba(45, 212, 191, 0.15); border: 1px solid rgba(45, 212, 191, 0.3);">
-                            <i class="bi bi-mortarboard-fill text-info"></i>
-                        </span>
-                        <div>
-                            <div class="fw-bold text-white small" style="letter-spacing: 0.05em; line-height: 1.1;">ATTENDX ACADEMY</div>
-                            <div class="text-white-50" style="font-size: 0.65rem; text-transform: uppercase;">Student Identity Credential</div>
-                        </div>
-                    </div>
-                    <span class="badge rounded-pill font-monospace" style="font-size: 0.65rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #5EEAD4;">
-                        <i class="bi bi-shield-lock-fill me-1"></i>VERIFIED
-                    </span>
-                </div>
-
-                <!-- Student Profile Body -->
-                <div class="d-flex align-items-center gap-3 my-2">
-                    <div class="student-avatar {% if overall_pct >= 75.0 %}avatar-halo-safe{% elif overall_pct >= 65.0 %}avatar-halo-warning{% else %}avatar-halo-danger{% endif %}" 
-                         style="width: 58px; height: 58px; font-size: 1.3rem; background: rgba(45, 212, 191, 0.2); color: #5EEAD4; border: 2px solid rgba(45, 212, 191, 0.5);">
-                        {{ student.name[:2]|upper }}
-                    </div>
-                    <div class="overflow-hidden">
-                        <h3 class="h5 fw-bold text-white mb-0 text-truncate">{{ student.name }}</h3>
-                        <div class="font-monospace text-info small mt-0.5">{{ student.roll_no }}</div>
-                        <div class="text-white-50 small text-truncate" style="font-size: 0.72rem;">{{ student.email or 'student@cloudattend.edu' }}</div>
-                    </div>
-                </div>
-
-                <!-- Standing & Metrics Footer -->
-                <div class="pt-3 border-top border-white-10 mt-2">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div class="small">
-                            <span class="text-white-50" style="font-size: 0.7rem;">STATUS:</span>
-                            {% if overall_pct >= 75.0 %}
-                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill font-monospace" style="font-size: 0.68rem;">
-                                    <i class="bi bi-shield-check me-1"></i>Exam Eligible
-                                </span>
-                            {% elif overall_pct >= 65.0 %}
-                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill font-monospace" style="font-size: 0.68rem;">
-                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Borderline
-                                </span>
-                            {% else %}
-                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill font-monospace" style="font-size: 0.68rem;">
-                                    <i class="bi bi-x-circle-fill me-1"></i>Debarment Warning
-                                </span>
-                            {% endif %}
-                        </div>
-                        <div class="text-end">
-                            <span class="text-white-50 small" style="font-size: 0.7rem;">ATTENDANCE</span>
-                            <div class="fw-bold font-monospace text-white">{{ "%.1f"|format(overall_pct) }}%</div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="hologram-barcode font-monospace" style="font-size: 0.95rem; letter-spacing: 3px; color: rgba(255,255,255,0.65);">
-                            ||| | || |||| | ||| {{ student.roll_no }} |||
-                        </div>
-                        <span class="text-white-50" style="font-size: 0.62rem; text-transform: uppercase;">
-                            CloudAttend
-                        </span>
-                    </div>
-                </div>
-            </div>
+  <!-- Row 2: Per-Course Attendance Safety & Exam Eligibility Calculator -->
+  <section id="eligibilityCalculatorSection" aria-label="Attendance Safety and Exam Eligibility Calculator" class="obsidian-card rounded-2xl p-5 sm:p-6 space-y-5 animate-entrance delay-3">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-white/10">
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[22px] text-secondary" aria-hidden="true">calculate</span>
+          <h2 class="font-headline-lg text-headline-lg obsidian-text-heading">Per-Course Attendance Safety &amp; Exam Eligibility Calculator</h2>
         </div>
+        <p class="text-xs obsidian-text-muted">
+          Simulate attending or missing upcoming lectures before making schedule decisions.
+        </p>
+      </div>
+      <span class="px-2.5 py-1 rounded-full border font-mono text-[11px] obsidian-chip-blue self-start sm:self-center">
+        Interactive What-If Engine
+      </span>
     </div>
 
-    <!-- Radial Progress Hero & Quick Stats -->
-    <div class="col-12 col-lg-7 d-flex flex-column gap-3">
-        <!-- Radial Gauge Hero Card -->
-        <div class="card card-custom p-3 d-flex flex-row align-items-center justify-content-around shadow-sm">
-            <div class="radial-progress-container">
-                <svg class="radial-progress-svg" viewBox="0 0 120 120">
-                    <circle class="radial-track" cx="60" cy="60" r="50"></circle>
-                    <circle id="studentRadialIndicator" class="radial-indicator {% if overall_pct >= 75.0 %}emerald{% elif overall_pct >= 65.0 %}amber{% else %}rose{% endif %}" 
-                            cx="60" cy="60" r="50"
-                            stroke-dasharray="314.159"
-                            stroke-dashoffset="{{ 314.159 * (1.0 - (overall_pct / 100.0)) }}">
-                    </circle>
-                </svg>
-                <div class="radial-inner-label">
-                    <span class="radial-pct-value {% if overall_pct >= 75.0 %}text-success{% elif overall_pct >= 65.0 %}text-warning{% else %}text-danger{% endif %}">
-                        {{ "%.1f"|format(overall_pct) }}%
-                    </span>
-                    <span class="radial-pct-sub">Overall</span>
-                </div>
-            </div>
-            <div>
-                <div class="text-muted small fw-bold text-uppercase">Academic Standing</div>
-                <div class="fw-bold fs-5 mt-1 {% if overall_pct >= 75.0 %}text-success{% elif overall_pct >= 65.0 %}text-warning{% else %}text-danger{% endif %}">
-                    {% if overall_pct >= 75.0 %}Eligible{% elif overall_pct >= 65.0 %}Borderline{% else %}Warning{% endif %}
-                </div>
-                <div class="text-muted small">Target: &ge; 75.0% Required for Final Exams</div>
-            </div>
-        </div>
-
-        <!-- Quick Stat Metrics -->
-        <div class="row g-2 flex-grow-1">
-            <div class="col-4">
-                <div class="kpi-card emerald shadow-sm h-100 d-flex flex-column justify-content-center text-center p-3">
-                    <div class="text-muted small fw-bold text-uppercase tracking-wider">Present</div>
-                    <div class="kpi-value text-success mt-1 fs-4">{{ present_count }}</div>
-                    <div class="text-muted small mt-0.5" style="font-size: 0.72rem;">Attended</div>
-                </div>
-            </div>
-
-            <div class="col-4">
-                <div class="kpi-card rose shadow-sm h-100 d-flex flex-column justify-content-center text-center p-3">
-                    <div class="text-muted small fw-bold text-uppercase tracking-wider">Absent</div>
-                    <div class="kpi-value text-danger mt-1 fs-4">{{ absent_count }}</div>
-                    <div class="text-muted small mt-0.5" style="font-size: 0.72rem;">Missed</div>
-                </div>
-            </div>
-
-            <div class="col-4">
-                <div class="kpi-card navy shadow-sm h-100 d-flex flex-column justify-content-center text-center p-3">
-                    <div class="text-muted small fw-bold text-uppercase tracking-wider">Total</div>
-                    <div class="kpi-value mt-1 fs-4">{{ total_sessions }}</div>
-                    <div class="text-muted small mt-0.5" style="font-size: 0.72rem;">Lectures</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Innovation: Per-Course Attendance Safety & Exam Eligibility Calculator -->
-<div class="safety-calc-card p-4 mb-4">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-3">
-        <div>
-            <div class="d-flex align-items-center gap-2">
-                <span class="d-inline-flex p-1.5 rounded-3 bg-primary-subtle text-primary">
-                    <i class="bi bi-calculator-fill fs-5"></i>
-                </span>
-                <h2 class="h5 fw-bold mb-0">Per-Course Attendance Safety &amp; Exam Eligibility Calculator</h2>
-            </div>
-            <p class="text-muted small mb-0 mt-1">Switch between Overall and individual courses to test scenarios and plan recovery trajectories.</p>
-        </div>
-        <div id="safetyVerdictBadge" class="safety-badge-status safety-badge-safe">
-            <i class="bi bi-shield-check"></i>
-            <span>Calculating...</span>
-        </div>
-    </div>
-
-    <div class="row g-3 align-items-center pt-3 border-top">
-        <div class="col-md-3">
-            <label for="calcCourseScope" class="form-label small fw-bold text-muted">Target Scope</label>
-            <select id="calcCourseScope" class="form-select form-select-sm fw-semibold">
-                <option value="All Courses" data-present="{{ present_count }}" data-total="{{ total_sessions }}" selected>
-                    All Courses ({{ present_count }}/{{ total_sessions }} • {{ "%.0f"|format(overall_pct) }}%)
-                </option>
-                {% for c in course_summaries %}
-                    <option value="{{ c.course_code }}" data-present="{{ c.present }}" data-total="{{ c.total }}">
-                        {{ c.course_code }} — {{ c.course_name }} ({{ c.present }}/{{ c.total }} • {{ "%.0f"|format(c.percentage) }}%)
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="col-md-4">
-            <label for="simulationRange" class="form-label small fw-bold text-muted d-flex justify-content-between">
-                <span>Simulate Upcoming Lectures</span>
-                <span id="sliderValueLabel" class="text-primary fw-bold font-monospace">+0 Lectures</span>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+      <!-- Controls (7 cols) -->
+      <div class="lg:col-span-7 space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label for="calcCourseScope" class="block font-mono text-[11px] uppercase tracking-wider obsidian-text-muted">
+              Course Scope
             </label>
-            <input type="range" class="form-range slider-custom" id="simulationRange" min="0" max="25" value="0">
-        </div>
-
-        <div class="col-md-2">
-            <label for="simulationMode" class="form-label small fw-bold text-muted">Assumption</label>
-            <select id="simulationMode" class="form-select form-select-sm">
-                <option value="attend" selected>Attend All (+100%)</option>
-                <option value="miss">Miss All (0%)</option>
+            <select id="calcCourseScope" class="obsidian-input w-full rounded-xl px-3.5 py-2.5 text-sm min-h-[44px] cursor-pointer">
+              <option
+                value="overall"
+                data-present="{{ present_count }}"
+                data-total="{{ total_sessions }}"
+                data-label="All Courses Overall"
+              >
+                All Courses Overall ({{ present_count }}/{{ total_sessions }})
+              </option>
+              {% for c in course_summaries %}
+              <option
+                value="{{ c.course_code }}"
+                data-present="{{ c.present }}"
+                data-total="{{ c.total }}"
+                data-label="{{ c.course_code }} — {{ c.course_name }}"
+              >
+                {{ c.course_code }} — {{ c.course_name }} ({{ c.present }}/{{ c.total }})
+              </option>
+              {% endfor %}
             </select>
+          </div>
+
+          <div class="space-y-1.5">
+            <label for="simulationMode" class="block font-mono text-[11px] uppercase tracking-wider obsidian-text-muted">
+              What-If Scenario
+            </label>
+            <select id="simulationMode" class="obsidian-input w-full rounded-xl px-3.5 py-2.5 text-sm min-h-[44px] cursor-pointer">
+              <option value="miss" selected>What if I MISS upcoming classes?</option>
+              <option value="attend">What if I ATTEND upcoming classes?</option>
+            </select>
+          </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="p-2.5 rounded-3 bg-light border text-center">
-                <div class="text-muted small" style="font-size: 0.74rem;">Simulated Projected Rate</div>
-                <div id="projectedPctDisplay" class="fw-bold fs-5 text-primary font-monospace mt-0.5">
-                    {{ "%.1f"|format(overall_pct) }}%
-                </div>
-            </div>
+        <div class="obsidian-subcard rounded-xl p-4 space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <label for="simulationRange" class="font-mono text-xs uppercase tracking-wider obsidian-text-heading font-semibold">
+              Upcoming Classes Count
+            </label>
+            <output id="sliderValueLabel" for="simulationRange" class="px-2.5 py-0.5 rounded-full border obsidian-chip-blue font-mono text-xs font-semibold">
+              3 sessions
+            </output>
+          </div>
+          <input
+            type="range"
+            id="simulationRange"
+            class="obsidian-slider"
+            min="1"
+            max="15"
+            step="1"
+            value="3"
+            aria-valuetext="3 upcoming sessions"
+          />
+          <div class="flex items-center justify-between text-[11px] font-mono obsidian-text-muted">
+            <span>1 class</span>
+            <span>5 classes</span>
+            <span>10 classes</span>
+            <span>15 classes</span>
+          </div>
         </div>
-    </div>
+      </div>
 
-    <!-- Smart Guidance Message -->
-    <div id="safetyAdviceAlert" class="mt-3 p-2.5 rounded-3 bg-light border-0 small d-flex align-items-center gap-2 text-muted">
-        <i class="bi bi-info-circle-fill text-primary"></i>
-        <span id="safetyAdviceText">Loading smart recommendation...</span>
-    </div>
-</div>
-
-<!-- Course Breakdown with 75% Cutoff Marker & History Row -->
-<div class="row g-4">
-    <!-- Course Breakdown with 75% Threshold Marker -->
-    <div class="col-lg-6">
-        <div class="card card-custom p-4 h-100">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                    <h2 class="h5 fw-bold mb-0">Course-Wise Attendance Standing</h2>
-                    <span class="text-muted small">Vertical tick marks the 75% exam cutoff</span>
-                </div>
-                <span class="badge bg-light text-secondary border">{{ course_summaries|length }} Enrolled</span>
-            </div>
-            {% if course_summaries %}
-                <div class="table-responsive">
-                    <table class="table table-custom align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th style="width: 52%;">Course &amp; 75% Cutoff Bar</th>
-                                <th style="width: 22%;">Attended</th>
-                                <th style="width: 26%;" class="text-end">Standing</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for c in course_summaries %}
-                                <tr>
-                                    <td>
-                                        <div class="fw-bold text-dark">{{ c.course_code }}</div>
-                                        <div class="text-muted small">{{ c.course_name }}</div>
-                                        <div class="progress-threshold-wrap" title="75% Threshold">
-                                            <div class="threshold-marker-75"></div>
-                                            <div class="progress-threshold-fill" 
-                                                 style="width: {{ c.percentage }}%; background-color: {% if c.percentage >= 75.0 %}#10B981{% elif c.percentage >= 65.0 %}#F59E0B{% else %}#EF4444{% endif %};">
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-light text-dark border font-monospace">{{ c.present }} / {{ c.total }}</span>
-                                    </td>
-                                    <td class="text-end">
-                                        {% if c.percentage >= 75.0 %}
-                                            <span class="badge-present">{{ "%.1f"|format(c.percentage) }}%</span>
-                                        {% else %}
-                                            <span class="badge-absent">{{ "%.1f"|format(c.percentage) }}%</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty-state py-4">
-                    <i class="bi bi-journal-x"></i>
-                    <p class="mb-0">No course attendance recorded yet.</p>
-                </div>
-            {% endif %}
+      <!-- Projected Output Panel (5 cols) -->
+      <div class="lg:col-span-5 obsidian-subcard rounded-2xl p-5 space-y-4" aria-live="polite">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="font-mono text-[11px] uppercase tracking-wider obsidian-text-muted">Projected Standing</div>
+            <div id="projectedPctDisplay" class="font-mono text-4xl font-bold obsidian-text-heading mt-1">--%</div>
+          </div>
+          <span id="safetyVerdictBadge" class="px-3 py-1 rounded-full border font-mono text-xs font-semibold obsidian-chip-neutral">
+            Calculating...
+          </span>
         </div>
-    </div>
 
-    <!-- Attendance Session Log & Streak Strip -->
-    <div class="col-lg-6">
-        <div class="card card-custom p-4 h-100">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                    <h2 class="h5 fw-bold mb-0">Recent Activity &amp; Streak Strip</h2>
-                    <span class="text-muted small">Visual dot matrix for instant pattern recognition</span>
-                </div>
-                <span class="badge bg-light text-secondary border">Latest {{ attendance_history|length }} Sessions</span>
-            </div>
-
-            {% if attendance_history %}
-                <!-- Session Heatmap Strip -->
-                <div class="mb-3 p-2.5 rounded-3 bg-light border">
-                    <div class="d-flex justify-content-between align-items-center mb-1.5">
-                        <span class="text-muted fw-bold text-uppercase" style="font-size: 0.68rem;">Session Streak (Newest &rarr; Oldest)</span>
-                        <span class="text-muted" style="font-size: 0.7rem;">Green = Present &bull; Red = Absent</span>
-                    </div>
-                    <div class="session-heatmap-strip">
-                        {% for rec in attendance_history %}
-                            <span class="session-dot-pill {% if rec.status == 'Present' %}present{% else %}absent{% endif %}" 
-                                  title="{{ rec.attendance_date }} • {{ rec.course_code }}: {{ rec.status }}">
-                                {{ 'P' if rec.status == 'Present' else 'A' }}
-                            </span>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-custom align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Course</th>
-                                <th class="text-end">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for rec in attendance_history %}
-                                <tr>
-                                    <td class="text-nowrap small text-muted font-monospace">
-                                        <i class="bi bi-calendar3 me-1 text-primary"></i> {{ rec.attendance_date }}
-                                    </td>
-                                    <td class="fw-bold text-dark">{{ rec.course_code }}</td>
-                                    <td class="text-end">
-                                        {% if rec.status == 'Present' %}
-                                            <span class="badge-present">Present</span>
-                                        {% else %}
-                                            <span class="badge-absent">Absent</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty-state py-4">
-                    <i class="bi bi-calendar-x"></i>
-                    <p class="mb-0">No attendance has been recorded for this student.</p>
-                </div>
-            {% endif %}
+        <div id="safetyAdviceAlert" class="rounded-xl border p-3.5 text-xs leading-relaxed flex items-start gap-2.5 obsidian-chip-blue">
+          <span class="material-symbols-outlined text-[18px] shrink-0" aria-hidden="true">tips_and_updates</span>
+          <span id="safetyAdviceText">Adjust the slider or course scope to preview your projected eligibility.</span>
         </div>
+      </div>
     </div>
-</div>
+  </section>
 
-<!-- Innovation: Monthly Attendance Calendar Heatmap Grid -->
-<div class="card card-custom p-4 mt-4">
-    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 gap-2">
+  <!-- Row 3: Course-Wise Standing & 35-Day Calendar Heatmap -->
+  <section class="grid grid-cols-1 xl:grid-cols-12 gap-space-md animate-entrance delay-4">
+    <!-- Course-Wise Standing (7 cols) -->
+    <article id="courseStandingSection" class="xl:col-span-7 obsidian-card rounded-2xl p-5 sm:p-6 space-y-4">
+      <div class="flex items-center justify-between gap-2">
         <div>
-            <div class="d-flex align-items-center gap-2">
-                <span class="d-inline-flex p-1.5 rounded-3 bg-success-subtle text-success">
-                    <i class="bi bi-calendar-check-fill fs-5"></i>
+          <h2 class="font-headline-sm text-headline-sm obsidian-text-heading">Course-Wise Attendance Standing</h2>
+          <p class="text-xs obsidian-text-muted">Amber vertical marker marks the 75% exam eligibility cutoff</p>
+        </div>
+        <span class="px-2.5 py-1 rounded-full border font-mono text-[11px] obsidian-chip-blue">
+          {{ course_summaries | length }} Enrolled
+        </span>
+      </div>
+
+      {% if course_summaries %}
+      <div class="space-y-3.5">
+        {% for c in course_summaries %}
+          {% if c.total == 0 %}
+            {% set bar_cls = 'obsidian-progress-muted' %}
+            {% set chip_cls = 'obsidian-chip-neutral' %}
+            {% set badge_txt = 'No Sessions' %}
+          {% elif c.percentage >= 75 %}
+            {% set bar_cls = 'obsidian-progress-safe' %}
+            {% set chip_cls = 'obsidian-chip-emerald' %}
+            {% set badge_txt = 'Eligible' %}
+          {% elif c.percentage >= 65 %}
+            {% set bar_cls = 'obsidian-progress-warn' %}
+            {% set chip_cls = 'obsidian-chip-amber' %}
+            {% set badge_txt = 'Borderline' %}
+          {% else %}
+            {% set bar_cls = 'obsidian-progress-danger' %}
+            {% set chip_cls = 'obsidian-chip-red' %}
+            {% set badge_txt = 'Warning' %}
+          {% endif %}
+          <div class="obsidian-subcard rounded-xl p-4 space-y-2.5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="px-2 py-0.5 rounded-md border font-mono text-xs font-semibold obsidian-chip-blue">{{ c.course_code }}</span>
+                  <span class="font-medium text-sm obsidian-text-heading truncate">{{ c.course_name }}</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="font-mono text-xs obsidian-text-muted">{{ c.present }} / {{ c.total }}</span>
+                <span class="px-2 py-0.5 rounded-full border font-mono text-xs font-semibold {{ chip_cls }}">
+                  {{ "%.2f"|format(c.percentage) }}% • {{ badge_txt }}
                 </span>
-                <h2 class="h5 fw-bold mb-0">Monthly Attendance Calendar Heatmap</h2>
+              </div>
             </div>
-            <p class="text-muted small mb-0 mt-1">Interactive 35-day academic grid tracking class attendance, absences, and open days.</p>
+
+            <div class="course-progress-shell" title="Attendance {{ '%.2f'|format(c.percentage) }}% (75% cutoff line marked)">
+              <progress
+                class="obsidian-progress {{ bar_cls }}"
+                max="100"
+                value="{{ c.percentage }}"
+                aria-label="{{ c.course_code }} attendance {{ '%.2f'|format(c.percentage) }} percent"
+              ></progress>
+              <span class="course-cutoff-pin" aria-hidden="true"></span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="obsidian-subcard rounded-xl p-8 text-center space-y-2">
+        <span class="material-symbols-outlined text-3xl obsidian-text-muted" aria-hidden="true">menu_book</span>
+        <p class="text-sm obsidian-text-muted">No course enrollments or attendance sessions found yet.</p>
+      </div>
+      {% endif %}
+    </article>
+
+    <!-- 35-Day Calendar Heatmap (5 cols) -->
+    <article id="heatmapSection" class="xl:col-span-5 obsidian-card rounded-2xl p-5 sm:p-6 space-y-4">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <h2 class="font-headline-sm text-headline-sm obsidian-text-heading">35-Day Activity Heatmap</h2>
+          <p class="text-xs obsidian-text-muted">Select or hover a day cell to inspect session outcomes</p>
         </div>
-        <div class="d-flex align-items-center gap-3 small font-monospace">
-            <span><span class="d-inline-block rounded-1 me-1" style="width:12px;height:12px;background:#ECFDF5;border:1px solid #A7F3D0;"></span>Present</span>
-            <span><span class="d-inline-block rounded-1 me-1" style="width:12px;height:12px;background:#FEF2F2;border:1px solid #FECACA;"></span>Absent</span>
-            <span><span class="d-inline-block rounded-1 me-1" style="width:12px;height:12px;background:#F8FAFC;border:1px solid #E2E8F0;"></span>No Session</span>
-        </div>
+        <span class="px-2.5 py-1 rounded-full border font-mono text-[11px] obsidian-chip-emerald">5 Weeks</span>
+      </div>
+
+      <div class="grid grid-cols-7 gap-1.5 text-center font-mono text-[10px] uppercase tracking-wider obsidian-text-muted" aria-hidden="true">
+        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+      </div>
+
+      <div id="studentHeatmapGrid" class="grid grid-cols-7 gap-1.5" role="grid" aria-label="35-day attendance heatmap"></div>
+
+      <div class="flex items-center justify-between flex-wrap gap-2 text-[11px] font-mono pt-1">
+        <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded heatmap-present border"></span>Present</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded heatmap-mixed border"></span>Mixed</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded heatmap-absent border"></span>Absent</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded heatmap-empty border"></span>None</span>
+      </div>
+
+      <div id="heatmapDetailText" class="obsidian-subcard rounded-xl px-3.5 py-2.5 text-xs font-mono obsidian-text-muted" aria-live="polite">
+        Select any highlighted date above to inspect recorded courses.
+      </div>
+    </article>
+  </section>
+
+  <!-- Row 4: Recent Streak Strip & Personal Attendance Ledger -->
+  <section aria-label="Recent Session Streak and Full History" class="obsidian-card rounded-2xl p-5 sm:p-6 space-y-5 animate-entrance delay-5">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div>
+        <h2 id="historyTableHeading" class="font-headline-sm text-headline-sm obsidian-text-heading">Recent Activity &amp; Session Ledger</h2>
+        <p class="text-xs obsidian-text-muted">Your chronological roll-call records across enrolled courses</p>
+      </div>
+      {% if attendance_history %}
+      <div class="flex items-center gap-1.5 flex-wrap" aria-label="Recent 14-session streak">
+        <span class="font-mono text-[11px] obsidian-text-muted mr-1">Streak:</span>
+        {% for rec in attendance_history[:14] %}
+          <span
+            class="inline-flex items-center justify-center w-7 h-7 rounded-lg border font-mono text-xs font-bold {{ 'obsidian-chip-emerald' if rec.status == 'Present' else 'obsidian-chip-red' }}"
+            title="{{ rec.attendance_date }} — {{ rec.course_code }}: {{ rec.status }}"
+            aria-label="{{ rec.attendance_date }} {{ rec.course_code }} {{ rec.status }}"
+          >
+            {{ 'P' if rec.status == 'Present' else 'A' }}
+          </span>
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
 
-    <div class="calendar-heatmap-card p-3">
-        <div class="heatmap-weekdays">
-            <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
-        </div>
-        <div class="heatmap-grid" id="studentHeatmapGrid">
-            <!-- Dynamically populated via JavaScript -->
-        </div>
+    {% if attendance_history %}
+    <div class="table-wrapper table-responsive-cards max-h-96 border border-white/10 rounded-xl" tabindex="0" role="region" aria-labelledby="historyTableHeading">
+      <table>
+        <thead>
+          <tr class="text-left text-[11px] font-mono uppercase tracking-wider">
+            <th class="px-4 py-3">Date</th>
+            <th class="px-4 py-3">Course Code</th>
+            <th class="px-4 py-3">Course Name</th>
+            <th class="px-4 py-3 text-right">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/10 text-sm">
+          {% for rec in attendance_history %}
+          <tr>
+            <td data-label="Date" class="px-4 py-3 font-mono text-xs">{{ rec.attendance_date }}</td>
+            <td data-label="Course Code" class="px-4 py-3">
+              <span class="px-2 py-0.5 rounded-md border obsidian-chip-blue font-mono text-xs font-semibold">{{ rec.course_code }}</span>
+            </td>
+            <td data-label="Course Name" class="px-4 py-3 font-medium">{{ rec.course_name }}</td>
+            <td data-label="Status" class="px-4 py-3 sm:text-right">
+              <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border font-mono text-xs font-semibold {{ 'obsidian-chip-emerald' if rec.status == 'Present' else 'obsidian-chip-red' }}">
+                <span class="material-symbols-outlined text-[14px]" aria-hidden="true">{{ 'check' if rec.status == 'Present' else 'close' }}</span>
+                {{ rec.status }}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+    {% else %}
+    <div class="obsidian-subcard rounded-xl p-8 text-center space-y-2">
+      <span class="material-symbols-outlined text-3xl obsidian-text-muted" aria-hidden="true">history_toggle_off</span>
+      <p class="text-sm obsidian-text-muted">No session logs recorded yet. Once instructors submit attendance, every record will appear here.</p>
+    </div>
+    {% endif %}
+  </section>
 </div>
+
+<script id="studentHistoryData" type="application/json">
+[
+  {% for r in attendance_history %}
+    {"date": {{ r.attendance_date | tojson }}, "status": {{ r.status | tojson }}, "course_code": {{ r.course_code | tojson }}, "course_name": {{ r.course_name | tojson }}}{{ "," if not loop.last }}
+  {% endfor %}
+]
+</script>
+{% endblock %}
 
 {% block scripts %}
 <script>
-(function() {
-    // 3D Tilt Effect on Student ID Card
-    const holoCard = document.getElementById('studentHoloCard');
-    const holoContainer = document.getElementById('studentHoloContainer');
-    if (holoCard && holoContainer) {
-        holoContainer.addEventListener('mousemove', function(e) {
-            const rect = holoContainer.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-            const rotateX = ((y - centerY) / centerY) * -12;
-            const rotateY = ((x - centerX) / centerX) * 12;
-            holoCard.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
-        });
-        holoContainer.addEventListener('mouseleave', function() {
-            holoCard.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
-        });
+  document.addEventListener("DOMContentLoaded", function () {
+    // 1. 3D Hologram ID Tilt (respects prefers-reduced-motion)
+    var holoCard = document.getElementById("studentHoloCard");
+    var prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (holoCard && !prefersReduced) {
+      holoCard.addEventListener("pointermove", function (evt) {
+        var rect = holoCard.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        var x = evt.clientX - rect.left;
+        var y = evt.clientY - rect.top;
+        var pctX = Math.max(0, Math.min(100, (x / rect.width) * 100));
+        var pctY = Math.max(0, Math.min(100, (y / rect.height) * 100));
+        var rx = ((pctY - 50) / 50) * -4.5;
+        var ry = ((pctX - 50) / 50) * 4.5;
+        holoCard.style.setProperty("--pointer-x", pctX.toFixed(1) + "%");
+        holoCard.style.setProperty("--pointer-y", pctY.toFixed(1) + "%");
+        holoCard.style.setProperty("--rx", rx.toFixed(2) + "deg");
+        holoCard.style.setProperty("--ry", ry.toFixed(2) + "deg");
+      });
+      holoCard.addEventListener("pointerleave", function () {
+        holoCard.style.setProperty("--pointer-x", "50%");
+        holoCard.style.setProperty("--pointer-y", "50%");
+        holoCard.style.setProperty("--rx", "0deg");
+        holoCard.style.setProperty("--ry", "0deg");
+      });
     }
 
-    // Monthly Calendar Heatmap
-    const attendanceMap = {
-        {% for rec in attendance_history %}
-            "{{ rec.attendance_date }}": { status: "{{ rec.status }}", course: "{{ rec.course_code }}" },
-        {% endfor %}
-    };
+    // 2. Per-Course Attendance Safety & Exam Eligibility Calculator
+    var scopeSelect = document.getElementById("calcCourseScope");
+    var modeSelect = document.getElementById("simulationMode");
+    var rangeSlider = document.getElementById("simulationRange");
+    var sliderLabel = document.getElementById("sliderValueLabel");
+    var projectedDisplay = document.getElementById("projectedPctDisplay");
+    var verdictBadge = document.getElementById("safetyVerdictBadge");
+    var adviceAlert = document.getElementById("safetyAdviceAlert");
+    var adviceText = document.getElementById("safetyAdviceText");
 
-    function renderMonthlyHeatmap() {
-        const grid = document.getElementById('studentHeatmapGrid');
-        if (!grid) return;
-        grid.innerHTML = '';
+    function updateSafetyCalculator() {
+      if (!scopeSelect || !modeSelect || !rangeSlider) return;
+      var opt = scopeSelect.options[scopeSelect.selectedIndex];
+      var basePresent = parseInt(opt ? opt.getAttribute("data-present") : "0", 10) || 0;
+      var baseTotal = parseInt(opt ? opt.getAttribute("data-total") : "0", 10) || 0;
+      var scopeName = opt ? (opt.getAttribute("data-label") || "Selected Scope") : "Selected Scope";
+      var n = parseInt(rangeSlider.value, 10) || 1;
+      var mode = modeSelect.value;
 
-        const today = new Date();
-        const dayOfWeek = (today.getDay() + 6) % 7; // Monday=0, Sunday=6
-        const totalDays = 35;
-        const startDate = new Date(today);
-        startDate.setDate(today.getDate() - (totalDays - 1 - (6 - dayOfWeek)));
+      // Sync CSS custom properties & accessible valuetext for native range slider fill
+      rangeSlider.style.setProperty("--attr-min", rangeSlider.min || "1");
+      rangeSlider.style.setProperty("--attr-max", rangeSlider.max || "15");
+      rangeSlider.style.setProperty("--control-value", String(n));
+      rangeSlider.setAttribute("aria-valuetext", n + (n === 1 ? " upcoming session" : " upcoming sessions"));
 
-        for (let i = 0; i < totalDays; i++) {
-            const d = new Date(startDate);
-            d.setDate(startDate.getDate() + i);
-            const isoDate = d.toISOString().split('T')[0];
-            const dayNum = d.getDate();
-            const monthShort = d.toLocaleString('default', { month: 'short' });
+      if (sliderLabel) {
+        sliderLabel.textContent = n + (n === 1 ? " session" : " sessions");
+      }
 
-            const cell = document.createElement('div');
-            cell.className = 'heatmap-day';
+      var newTotal = baseTotal + n;
+      var newPresent = mode === "attend" ? basePresent + n : basePresent;
+      var projectedPct = newTotal > 0 ? (newPresent / newTotal) * 100 : 0;
 
-            const record = attendanceMap[isoDate];
-            if (record) {
-                if (record.status === 'Present') {
-                    cell.classList.add('present');
-                    cell.title = `${isoDate} • ${record.course}: Present`;
-                } else {
-                    cell.classList.add('absent');
-                    cell.title = `${isoDate} • ${record.course}: Absent`;
-                }
-            } else {
-                cell.classList.add('empty');
-                cell.title = `${isoDate} • No scheduled session`;
-            }
+      if (projectedDisplay) {
+        projectedDisplay.textContent = projectedPct.toFixed(2) + "%";
+      }
 
-            cell.innerHTML = `<span>${dayNum}</span><span style="font-size:0.6rem;opacity:0.75;">${monthShort}</span>`;
-            grid.appendChild(cell);
-        }
-    }
+      var maxSafeMisses = baseTotal > 0 ? Math.max(0, Math.floor((basePresent - 0.75 * baseTotal) / 0.75)) : 0;
+      var recoverCount = Math.max(1, Math.ceil(3 * baseTotal - 4 * basePresent));
 
-    renderMonthlyHeatmap();
+      if (!verdictBadge || !adviceAlert || !adviceText) return;
 
-    const scopeSelect = document.getElementById('calcCourseScope');
-    const slider = document.getElementById('simulationRange');
-    const modeSelect = document.getElementById('simulationMode');
-    const sliderLabel = document.getElementById('sliderValueLabel');
-    const projectedDisplay = document.getElementById('projectedPctDisplay');
-    const verdictBadge = document.getElementById('safetyVerdictBadge');
-    const adviceText = document.getElementById('safetyAdviceText');
+      adviceAlert.className = "rounded-xl border p-3.5 text-xs leading-relaxed flex items-start gap-2.5";
+      verdictBadge.className = "px-3 py-1 rounded-full border font-mono text-xs font-semibold";
 
-    function updateSimulation() {
-        if (!scopeSelect || !slider || !modeSelect) return;
-        const opt = scopeSelect.options[scopeSelect.selectedIndex];
-        const basePresent = parseInt(opt.getAttribute('data-present') || '0', 10);
-        const baseTotal = parseInt(opt.getAttribute('data-total') || '0', 10);
-        const extraLectures = parseInt(slider.value, 10);
-        const mode = modeSelect.value;
-        const scopeName = scopeSelect.value;
+      if (baseTotal === 0 && mode === "miss") {
+        verdictBadge.classList.add("obsidian-chip-neutral");
+        verdictBadge.textContent = "No Baseline";
+        adviceAlert.classList.add("obsidian-chip-blue");
+        adviceText.textContent = scopeName + " has no past sessions yet. Switch to 'What if I ATTEND' to model starting attendance.";
+        return;
+      }
 
-        sliderLabel.textContent = '+' + extraLectures + ' Lectures';
-
-        let simPresent = basePresent;
-        let simTotal = baseTotal + extraLectures;
-
-        if (mode === 'attend') {
-            simPresent += extraLectures;
-        }
-
-        const simPct = simTotal > 0 ? (simPresent / simTotal) * 100 : 0;
-        projectedDisplay.textContent = simPct.toFixed(1) + '%';
-
-        // Update verdict badge styling
-        if (simPct >= 75.0) {
-            verdictBadge.className = 'safety-badge-status safety-badge-safe';
-            verdictBadge.innerHTML = '<i class="bi bi-shield-check"></i> <span>Eligible for Exams (' + simPct.toFixed(1) + '%)</span>';
-            projectedDisplay.className = 'fw-bold fs-5 text-success font-monospace mt-0.5';
-        } else if (simPct >= 65.0) {
-            verdictBadge.className = 'safety-badge-status safety-badge-warning';
-            verdictBadge.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> <span>Borderline Risk (' + simPct.toFixed(1) + '%)</span>';
-            projectedDisplay.className = 'fw-bold fs-5 text-warning font-monospace mt-0.5';
+      if (projectedPct >= 75) {
+        verdictBadge.classList.add("obsidian-chip-emerald");
+        verdictBadge.textContent = "Eligible (>= 75%)";
+        adviceAlert.classList.add("obsidian-chip-emerald");
+        if (mode === "miss") {
+          adviceText.textContent = "Safe buffer in " + scopeName + ": missing " + n + " class" + (n === 1 ? "" : "es") + " leaves " + newPresent + "/" + newTotal + " (" + projectedPct.toFixed(2) + "%). Max consecutive misses allowed now: " + maxSafeMisses + ".";
         } else {
-            verdictBadge.className = 'safety-badge-status safety-badge-danger';
-            verdictBadge.innerHTML = '<i class="bi bi-x-circle-fill"></i> <span>Debarment Warning (' + simPct.toFixed(1) + '%)</span>';
-            projectedDisplay.className = 'fw-bold fs-5 text-danger font-monospace mt-0.5';
+          adviceText.textContent = "Attending " + n + " consecutive class" + (n === 1 ? "" : "es") + " in " + scopeName + " brings your record to " + newPresent + "/" + newTotal + " (" + projectedPct.toFixed(2) + "%), clearing the 75% exam requirement.";
         }
-
-        // Smart Guidance Message
-        if (baseTotal === 0) {
-            adviceText.textContent = 'No attendance recorded yet for ' + scopeName + '. Attend scheduled lectures to establish a solid standing.';
+      } else {
+        verdictBadge.classList.add("obsidian-chip-red");
+        verdictBadge.textContent = "Cutoff Risk (< 75%)";
+        adviceAlert.classList.add("obsidian-chip-red");
+        if (mode === "miss") {
+          adviceText.textContent = "Warning: missing " + n + " class" + (n === 1 ? "" : "es") + " in " + scopeName + " drops attendance to " + projectedPct.toFixed(2) + "% (" + newPresent + "/" + newTotal + "). Safe miss buffer before drop: " + maxSafeMisses + ".";
         } else {
-            const currentPct = (basePresent / baseTotal) * 100;
-            if (currentPct >= 75.0) {
-                const safeMisses = Math.floor((basePresent - 0.75 * baseTotal) / 0.75);
-                if (safeMisses > 0) {
-                    adviceText.innerHTML = '<strong>Safety Margin (' + scopeName + '):</strong> You can safely miss up to <strong>' + safeMisses + '</strong> upcoming lecture(s) and still maintain the required 75% threshold.';
-                } else {
-                    adviceText.innerHTML = '<strong>Caution (' + scopeName + '):</strong> You are currently at the 75% boundary. Missing even 1 additional class will trigger an attendance warning.';
-                }
-            } else {
-                const needed = Math.max(1, Math.ceil(3 * baseTotal - 4 * basePresent));
-                adviceText.innerHTML = '<strong>Recovery Plan (' + scopeName + '):</strong> You need to attend the next <strong>' + needed + '</strong> consecutive lecture(s) without absence to restore your standing to &ge; 75%.';
-            }
+          adviceText.textContent = "After attending " + n + " class" + (n === 1 ? "" : "es") + " (" + newPresent + "/" + newTotal + " -> " + projectedPct.toFixed(2) + "%), you remain below 75%. Current consecutive recovery needed from baseline: " + recoverCount + ".";
         }
+      }
     }
 
-    if (slider && modeSelect && scopeSelect) {
-        slider.addEventListener('input', updateSimulation);
-        modeSelect.addEventListener('change', updateSimulation);
-        scopeSelect.addEventListener('change', updateSimulation);
-        updateSimulation();
+    if (scopeSelect && modeSelect && rangeSlider) {
+      scopeSelect.addEventListener("change", updateSafetyCalculator);
+      modeSelect.addEventListener("change", updateSafetyCalculator);
+      rangeSlider.addEventListener("input", updateSafetyCalculator);
+      updateSafetyCalculator();
     }
-})();
+
+    // 3. 35-Day Calendar Heatmap Builder (safe DOM APIs, zero raw HTML interpolation)
+    var heatmapGrid = document.getElementById("studentHeatmapGrid");
+    var heatmapDetail = document.getElementById("heatmapDetailText");
+    var rawHistoryNode = document.getElementById("studentHistoryData");
+    if (heatmapGrid && rawHistoryNode) {
+      var historyList = [];
+      try {
+        historyList = JSON.parse(rawHistoryNode.textContent || "[]");
+      } catch (e) {
+        historyList = [];
+      }
+
+      var byDate = {};
+      historyList.forEach(function (item) {
+        if (!item || !item.date) return;
+        if (!byDate[item.date]) {
+          byDate[item.date] = { present: 0, absent: 0, notes: [] };
+        }
+        if (item.status === "Present") {
+          byDate[item.date].present += 1;
+        } else {
+          byDate[item.date].absent += 1;
+        }
+        byDate[item.date].notes.push((item.course_code || "Course") + ": " + (item.status || "Unknown"));
+      });
+
+      function formatIsoLocal(dt) {
+        var yr = dt.getFullYear();
+        var mo = String(dt.getMonth() + 1).padStart(2, "0");
+        var dy = String(dt.getDate()).padStart(2, "0");
+        return yr + "-" + mo + "-" + dy;
+      }
+
+      var anchorDate = new Date();
+      if (historyList.length > 0 && historyList[0].date) {
+        var latestDateStr = historyList[0].date;
+        var parsedLatest = new Date(latestDateStr + "T00:00:00");
+        if (!isNaN(parsedLatest.getTime()) && parsedLatest > anchorDate) {
+          anchorDate = parsedLatest;
+        }
+      }
+
+      // Align grid so the 35th cell ends on the Sunday of anchorDate's week (Mon..Sun rows)
+      var dayOfWeekMon0 = (anchorDate.getDay() + 6) % 7;
+      var endSunday = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), anchorDate.getDate() + (6 - dayOfWeekMon0));
+      var startMonday = new Date(endSunday.getFullYear(), endSunday.getMonth(), endSunday.getDate() - 34);
+      var todayIso = formatIsoLocal(new Date());
+
+      heatmapGrid.textContent = "";
+      for (var i = 0; i < 35; i++) {
+        var cellDate = new Date(startMonday.getFullYear(), startMonday.getMonth(), startMonday.getDate() + i);
+        var iso = formatIsoLocal(cellDate);
+        var info = byDate[iso];
+
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "heatmap-cell";
+        btn.setAttribute("role", "gridcell");
+
+        if (iso === todayIso) {
+          btn.classList.add("heatmap-today");
+        }
+
+        var summaryText = iso + ": No attendance recorded";
+        if (info) {
+          if (info.present > 0 && info.absent === 0) {
+            btn.classList.add("heatmap-present");
+          } else if (info.absent > 0 && info.present === 0) {
+            btn.classList.add("heatmap-absent");
+          } else {
+            btn.classList.add("heatmap-mixed");
+          }
+          summaryText = iso + " — " + info.present + " Present, " + info.absent + " Absent (" + info.notes.join("; ") + ")";
+        } else {
+          btn.classList.add("heatmap-empty");
+        }
+
+        btn.textContent = String(cellDate.getDate());
+        btn.setAttribute("aria-label", summaryText);
+        btn.setAttribute("title", summaryText);
+
+        (function (msg) {
+          btn.addEventListener("click", function () {
+            if (heatmapDetail) heatmapDetail.textContent = msg;
+          });
+          btn.addEventListener("focus", function () {
+            if (heatmapDetail) heatmapDetail.textContent = msg;
+          });
+        })(summaryText);
+
+        heatmapGrid.appendChild(btn);
+      }
+    }
+  });
 </script>
-{% endblock %}
 {% endblock %}

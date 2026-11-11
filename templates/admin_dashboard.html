@@ -1,0 +1,481 @@
+{% extends "obsidian_admin_base.html" %}
+
+{% block title %}Administrator Overview — AttendX{% endblock %}
+
+{% block content %}
+<!-- Top Section Header -->
+<div class="animate-entrance delay-1 flex flex-col lg:flex-row lg:items-end justify-between gap-space-md pb-space-xs">
+  <div class="flex flex-col gap-space-xxs">
+    <div class="flex items-center gap-space-xs font-label-sm text-label-sm obsidian-text-muted font-mono tracking-wider">
+      <span>SYS</span>
+      <span aria-hidden="true">//</span>
+      <span>ADMIN CONSOLE</span>
+      <span aria-hidden="true">//</span>
+      <span class="text-secondary font-semibold">TELEMETRY &amp; ACADEMIC PULSE</span>
+    </div>
+    <h1 class="font-headline-xl text-headline-xl-mobile sm:text-headline-xl obsidian-text-heading tracking-tight font-bold">
+      Administrator Overview
+    </h1>
+  </div>
+
+  <div class="flex items-center flex-wrap gap-space-xs sm:gap-space-sm">
+    <div class="obsidian-subcard inline-flex items-center gap-space-xs px-space-sm py-space-xs rounded-lg">
+      <span class="material-symbols-outlined text-[16px] text-secondary" aria-hidden="true">calendar_today</span>
+      <span class="font-label-md text-label-md font-medium font-mono">{{ stats.today_iso }}</span>
+    </div>
+
+    <div class="obsidian-subcard inline-flex items-center gap-space-xs px-space-sm py-space-xs rounded-lg obsidian-text-muted font-mono text-label-sm">
+      <span class="w-1.5 h-1.5 rounded-full bg-success telemetry-radar-dot" aria-hidden="true"></span>
+      <span id="live-utc-clock">UTC --:--:--</span>
+    </div>
+
+    <div class="inline-flex items-center gap-space-xs px-space-sm py-space-xs rounded-lg bg-success-soft text-success font-label-sm text-label-sm font-mono border border-emerald-500/30">
+      <span class="material-symbols-outlined text-[16px]" aria-hidden="true">database</span>
+      <span>SQLite Pool: Healthy ({{ stats.query_latency_ms }}ms)</span>
+    </div>
+  </div>
+</div>
+
+<!-- System KPIs (4 Sparkline Metric Cards bound to SQLite) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-md">
+  <!-- KPI 1: Students -->
+  <div class="animate-entrance delay-2 interactive-card obsidian-card p-space-lg rounded-xl flex flex-col justify-between">
+    <div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary shadow-[0_0_12px_rgba(96,165,250,0.8)]" aria-hidden="true"></div>
+    <div class="flex items-center justify-between gap-space-xs">
+      <span class="font-label-sm text-label-sm obsidian-text-muted uppercase tracking-wider font-mono">Total Students</span>
+      <span class="inline-flex items-center gap-1 text-success font-label-sm bg-success-soft px-space-xs py-0.5 rounded border border-emerald-500/30 font-mono">
+        <span class="material-symbols-outlined text-[14px]" aria-hidden="true">group</span>{{ stats.enrolled_student_count }} Enrolled
+      </span>
+    </div>
+    <div class="my-space-sm">
+      <div class="font-headline-xl text-headline-xl obsidian-text-heading font-mono tracking-tight font-bold">
+        <span class="counter-val" data-format="comma" data-target="{{ stats.student_count }}">{{ stats.student_count }}</span>
+      </div>
+      <div class="font-body-sm text-body-sm obsidian-text-muted mt-0.5">{{ stats.enrollment_rate }}% active roster enrollments</div>
+    </div>
+    <div aria-hidden="true" class="flex items-end gap-1 h-6 w-full pt-1">
+      {% for h in stats.sparks.students %}
+        <div class="flex-1 rounded-t transition-all {% if loop.last %}bg-secondary shadow-[0_0_8px_rgba(96,165,250,0.6)]{% else %}bg-surface-container-high hover:bg-secondary/40{% endif %}" style="height: {{ h }}%;"></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- KPI 2: Courses -->
+  <div class="animate-entrance delay-3 interactive-card obsidian-card p-space-lg rounded-xl flex flex-col justify-between">
+    <div class="absolute left-0 top-0 bottom-0 w-1 bg-on-tertiary-container shadow-[0_0_12px_rgba(255,140,66,0.8)]" aria-hidden="true"></div>
+    <div class="flex items-center justify-between gap-space-xs">
+      <span class="font-label-sm text-label-sm obsidian-text-muted uppercase tracking-wider font-mono">Active Courses</span>
+      <span class="font-label-sm obsidian-text-muted font-mono obsidian-subcard px-space-xs py-0.5 rounded">
+        {{ stats.enrollment_count }} Links
+      </span>
+    </div>
+    <div class="my-space-sm">
+      <div class="font-headline-xl text-headline-xl obsidian-text-heading font-mono tracking-tight font-bold">
+        <span class="counter-val" data-target="{{ stats.course_count }}">{{ stats.course_count }}</span>
+      </div>
+      <div class="font-body-sm text-body-sm obsidian-text-muted mt-0.5">{{ stats.courses_with_records }} courses with attendance logs</div>
+    </div>
+    <div aria-hidden="true" class="flex items-end gap-1 h-6 w-full pt-1">
+      {% for h in stats.sparks.courses %}
+        <div class="flex-1 rounded-t transition-all {% if loop.last %}bg-on-tertiary-container shadow-[0_0_8px_rgba(255,140,66,0.6)]{% else %}bg-surface-container-high hover:bg-amber-400/40{% endif %}" style="height: {{ h }}%;"></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- KPI 3: Attendance Records -->
+  <div class="animate-entrance delay-4 interactive-card obsidian-card p-space-lg rounded-xl flex flex-col justify-between">
+    <div class="absolute left-0 top-0 bottom-0 w-1 bg-success shadow-[0_0_12px_rgba(16,185,129,0.8)]" aria-hidden="true"></div>
+    <div class="flex items-center justify-between gap-space-xs">
+      <span class="font-label-sm text-label-sm obsidian-text-muted uppercase tracking-wider font-mono">Recorded Logs</span>
+      <span class="font-label-sm text-success font-mono bg-success-soft px-space-xs py-0.5 rounded border border-emerald-500/30">
+        {{ stats.latest_record_count }} Latest
+      </span>
+    </div>
+    <div class="my-space-sm">
+      <div class="font-headline-xl text-headline-xl obsidian-text-heading font-mono tracking-tight font-bold">
+        <span class="counter-val" data-format="comma" data-target="{{ stats.attendance_count }}">{{ stats.attendance_count }}</span>
+      </div>
+      <div class="font-body-sm text-body-sm obsidian-text-muted mt-0.5">{{ "%.1f"|format(stats.overall_percentage) }}% avg campus attendance rate</div>
+    </div>
+    <div aria-hidden="true" class="flex items-end gap-1 h-6 w-full pt-1">
+      {% for h in stats.sparks.sessions %}
+        <div class="flex-1 rounded-t transition-all {% if loop.last %}bg-success shadow-[0_0_8px_rgba(16,185,129,0.6)]{% else %}bg-surface-container-high hover:bg-emerald-400/40{% endif %}" style="height: {{ h }}%;"></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- KPI 4: Audit Trail -->
+  <div class="animate-entrance delay-5 interactive-card obsidian-card p-space-lg rounded-xl flex flex-col justify-between">
+    <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary shadow-[0_0_12px_rgba(197,210,220,0.8)]" aria-hidden="true"></div>
+    <div class="flex items-center justify-between gap-space-xs">
+      <span class="font-label-sm text-label-sm obsidian-text-muted uppercase tracking-wider font-mono">Audit Entries</span>
+      <span class="font-label-sm font-mono obsidian-subcard px-space-xs py-0.5 rounded text-secondary">
+        {{ stats.distinct_actors }} Actors
+      </span>
+    </div>
+    <div class="my-space-sm">
+      <div class="font-headline-xl text-headline-xl obsidian-text-heading font-mono tracking-tight font-bold">
+        <span class="counter-val" data-format="comma" data-target="{{ stats.audit_count }}">{{ stats.audit_count }}</span>
+      </div>
+      <div class="font-body-sm text-body-sm obsidian-text-muted mt-0.5">{{ stats.db_size_kb }} KB SQLite store • Verified</div>
+    </div>
+    <div aria-hidden="true" class="flex items-end gap-1 h-6 w-full pt-1">
+      {% for h in stats.sparks.audit %}
+        <div class="flex-1 rounded-t transition-all {% if loop.last %}bg-primary shadow-[0_0_8px_rgba(197,210,220,0.6)]{% else %}bg-surface-container-high hover:bg-slate-400/40{% endif %}" style="height: {{ h }}%;"></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions Command Bar -->
+<div class="animate-entrance delay-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+  <a href="{{ url_for('attendance') }}" class="interactive-action group p-space-md rounded-xl flex items-center justify-between">
+    <div class="flex items-center gap-space-sm">
+      <div class="action-icon obsidian-subcard w-10 h-10 rounded-lg text-secondary group-hover:bg-blue-600 group-hover:text-white transition-colors flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined text-[22px]" aria-hidden="true">how_to_reg</span>
+      </div>
+      <div>
+        <div class="font-label-lg text-label-lg obsidian-text-heading group-hover:text-secondary transition-colors">Mark Attendance</div>
+        <div class="font-body-sm text-body-sm obsidian-text-muted">Record daily course roll</div>
+      </div>
+    </div>
+    <span class="px-space-xs py-0.5 rounded text-label-sm font-mono obsidian-subcard obsidian-text-muted">Roll-call</span>
+  </a>
+
+  <a href="{{ url_for('students') }}" class="interactive-action group p-space-md rounded-xl flex items-center justify-between">
+    <div class="flex items-center gap-space-sm">
+      <div class="action-icon obsidian-subcard w-10 h-10 rounded-lg text-secondary group-hover:bg-blue-600 group-hover:text-white transition-colors flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined text-[22px]" aria-hidden="true">person_add</span>
+      </div>
+      <div>
+        <div class="font-label-lg text-label-lg obsidian-text-heading group-hover:text-secondary transition-colors">Register Student</div>
+        <div class="font-body-sm text-body-sm obsidian-text-muted">Manage learner profiles</div>
+      </div>
+    </div>
+    <span class="px-space-xs py-0.5 rounded text-label-sm font-mono obsidian-subcard obsidian-text-muted">Directory</span>
+  </a>
+
+  <a href="{{ url_for('courses') }}" class="interactive-action group p-space-md rounded-xl flex items-center justify-between">
+    <div class="flex items-center gap-space-sm">
+      <div class="action-icon obsidian-subcard w-10 h-10 rounded-lg text-secondary group-hover:bg-blue-600 group-hover:text-white transition-colors flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined text-[22px]" aria-hidden="true">library_add</span>
+      </div>
+      <div>
+        <div class="font-label-lg text-label-lg obsidian-text-heading group-hover:text-secondary transition-colors">Manage Courses</div>
+        <div class="font-body-sm text-body-sm obsidian-text-muted">Catalogue &amp; enrollments</div>
+      </div>
+    </div>
+    <span class="px-space-xs py-0.5 rounded text-label-sm font-mono obsidian-subcard obsidian-text-muted">Catalog</span>
+  </a>
+
+  <a href="{{ url_for('analytics') }}" class="interactive-action group p-space-md rounded-xl flex items-center justify-between">
+    <div class="flex items-center gap-space-sm">
+      <div class="action-icon obsidian-subcard w-10 h-10 rounded-lg text-secondary group-hover:bg-blue-600 group-hover:text-white transition-colors flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined text-[22px]" aria-hidden="true">analytics</span>
+      </div>
+      <div>
+        <div class="font-label-lg text-label-lg obsidian-text-heading group-hover:text-secondary transition-colors">Analytics &amp; Export</div>
+        <div class="font-body-sm text-body-sm obsidian-text-muted">75% risk &amp; CSV reports</div>
+      </div>
+    </div>
+    <span class="px-space-xs py-0.5 rounded text-label-sm font-mono obsidian-subcard obsidian-text-muted">Reports</span>
+  </a>
+</div>
+
+<!-- Two-Column Analytics & Live Activity Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+  <!-- Left Column: Latest Session Banner & Daily Velocity Chart (7 Cols) -->
+  <div class="animate-entrance delay-4 lg:col-span-7 flex flex-col gap-space-md">
+    {% if latest_session %}
+      <div class="obsidian-hero-banner p-space-md rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+        <div class="flex items-center gap-space-sm">
+          <span class="relative flex h-3 w-3 shrink-0" aria-hidden="true">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-400 telemetry-radar-dot"></span>
+          </span>
+          <div>
+            <div class="font-label-lg text-label-lg tracking-tight flex flex-wrap items-center gap-space-xs font-semibold text-white">
+              <span>{{ latest_session.course_code }}: {{ latest_session.course_name }}</span>
+              <span class="font-label-sm text-cyan-200/90 font-normal font-mono">({{ latest_session.attendance_date }})</span>
+            </div>
+            <div class="font-body-sm text-slate-200/90">
+              {% if latest_session.has_logs %}
+                Latest Roll by {{ latest_session.marked_by_username }} • {{ stats.total_sessions }} Recorded Dates
+              {% else %}
+                Course Ready • No attendance sessions recorded yet
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-space-sm shrink-0">
+          <div class="text-right">
+            <div class="font-headline-sm font-mono font-bold text-white">{{ latest_session.present_count }} / {{ latest_session.total_count }}</div>
+            <div class="font-label-sm text-emerald-300 flex items-center justify-end gap-1 font-mono">
+              <span class="material-symbols-outlined text-[13px]" aria-hidden="true">verified</span>
+              <span>{{ "%.1f"|format(latest_session.percentage) }}% Present</span>
+            </div>
+          </div>
+          <a
+            href="{{ url_for('attendance', course_id=latest_session.course_id, date=latest_session.attendance_date) }}"
+            class="obsidian-primary-btn px-space-sm py-space-xs rounded-lg font-label-md font-medium active:scale-95 transition-all"
+          >
+            Monitor
+          </a>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Daily Turnout Velocity & Density Card -->
+    <div class="obsidian-card obsidian-sheen p-space-lg rounded-xl flex flex-col gap-space-md">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-space-xs">
+        <div>
+          <h2 class="font-headline-sm text-headline-sm obsidian-text-heading font-semibold">Daily Turnout Velocity &amp; Density</h2>
+          <p class="font-body-sm text-body-sm obsidian-text-muted">Present vs. Absent distribution across recent recorded dates</p>
+        </div>
+        <div class="flex items-center gap-space-sm text-label-sm font-mono">
+          <span class="flex items-center gap-1.5 obsidian-text-heading"><span class="w-2.5 h-2.5 rounded-sm bg-blue-500"></span>Present</span>
+          <span class="flex items-center gap-1.5 obsidian-text-heading"><span class="w-2.5 h-2.5 rounded-sm bg-red-500"></span>Absent</span>
+        </div>
+      </div>
+
+      {% if daily_velocity %}
+        <div class="w-full pt-space-sm pb-space-xs">
+          <div class="obsidian-subcard grid gap-space-sm items-end h-48 w-full rounded-lg p-space-sm" style="grid-template-columns: repeat({{ daily_velocity|length }}, minmax(0, 1fr));">
+            {% for d in daily_velocity %}
+              <div tabindex="0" class="chart-bar-col relative flex flex-col items-center gap-1.5 h-full justify-end cursor-pointer">
+                <div class="chart-tooltip absolute -top-7 px-2 py-0.5 rounded obsidian-card text-[11px] font-mono whitespace-nowrap shadow-md z-10">
+                  {{ d.present_count }}P / {{ d.absent_count }}A{% if d.is_peak %} • Peak{% endif %}
+                </div>
+                <div class="font-mono text-label-sm {% if d.is_peak %}text-secondary font-semibold{% else %}obsidian-text-muted{% endif %}">
+                  {{ d.present_pct }}%
+                </div>
+                <div class="w-full max-w-[40px] flex flex-col gap-0.5 items-center justify-end h-28">
+                  {% if d.absent_pct > 0 %}
+                    <div class="w-full bg-red-500/85 rounded-t-sm transition-all" style="height: {{ d.absent_pct }}%;"></div>
+                  {% endif %}
+                  <div class="w-full rounded-t-sm transition-all {% if d.is_peak %}bg-secondary shadow-[0_0_10px_rgba(96,165,250,0.65)]{% else %}bg-blue-500/80{% endif %}" style="height: {{ [d.present_pct, 4]|max }}%;"></div>
+                </div>
+                <span class="font-mono text-label-sm {% if d.is_peak %}text-secondary font-semibold{% else %}obsidian-text-muted{% endif %}">
+                  {{ d.short_date }}{% if d.is_peak %}*{% endif %}
+                </span>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-space-xs font-body-sm obsidian-text-muted">
+          {% if peak_day_summary %}
+            <span>Peak volume: <strong class="obsidian-text-heading font-semibold">{{ peak_day_summary.total_count }} marks on {{ peak_day_summary.date }}</strong></span>
+          {% endif %}
+          <span class="font-mono text-label-sm">Total Marks Logged: {{ stats.attendance_count }}</span>
+        </div>
+      {% else %}
+        <div class="obsidian-subcard rounded-lg p-space-xl text-center">
+          <span class="material-symbols-outlined text-[32px] text-secondary mb-2" aria-hidden="true">bar_chart</span>
+          <p class="font-label-md obsidian-text-heading mb-1">No attendance sessions recorded yet</p>
+          <p class="font-body-sm obsidian-text-muted mb-3">Record a class session to visualize daily turnout trends.</p>
+          <a href="{{ url_for('attendance') }}" class="obsidian-primary-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium">
+            <span class="material-symbols-outlined text-[16px]" aria-hidden="true">how_to_reg</span>Record Session
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Right Column: Live Operations Ledger (5 Cols) -->
+  <div class="animate-entrance delay-5 lg:col-span-5 flex flex-col gap-space-md">
+    <div class="obsidian-card obsidian-sheen p-space-lg rounded-xl flex flex-col gap-space-md">
+      <div class="flex items-center justify-between pb-space-xxs">
+        <div class="flex items-center gap-space-xs">
+          <span class="material-symbols-outlined text-[20px] text-secondary" aria-hidden="true">history</span>
+          <h2 class="font-headline-sm text-headline-sm obsidian-text-heading font-semibold">Live Operations Ledger</h2>
+        </div>
+        <a href="{{ url_for('audit') }}" class="font-label-sm text-secondary hover:underline flex items-center gap-1 font-mono">
+          <span>Full Log</span>
+          <span class="material-symbols-outlined text-[14px]" aria-hidden="true">arrow_forward</span>
+        </a>
+      </div>
+
+      {% if recent_activity %}
+        <div class="flex flex-col gap-space-sm">
+          {% for act in recent_activity %}
+            {% set act_up = act.action|upper %}
+            {% if 'MARK' in act_up %}
+              {% set tag_label = 'Faculty' %}
+              {% set tag_icon = 'how_to_reg' %}
+              {% set tag_cls = 'obsidian-chip-blue' %}
+            {% elif 'BACKUP' in act_up or 'RESTORE' in act_up %}
+              {% set tag_label = 'System' %}
+              {% set tag_icon = 'backup' %}
+              {% set tag_cls = 'obsidian-chip-emerald' %}
+            {% elif 'FAIL' in act_up or 'DENIED' in act_up or 'ERROR' in act_up %}
+              {% set tag_label = 'Alert' %}
+              {% set tag_icon = 'warning' %}
+              {% set tag_cls = 'obsidian-chip-red' %}
+            {% elif 'LOGIN' in act_up or 'LOGOUT' in act_up %}
+              {% set tag_label = 'Auth' %}
+              {% set tag_icon = 'verified_user' %}
+              {% set tag_cls = 'obsidian-chip-amber' %}
+            {% else %}
+              {% set tag_label = 'Admin' %}
+              {% set tag_icon = 'admin_panel_settings' %}
+              {% set tag_cls = 'obsidian-chip-neutral' %}
+            {% endif %}
+
+            <div class="ledger-row obsidian-subcard p-space-sm rounded-lg flex items-start gap-space-sm">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-label-sm font-mono border shrink-0 {{ tag_cls }}">
+                <span class="material-symbols-outlined text-[13px]" aria-hidden="true">{{ tag_icon }}</span>
+                <span>{{ tag_label }}</span>
+              </span>
+              <div class="flex-1 min-w-0">
+                <div class="font-body-md obsidian-text-heading font-medium truncate" title="{{ act.action }}">
+                  {{ act.action }}{% if act.username %} • <span class="text-secondary font-mono text-xs">{{ act.username }}</span>{% endif %}
+                </div>
+                <div class="font-label-sm obsidian-text-muted mt-0.5 line-clamp-2">{{ act.detail }}</div>
+              </div>
+              <span class="font-mono text-label-sm obsidian-text-muted shrink-0">
+                {% if act.created_at and act.created_at.strftime is defined %}
+                  {{ act.created_at.strftime('%m-%d %H:%M') }}
+                {% else %}
+                  {{ (act.created_at|string)[:16] }}
+                {% endif %}
+              </span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="obsidian-subcard p-space-md rounded-lg text-center obsidian-text-muted">
+          No system events recorded yet.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Course Attendance Index (Real SQLite Course Breakdown) -->
+<div class="animate-entrance delay-6 obsidian-card obsidian-sheen p-space-lg rounded-xl flex flex-col gap-space-md">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs">
+    <div>
+      <h2 class="font-headline-sm text-headline-sm obsidian-text-heading font-semibold">Course Attendance Index</h2>
+      <p class="font-body-sm text-body-sm obsidian-text-muted">Aggregated attendance percentage and active roster size per catalogue course</p>
+    </div>
+    <div class="flex items-center gap-space-xs font-mono text-label-sm obsidian-text-muted">
+      <span class="w-2 h-2 rounded-full bg-success telemetry-radar-dot" aria-hidden="true"></span>
+      <span>Benchmark: &ge; 75.0%</span>
+    </div>
+  </div>
+
+  {% if course_index %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-md pt-space-xs">
+      {% for c in course_index %}
+        {% if c.record_count == 0 %}
+          {% set status_text_cls = 'obsidian-text-muted' %}
+          {% set status_bar_cls = 'bg-slate-500' %}
+          {% set status_icon = 'schedule' %}
+        {% elif c.percentage >= 75.0 %}
+          {% set status_text_cls = 'text-success' %}
+          {% set status_bar_cls = 'bg-success' %}
+          {% set status_icon = 'check_circle' %}
+        {% elif c.percentage >= 65.0 %}
+          {% set status_text_cls = 'obsidian-status-warn' %}
+          {% set status_bar_cls = 'bg-amber-500' %}
+          {% set status_icon = 'warning' %}
+        {% else %}
+          {% set status_text_cls = 'obsidian-status-danger' %}
+          {% set status_bar_cls = 'bg-red-500' %}
+          {% set status_icon = 'error' %}
+        {% endif %}
+
+        <div class="obsidian-subcard p-space-md rounded-lg flex flex-col gap-space-xs hover:border-blue-400/40 transition-transform hover:-translate-y-0.5 duration-200">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <span class="font-mono text-label-sm text-secondary uppercase tracking-wider">{{ c.code }}</span>
+              <div class="font-label-md obsidian-text-heading font-semibold truncate">{{ c.name }}</div>
+            </div>
+            <span class="inline-flex items-center gap-1 font-mono font-bold text-label-md shrink-0 {{ status_text_cls }}">
+              <span class="material-symbols-outlined text-[15px]" aria-hidden="true">{{ status_icon }}</span>
+              <span>{{ "%.1f"|format(c.percentage) }}%</span>
+            </span>
+          </div>
+
+          <div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+            <div class="progress-fill {{ status_bar_cls }} h-full rounded-full" style="--target-width: {{ c.percentage }}%;"></div>
+          </div>
+
+          <div class="flex items-center justify-between pt-1">
+            <span class="font-label-sm obsidian-text-muted font-mono">
+              {{ c.enrolled_count }} Enrolled • {{ c.present_count }}/{{ c.record_count }} Present
+            </span>
+            <a href="{{ url_for('attendance', course_id=c.id) }}" class="font-mono text-label-sm text-secondary hover:underline">
+              Roll &rarr;
+            </a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="obsidian-subcard p-space-lg rounded-lg text-center obsidian-text-muted">
+      No courses found in the catalogue. <a href="{{ url_for('courses') }}" class="text-secondary underline">Add a course</a> to begin tracking.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    // Live UTC Clock
+    function updateClock() {
+      const clockEl = document.getElementById("live-utc-clock");
+      if (clockEl) {
+        const now = new Date();
+        const hrs = String(now.getUTCHours()).padStart(2, "0");
+        const mins = String(now.getUTCMinutes()).padStart(2, "0");
+        const secs = String(now.getUTCSeconds()).padStart(2, "0");
+        clockEl.textContent = "UTC " + hrs + ":" + mins + ":" + secs;
+      }
+      setTimeout(updateClock, 1000);
+    }
+
+    // Animated KPI Counters (respects prefers-reduced-motion)
+    function animateCounters() {
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const counters = document.querySelectorAll(".counter-val");
+      counters.forEach(function (counter) {
+        const target = parseInt(counter.getAttribute("data-target"), 10) || 0;
+        const formatComma = counter.getAttribute("data-format") === "comma";
+        if (prefersReducedMotion || target === 0) {
+          counter.textContent = formatComma ? target.toLocaleString() : String(target);
+          return;
+        }
+        const duration = 900;
+        const startTime = performance.now();
+        function step(now) {
+          const progress = Math.min((now - startTime) / duration, 1);
+          const easeOut = 1 - Math.pow(1 - progress, 3);
+          const val = Math.floor(easeOut * target);
+          counter.textContent = formatComma ? val.toLocaleString() : String(val);
+          if (progress < 1) {
+            requestAnimationFrame(step);
+          } else {
+            counter.textContent = formatComma ? target.toLocaleString() : String(target);
+          }
+        }
+        requestAnimationFrame(step);
+      });
+    }
+
+    function animateProgressBars() {
+      setTimeout(function () {
+        document.querySelectorAll(".progress-fill").forEach(function (bar) {
+          bar.classList.add("filled");
+        });
+      }, 120);
+    }
+
+    updateClock();
+    animateCounters();
+    animateProgressBars();
+  })();
+</script>
+{% endblock %}

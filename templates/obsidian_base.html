@@ -1,0 +1,1302 @@
+{% macro render_portal_nav(current_endpoint, is_drawer=False) %}
+{% set role = g.user.role if g.user and g.user.role else 'admin' %}
+{% if role == 'admin' %}
+  {% set nav_items = [
+    {'endpoint': 'dashboard', 'url': url_for('dashboard'), 'icon': 'dashboard', 'label': 'Dashboard'},
+    {'endpoint': 'students', 'url': url_for('students'), 'icon': 'school', 'label': 'Students Directory'},
+    {'endpoint': 'teachers', 'url': url_for('teachers'), 'icon': 'co_present', 'label': 'Teachers Directory'},
+    {'endpoint': 'courses', 'url': url_for('courses'), 'icon': 'menu_book', 'label': 'Course Catalogue'},
+    {'endpoint': 'attendance', 'url': url_for('attendance'), 'icon': 'how_to_reg', 'label': 'Attendance Entry'},
+    {'endpoint': 'analytics', 'url': url_for('analytics'), 'icon': 'bar_chart', 'label': 'Analytics & Reports'},
+    {'endpoint': 'audit', 'url': url_for('audit'), 'icon': 'policy', 'label': 'Governance & Audit'},
+    {'endpoint': 'backup', 'url': url_for('backup'), 'icon': 'settings_backup_restore', 'label': 'System Backup'},
+  ] %}
+{% elif role == 'faculty' %}
+  {% set nav_items = [
+    {'endpoint': 'dashboard', 'url': url_for('dashboard'), 'icon': 'dashboard', 'label': 'Faculty Dashboard'},
+    {'endpoint': 'courses', 'url': url_for('courses'), 'icon': 'menu_book', 'label': 'Course Catalogue'},
+    {'endpoint': 'attendance', 'url': url_for('attendance'), 'icon': 'how_to_reg', 'label': 'Attendance Entry'},
+    {'endpoint': 'analytics', 'url': url_for('analytics'), 'icon': 'bar_chart', 'label': 'Analytics & Reports'},
+  ] %}
+{% elif role == 'student' %}
+  {% set nav_items = [
+    {'endpoint': 'student_dashboard', 'url': url_for('student_dashboard'), 'icon': 'badge', 'label': 'My Attendance'},
+    {'endpoint': 'analytics', 'url': url_for('analytics'), 'icon': 'bar_chart', 'label': 'Course Analytics'},
+  ] %}
+{% else %}
+  {% set nav_items = [] %}
+{% endif %}
+{% set role_nav_name = 'Admin' if role == 'admin' else ('Faculty' if role == 'faculty' else 'Student') %}
+<nav aria-label="{{ ('Mobile ' ~ role_nav_name ~ ' Navigation') if is_drawer else ('Primary ' ~ role_nav_name ~ ' Navigation') }}" class="flex flex-col gap-space-xxs">
+  {% for item in nav_items %}
+    {% set is_active = (current_endpoint == item.endpoint) %}
+    <a
+      href="{{ item.url }}"
+      {% if is_active %}aria-current="page"{% endif %}
+      class="obsidian-nav-link flex items-center gap-space-sm px-space-sm py-space-xs min-h-[42px] transition-all rounded-lg {% if is_active %}obsidian-nav-active bg-primary-container text-on-primary-container font-label-lg text-label-lg{% else %}text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-label-md text-label-md hover:translate-x-1{% endif %}"
+    >
+      <span class="material-symbols-outlined text-[20px]" aria-hidden="true">{{ item.icon }}</span>
+      <span class="flex-1 truncate">{{ item.label }}</span>
+      {% if is_active %}
+        <span class="w-1.5 h-1.5 rounded-full bg-secondary shrink-0" aria-hidden="true"></span>
+      {% endif %}
+    </a>
+  {% endfor %}
+</nav>
+{% endmacro %}
+{% set current_role = g.user.role if g.user and g.user.role else 'admin' %}
+{% set is_admin_role = (current_role == 'admin') %}
+{% set is_faculty_role = (current_role == 'faculty') %}
+{% set is_student_role = (current_role == 'student') %}
+{% set portal_short_name = 'Admin Console' if is_admin_role else ('Faculty Portal' if is_faculty_role else 'Student Portal') %}
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="color-scheme" content="dark light"/>
+  <script>
+    (function () {
+      var theme = "dark";
+      try {
+        var saved = localStorage.getItem("cloudattend-theme");
+        if (saved === "light" || saved === "dark") {
+          theme = saved;
+        }
+      } catch (err) {}
+      document.documentElement.classList.toggle("dark", theme === "dark");
+      var meta = document.querySelector('meta[name="color-scheme"]');
+      if (meta) meta.content = theme;
+    })();
+  </script>
+  <title>{% block title %}AttendX — {{ portal_short_name }}{% endblock %}</title>
+  <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='images/attendx-icon.jpg') }}"/>
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/attendx-icon.jpg') }}"/>
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400..600,0..1,-50..200" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "muted-text": "#8292a8",
+            "on-primary-container": "#222b30",
+            primary: "#c5d2dc",
+            "inverse-surface": "#e0e2ec",
+            "on-error-container": "#ffdad6",
+            error: "#ffb4ab",
+            "surface-container-low": "#06090e",
+            "primary-fixed": "#dbe4eb",
+            "surface-container-lowest": "#010204",
+            "on-tertiary-fixed": "#321200",
+            "inverse-on-surface": "#2d3038",
+            "inverse-primary": "#576066",
+            "secondary-fixed": "#dae2ff",
+            warning: "#f59e0b",
+            "warning-soft": "#FEF3D6",
+            "tertiary-fixed": "#ffdbc9",
+            tertiary: "#ffb68c",
+            "on-tertiary-container": "#ff8c42",
+            "surface-container-highest": "#1c222e",
+            "error-container": "#93000a",
+            "surface-bright": "#222a38",
+            "on-surface-variant": "#9cb0c9",
+            "on-secondary-container": "#98b3ff",
+            "surface-dim": "#030407",
+            "surface-container-high": "#141923",
+            "surface-container": "#0c1017",
+            "on-secondary": "#002c72",
+            "primary-container": "#1e3a5f",
+            "tertiary-container": "#e3711f",
+            "on-primary-fixed": "#141d22",
+            "error-soft": "#2d1215",
+            "success-soft": "#08281b",
+            "tertiary-fixed-dim": "#ffb68c",
+            "secondary-container": "#104199",
+            "on-error": "#690005",
+            "page-bg": "#010204",
+            "surface-tint": "#bfc8cf",
+            "on-primary-fixed-variant": "#3f484e",
+            "outline-variant": "#2b3446",
+            "secondary-fixed-dim": "#b2c5ff",
+            "surface-variant": "#121822",
+            "on-surface": "#f1f5f9",
+            background: "#010204",
+            "on-secondary-fixed": "#001847",
+            "primary-fixed-dim": "#bfc8cf",
+            "on-tertiary-fixed-variant": "#763400",
+            success: "#10b981",
+            surface: "#05080e",
+            border: "#1f2937",
+            "on-tertiary": "#532200",
+            "on-primary": "#ffffff",
+            "on-background": "#f8fafc",
+            secondary: "#60a5fa",
+            "on-secondary-fixed-variant": "#104199",
+            outline: "#5f708a"
+          },
+          borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+          spacing: {
+            gutter: "1.5rem",
+            "gutter-mobile": "1rem",
+            margin: "1.5rem",
+            "space-xl": "2rem",
+            "space-md": "1rem",
+            "space-xxs": "0.25rem",
+            "space-sm": "0.75rem",
+            "space-lg": "1.5rem",
+            "margin-mobile": "1rem",
+            "space-xs": "0.5rem",
+            "space-2xl": "3rem"
+          },
+          fontFamily: {
+            headline: ["Inter", "sans-serif"],
+            display: ["Inter", "sans-serif"],
+            body: ["Inter", "sans-serif"],
+            label: ["Inter", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          },
+          fontSize: {
+            "label-lg": ["15px", { lineHeight: "20px", fontWeight: "600" }],
+            "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }],
+            "label-sm": ["11px", { lineHeight: "16px", letterSpacing: "0.04em", fontWeight: "600" }],
+            "body-sm": ["13px", { lineHeight: "18px", fontWeight: "400" }],
+            "body-md": ["14px", { lineHeight: "21px", fontWeight: "400" }],
+            "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+            "headline-lg": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "headline-xl": ["32px", { lineHeight: "38px", letterSpacing: "-0.02em", fontWeight: "700" }],
+            "label-md": ["13px", { lineHeight: "18px", fontWeight: "500" }],
+            "headline-xl-mobile": ["24px", { lineHeight: "30px", letterSpacing: "-0.01em", fontWeight: "700" }]
+          }
+        }
+      }
+    };
+  </script>
+  <style id="obsidian-black-mirror-overrides">
+    :root {
+      color-scheme: light dark;
+      --accent-dark: #60a5fa;
+      --accent-light: #1d4ed8;
+      --scrollbar-thumb-color: light-dark(#94a3b8, #334155);
+      --scrollbar-track-color: light-dark(#e2e8f0, #0b111b);
+      scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color);
+    }
+
+    :root:has(> head > meta[name="color-scheme"][content="dark"]) {
+      color-scheme: dark;
+    }
+
+    :root:has(> head > meta[name="color-scheme"][content="light"]) {
+      color-scheme: light;
+    }
+
+    @layer base {
+      html, body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        overscroll-behavior: none;
+      }
+      main > :first-child {
+        margin-top: 0 !important;
+      }
+      main > :last-child {
+        margin-bottom: 0 !important;
+      }
+    }
+
+    :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+      outline: 2px solid #60a5fa;
+      outline-offset: 2px;
+    }
+
+    /* Native Modal Dialogs & Top-Layer Containment */
+    dialog:modal {
+      overscroll-behavior: contain;
+    }
+    dialog::backdrop {
+      overflow: hidden;
+      overscroll-behavior: contain;
+      background: rgba(2, 4, 8, 0.72);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+
+    dialog.obsidian-modal {
+      margin: auto;
+      padding: 0;
+      width: min(32rem, calc(100dvw - 2rem));
+      max-height: calc(100dvh - 2rem);
+      border-radius: 0.875rem;
+      overflow: auto;
+    }
+
+    dialog.obsidian-drawer {
+      inset: 0;
+      margin: 0;
+      padding: 0;
+      width: min(20rem, 84dvw);
+      max-width: none;
+      height: 100svh;
+      max-height: none;
+      border: 0;
+      border-radius: 0;
+    }
+
+    /* ===========================
+       OBSIDIAN DARK MIRROR THEME
+       =========================== */
+    html.dark {
+      color-scheme: dark;
+      accent-color: #60a5fa;
+    }
+
+    html.dark select.obsidian-input option,
+    html.dark select option {
+      background-color: #0b111c;
+      color: #f1f5f9;
+    }
+
+    html.dark,
+    html.dark body {
+      background-color: #020306;
+      background-image:
+        radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.05) 0%, transparent 45%),
+        radial-gradient(circle at 100% 30%, rgba(99, 102, 241, 0.04) 0%, transparent 40%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.015) 0%, transparent 40%, rgba(255, 255, 255, 0.01) 70%, transparent 100%);
+      background-attachment: fixed;
+      color: #f1f5f9;
+    }
+
+    html.dark header.fixed {
+      background: linear-gradient(180deg, rgba(8, 12, 18, 0.88) 0%, rgba(2, 4, 7, 0.76) 100%);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.8), inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    html.dark aside.fixed,
+    html.dark dialog.obsidian-drawer {
+      background: linear-gradient(180deg, #05070c 0%, #020305 100%);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
+      color: #f1f5f9;
+    }
+
+    html.dark main {
+      background-color: transparent;
+    }
+
+    html.dark footer {
+      background: linear-gradient(180deg, #05070c 0%, #010204 100%);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    html.dark .obsidian-card,
+    html.dark .interactive-card,
+    html.dark dialog.obsidian-modal {
+      background: linear-gradient(145deg, rgba(14, 18, 26, 0.78) 0%, rgba(5, 7, 12, 0.92) 100%);
+      backdrop-filter: blur(16px) saturate(160%);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      border-top: 1px solid rgba(255, 255, 255, 0.22);
+      border-left: 1px solid rgba(255, 255, 255, 0.10);
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      box-shadow:
+        0 12px 32px -4px rgba(0, 0, 0, 0.75),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 0 20px rgba(255, 255, 255, 0.015);
+      color: #f1f5f9;
+    }
+
+    html.dark .obsidian-card,
+    html.dark .interactive-card {
+      position: relative;
+      overflow: hidden;
+    }
+
+    html.dark .interactive-card::after,
+    html.dark .obsidian-sheen::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -150%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        115deg,
+        transparent 20%,
+        rgba(255, 255, 255, 0.04) 45%,
+        rgba(255, 255, 255, 0.12) 50%,
+        rgba(255, 255, 255, 0.04) 55%,
+        transparent 80%
+      );
+      pointer-events: none;
+      transform: skewX(-20deg);
+      transition: left 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    html.dark .interactive-card:hover::after,
+    html.dark .obsidian-sheen:hover::after {
+      left: 160%;
+    }
+
+    html.dark .obsidian-subcard {
+      background: linear-gradient(145deg, rgba(9, 13, 19, 0.78) 0%, rgba(3, 5, 8, 0.88) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    html.dark .obsidian-hero-banner {
+      background: linear-gradient(135deg, rgba(16, 26, 44, 0.92) 0%, rgba(5, 10, 20, 0.96) 100%);
+      border-top: 1px solid rgba(255, 255, 255, 0.28);
+      border-left: 1px solid rgba(255, 255, 255, 0.12);
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      color: #f8fafc;
+    }
+
+    html.dark .interactive-action {
+      background: linear-gradient(145deg, rgba(14, 18, 26, 0.76) 0%, rgba(5, 7, 12, 0.9) 100%);
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    html.dark .obsidian-input {
+      background-color: rgba(9, 13, 19, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #f1f5f9;
+    }
+
+    html.dark .obsidian-input::placeholder {
+      color: #7c8ea6;
+    }
+
+    html.dark .obsidian-input:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.22);
+    }
+
+    html.dark .obsidian-nav-active {
+      background: linear-gradient(135deg, rgba(30, 58, 95, 0.85) 0%, rgba(15, 30, 50, 0.92) 100%);
+      color: #e0f2fe;
+      border: 1px solid rgba(96, 165, 250, 0.35);
+      border-left: 3px solid #60a5fa;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    }
+
+    html.dark nav a.obsidian-nav-link:not(.obsidian-nav-active):hover {
+      background: linear-gradient(90deg, rgba(30, 41, 59, 0.65) 0%, rgba(15, 23, 42, 0.35) 100%);
+      border-left: 2px solid #60a5fa;
+      color: #f8fafc;
+    }
+
+    html.dark .obsidian-primary-btn {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: #ffffff;
+      border-top: 1px solid rgba(255, 255, 255, 0.35);
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    }
+
+    html.dark .obsidian-primary-btn:hover {
+      filter: brightness(1.08);
+    }
+
+    html.dark .obsidian-text-heading {
+      color: #f8fafc;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
+    }
+
+    html.dark .obsidian-text-muted {
+      color: #94a3b8;
+    }
+
+    /* ===========================
+       CRISP FROSTED LIGHT THEME
+       =========================== */
+    html:not(.dark) {
+      color-scheme: light;
+      accent-color: #1d4ed8;
+    }
+
+    html:not(.dark),
+    html:not(.dark) body {
+      background-color: #f1f5f9;
+      background-image:
+        radial-gradient(circle at 15% 0%, rgba(37, 99, 235, 0.06) 0%, transparent 45%),
+        radial-gradient(circle at 90% 20%, rgba(21, 154, 156, 0.05) 0%, transparent 40%);
+      background-attachment: fixed;
+      color: #0f172a;
+    }
+
+    html:not(.dark) header.fixed {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid #e2e8f0;
+      box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+      color: #0f172a;
+    }
+
+    html:not(.dark) aside.fixed,
+    html:not(.dark) dialog.obsidian-drawer {
+      background: #ffffff;
+      border-right: 1px solid #e2e8f0;
+      box-shadow: 4px 0 20px rgba(15, 23, 42, 0.04);
+      color: #0f172a;
+    }
+
+    html:not(.dark) main {
+      background-color: transparent;
+    }
+
+    html:not(.dark) footer {
+      background: #ffffff;
+      border-top: 1px solid #e2e8f0;
+      color: #475569;
+    }
+
+    html:not(.dark) .obsidian-card,
+    html:not(.dark) .interactive-card,
+    html:not(.dark) dialog.obsidian-modal {
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid #dbe3ee;
+      box-shadow: 0 8px 24px -6px rgba(15, 23, 42, 0.08);
+      color: #0f172a;
+    }
+
+    html:not(.dark) .obsidian-subcard {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      color: #0f172a;
+    }
+
+    html:not(.dark) .obsidian-hero-banner {
+      background: linear-gradient(135deg, #17365d 0%, #1e4b85 100%);
+      border: 1px solid #1e40af;
+      box-shadow: 0 12px 26px -6px rgba(23, 54, 93, 0.28);
+      color: #ffffff;
+    }
+
+    html:not(.dark) .interactive-action {
+      background: #ffffff;
+      border: 1px solid #dbe3ee;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+      color: #0f172a;
+    }
+
+    html:not(.dark) .obsidian-input {
+      background-color: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #0f172a;
+    }
+
+    html:not(.dark) .obsidian-input::placeholder {
+      color: #64748b;
+    }
+
+    html:not(.dark) .obsidian-input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+    }
+
+    html.dark .brand-wordmark-img {
+      mix-blend-mode: screen;
+    }
+
+    html:not(.dark) .brand-wordmark-shell {
+      background: #03050a;
+      padding: 0.2rem 0.55rem;
+      border-radius: 0.65rem;
+    }
+
+    html:not(.dark) .obsidian-nav-active {
+      background: #eff6ff;
+      color: #1e3a8a;
+      border: 1px solid #bfdbfe;
+      border-left: 3px solid #2563eb;
+    }
+
+    html:not(.dark) nav a.obsidian-nav-link:not(.obsidian-nav-active) {
+      color: #475569;
+    }
+
+    html:not(.dark) nav a.obsidian-nav-link:not(.obsidian-nav-active):hover {
+      background: #f1f5f9;
+      color: #0f172a;
+      border-left: 2px solid #2563eb;
+    }
+
+    html:not(.dark) .obsidian-primary-btn {
+      background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+      color: #ffffff;
+      border: 1px solid #1d4ed8;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+
+    html:not(.dark) .obsidian-text-heading,
+    html:not(.dark) h1,
+    html:not(.dark) h2 {
+      color: #0f172a;
+    }
+
+    html:not(.dark) .obsidian-text-muted {
+      color: #475569;
+    }
+
+    /* Light-mode overrides for utility chips that default to dark tokens */
+    html:not(.dark) .text-primary { color: #0f172a !important; }
+    html:not(.dark) .text-on-surface { color: #0f172a !important; }
+    html:not(.dark) .text-on-surface-variant { color: #475569 !important; }
+    html:not(.dark) .text-muted-text { color: #475569 !important; }
+    html:not(.dark) .text-secondary { color: #1d4ed8 !important; }
+    html:not(.dark) .text-success { color: #047857 !important; }
+    html:not(.dark) .bg-success-soft { background-color: #d1fae5 !important; border-color: #6ee7b7 !important; color: #065f46 !important; }
+    html:not(.dark) .bg-surface-container-low { background-color: #f8fafc !important; border-color: #e2e8f0 !important; }
+    html:not(.dark) .bg-surface-container-high { background-color: #e2e8f0 !important; }
+
+    /* Dual-Theme Accessible Status Chips & Alerts (WCAG 4.5:1+ in Dark & Light) */
+    html.dark .obsidian-chip-blue { background: rgba(59, 130, 246, 0.16); border-color: rgba(96, 165, 250, 0.35); color: #93c5fd; }
+    html:not(.dark) .obsidian-chip-blue { background: #eff6ff; border-color: #93c5fd; color: #1e40af; }
+
+    html.dark .obsidian-chip-emerald { background: rgba(16, 185, 129, 0.16); border-color: rgba(52, 211, 153, 0.35); color: #6ee7b7; }
+    html:not(.dark) .obsidian-chip-emerald { background: #ecfdf5; border-color: #6ee7b7; color: #065f46; }
+
+    html.dark .obsidian-chip-amber { background: rgba(245, 158, 11, 0.16); border-color: rgba(251, 191, 36, 0.35); color: #fcd34d; }
+    html:not(.dark) .obsidian-chip-amber { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
+
+    html.dark .obsidian-chip-purple { background: rgba(168, 85, 247, 0.16); border-color: rgba(192, 132, 252, 0.35); color: #d8b4fe; }
+    html:not(.dark) .obsidian-chip-purple { background: #faf5ff; border-color: #d8b4fe; color: #6b21a8; }
+
+    html.dark .obsidian-chip-red { background: rgba(239, 68, 68, 0.16); border-color: rgba(248, 113, 113, 0.35); color: #fca5a5; }
+    html:not(.dark) .obsidian-chip-red { background: #fef2f2; border-color: #fca5a5; color: #991b1b; }
+
+    html.dark .obsidian-chip-neutral { background: rgba(148, 163, 184, 0.16); border-color: rgba(148, 163, 184, 0.32); color: #e2e8f0; }
+    html:not(.dark) .obsidian-chip-neutral { background: #f1f5f9; border-color: #cbd5e1; color: #334155; }
+
+    html.dark .obsidian-status-warn { color: #fbbf24; }
+    html:not(.dark) .obsidian-status-warn { color: #b45309; }
+    html.dark .obsidian-status-danger { color: #f87171; }
+    html:not(.dark) .obsidian-status-danger { color: #b91c1c; }
+
+    /* Semantic Native <progress> Component Styling (separate -webkit- and -moz- rules) */
+    progress.obsidian-progress {
+      appearance: none;
+      border: 0 solid;
+      overflow: clip;
+      width: 100%;
+      height: 0.5rem;
+      border-radius: 1e5px;
+      display: block;
+    }
+
+    html.dark progress.obsidian-progress {
+      background: rgba(30, 41, 59, 0.8);
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+
+    html:not(.dark) progress.obsidian-progress {
+      background: #e2e8f0;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
+    }
+
+    progress.obsidian-progress::-webkit-progress-bar {
+      background: transparent;
+    }
+
+    progress.obsidian-progress::-webkit-progress-value {
+      background: var(--progress-bar-fill, #60a5fa);
+      border-radius: 1e5px;
+      transition: inline-size 0.35s ease;
+    }
+
+    progress.obsidian-progress::-moz-progress-bar {
+      background: var(--progress-bar-fill, #60a5fa);
+      border-radius: 1e5px;
+      transition: inline-size 0.35s ease;
+    }
+
+    progress.obsidian-progress-safe { --progress-bar-fill: #10b981; }
+    progress.obsidian-progress-warn { --progress-bar-fill: #f59e0b; }
+    progress.obsidian-progress-danger { --progress-bar-fill: #ef4444; }
+    progress.obsidian-progress-muted { --progress-bar-fill: #64748b; }
+
+    /* Brand-Consistent Native Range Slider (separate WebKit / Firefox rules) */
+    input[type="range"].obsidian-slider {
+      --slider-track-size: 0.5rem;
+      --slider-thumb-size: 1.25rem;
+      --slider-track-radius: 999px;
+      --slider-thumb-radius: 50%;
+      --slider-track-color: rgba(148, 163, 184, 0.24);
+      --slider-fill-color: #3b82f6;
+      --slider-thumb-color: #93c5fd;
+      --slider-direction: to right;
+      --attr-min: attr(min type(<number>), 1);
+      --attr-max: attr(max type(<number>), 15);
+      --control-value: attr(value type(<number>), 3);
+      --slider-progress: calc(
+        progress(var(--control-value), var(--attr-min), var(--attr-max)) * 100%
+      );
+
+      appearance: none;
+      -webkit-appearance: none;
+      inline-size: 100%;
+      block-size: 2.5rem;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    :dir(rtl) input[type="range"].obsidian-slider {
+      --slider-direction: to left;
+    }
+
+    html:not(.dark) input[type="range"].obsidian-slider {
+      --slider-track-color: #cbd5e1;
+      --slider-fill-color: #2563eb;
+      --slider-thumb-color: #1d4ed8;
+    }
+
+    @supports not (opacity: progress(1, 0, 100)) {
+      input[type="range"].obsidian-slider {
+        --slider-progress: calc(
+          (var(--control-value) - var(--attr-min)) /
+          (var(--attr-max) - var(--attr-min)) * 100%
+        );
+      }
+    }
+
+    input[type="range"].obsidian-slider::-webkit-slider-runnable-track {
+      block-size: var(--slider-track-size);
+      border: 0;
+      border-radius: var(--slider-track-radius);
+      background: linear-gradient(
+        var(--slider-direction),
+        var(--slider-fill-color) var(--slider-progress),
+        var(--slider-track-color) var(--slider-progress)
+      );
+    }
+
+    input[type="range"].obsidian-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      inline-size: var(--slider-thumb-size);
+      block-size: var(--slider-thumb-size);
+      margin-block-start: calc(
+        (var(--slider-track-size) - var(--slider-thumb-size)) / 2
+      );
+      border: 2px solid #ffffff;
+      border-radius: var(--slider-thumb-radius);
+      background: var(--slider-thumb-color);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.4);
+    }
+
+    input[type="range"].obsidian-slider::-moz-range-track {
+      block-size: var(--slider-track-size);
+      border: 0;
+      border-radius: var(--slider-track-radius);
+      background: var(--slider-track-color);
+    }
+
+    input[type="range"].obsidian-slider::-moz-range-progress {
+      block-size: var(--slider-track-size);
+      border-radius: var(--slider-track-radius);
+      background: var(--slider-fill-color);
+    }
+
+    input[type="range"].obsidian-slider::-moz-range-thumb {
+      inline-size: var(--slider-thumb-size);
+      block-size: var(--slider-thumb-size);
+      border: 2px solid #ffffff;
+      border-radius: var(--slider-thumb-radius);
+      background: var(--slider-thumb-color);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.4);
+    }
+
+    input[type="range"].obsidian-slider:focus-visible {
+      outline: 2px solid var(--slider-fill-color);
+      outline-offset: 4px;
+      border-radius: 0.5rem;
+    }
+
+    /* Responsive Accessible Data Tables */
+    .table-wrapper {
+      overflow: auto;
+      max-inline-size: 100%;
+      container-type: inline-size;
+      scrollbar-width: thin;
+      border-radius: 0.75rem;
+    }
+
+    .table-wrapper table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    .table-wrapper thead th {
+      position: sticky;
+      inset-block-start: 0;
+      z-index: 2;
+      white-space: nowrap;
+    }
+
+    html.dark .table-wrapper thead th {
+      background: #0a0f18;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      color: #94a3b8;
+    }
+
+    html:not(.dark) .table-wrapper thead th {
+      background: #f8fafc;
+      border-bottom: 1px solid #cbd5e1;
+      color: #334155;
+    }
+
+    html.dark .table-wrapper tbody tr:hover {
+      background-color: rgba(30, 41, 59, 0.45);
+    }
+
+    html:not(.dark) .table-wrapper tbody tr:hover {
+      background-color: #f8fafc;
+    }
+
+    @container (width < 640px) {
+      .table-responsive-cards table,
+      .table-responsive-cards thead,
+      .table-responsive-cards tbody,
+      .table-responsive-cards tr,
+      .table-responsive-cards th,
+      .table-responsive-cards td {
+        display: block;
+      }
+      .table-responsive-cards thead {
+        display: none;
+      }
+      .table-responsive-cards tbody tr {
+        margin-bottom: 0.85rem;
+        padding: 0.75rem;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+      }
+      .table-responsive-cards td {
+        padding: 0.35rem 0 !important;
+        border: 0 !important;
+      }
+      .table-responsive-cards td[data-label]::before {
+        content: attr(data-label) ": ";
+        display: block;
+        font-size: 11px;
+        font-family: "JetBrains Mono", monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        opacity: 0.75;
+        margin-bottom: 0.15rem;
+      }
+    }
+
+    /* Animations & Micro-interactions */
+    @keyframes enterFadeSlide {
+      0% { opacity: 0; transform: translateY(14px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .animate-entrance {
+      animation: enterFadeSlide 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      opacity: 0;
+    }
+    .delay-1 { animation-delay: 0.04s; }
+    .delay-2 { animation-delay: 0.10s; }
+    .delay-3 { animation-delay: 0.16s; }
+    .delay-4 { animation-delay: 0.22s; }
+    .delay-5 { animation-delay: 0.28s; }
+    .delay-6 { animation-delay: 0.34s; }
+
+    .interactive-card {
+      transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+    .interactive-card:hover {
+      transform: translateY(-3px);
+    }
+
+    .interactive-action {
+      transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+    }
+    .interactive-action:hover {
+      transform: translateY(-2px);
+    }
+    .action-icon {
+      transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .interactive-action:hover .action-icon {
+      transform: scale(1.08) rotate(-3deg);
+    }
+
+    @keyframes radarPulse {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    .telemetry-radar-dot {
+      animation: radarPulse 2.2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+    }
+
+    @keyframes syncSpinSlow {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .sync-badge:hover .sync-icon-pulse {
+      animation: syncSpinSlow 1.4s linear infinite;
+    }
+
+    .chart-bar-col {
+      transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .chart-bar-col:hover {
+      transform: translateY(-3px);
+    }
+    .chart-bar-col .chart-tooltip {
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      pointer-events: none;
+    }
+    .chart-bar-col:hover .chart-tooltip,
+    .chart-bar-col:focus-within .chart-tooltip {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .ledger-row {
+      position: relative;
+      transition: background-color 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+    }
+    .ledger-row:hover {
+      transform: translateX(3px);
+    }
+
+    .progress-fill {
+      width: 0%;
+      transition: width 1.1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .progress-fill.filled {
+      width: var(--target-width);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+      .animate-entrance {
+        opacity: 1 !important;
+        transform: none !important;
+      }
+      .progress-fill {
+        width: var(--target-width) !important;
+      }
+    }
+
+    @media (forced-colors: active) {
+      .obsidian-card,
+      .interactive-card,
+      .interactive-action,
+      .obsidian-subcard,
+      .obsidian-hero-banner,
+      dialog.obsidian-modal,
+      .obsidian-nav-active {
+        border: 1px solid CanvasText !important;
+      }
+      .obsidian-nav-active {
+        border-left: 4px solid Highlight !important;
+      }
+      progress.obsidian-progress {
+        border: 1px solid CanvasText !important;
+        --progress-bar-fill: Highlight;
+      }
+      input[type="range"].obsidian-slider {
+        outline: 1px solid CanvasText;
+      }
+    }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body class="font-body-md text-body-md antialiased min-h-screen flex flex-col">
+
+  <!-- Fixed Top Glass Header (single compact row < 12% viewport height) -->
+  <header class="fixed top-0 left-0 right-0 z-40 h-16 px-4 sm:px-gutter flex items-center justify-between gap-2">
+    <div class="flex items-center gap-2.5 sm:gap-space-md min-w-0">
+      <button
+        id="mobile-nav-open"
+        type="button"
+        class="lg:hidden inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-lg border border-white/15 bg-surface-container-low text-on-surface hover:bg-surface-container-high transition-colors"
+        aria-label="Open navigation menu"
+        aria-controls="mobile-nav-drawer"
+        aria-expanded="false"
+      >
+        <span class="material-symbols-outlined text-[22px]" aria-hidden="true">menu</span>
+      </button>
+
+      <a href="{{ url_for('student_dashboard') if is_student_role else url_for('dashboard') }}" class="inline-flex items-center gap-2 min-w-0">
+        <img
+          src="{{ url_for('static', filename='images/attendx-icon.jpg') }}"
+          alt=""
+          width="1024"
+          height="1024"
+          fetchpriority="high"
+          aria-hidden="true"
+          class="h-9 w-9 rounded-xl object-cover shrink-0"
+          onerror="this.style.display='none'; document.getElementById('header-logo-fallback').classList.remove('hidden');"
+        />
+        <span id="header-logo-fallback" class="hidden inline-flex items-center justify-center w-9 h-9 rounded-xl obsidian-primary-btn shrink-0">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">school</span>
+        </span>
+        <span class="brand-wordmark-shell hidden sm:inline-flex items-center shrink-0">
+          <img
+            src="{{ url_for('static', filename='images/attendx-wordmark.jpg') }}"
+            alt="AttendX — Intelligent Attendance & Academic Analytics Platform"
+            width="602"
+            height="151"
+            fetchpriority="high"
+            class="brand-wordmark-img h-7 w-auto object-contain"
+          />
+        </span>
+        <span class="sm:hidden font-headline-sm text-headline-sm obsidian-text-heading tracking-tight font-bold truncate">AttendX</span>
+      </a>
+
+      <div class="hidden sm:flex items-center gap-space-xs px-space-sm py-space-xxs rounded-full bg-success-soft border border-emerald-400/25">
+        <span class="w-2 h-2 rounded-full bg-success telemetry-radar-dot" aria-hidden="true"></span>
+        <span class="font-label-sm text-label-sm text-success tracking-wide uppercase font-mono">
+          {{ 'SYS // LIVE V2.4' if is_admin_role else ('FACULTY // LIVE V2.4' if is_faculty_role else 'STUDENT // LIVE V2.4') }}
+        </span>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 sm:gap-space-sm shrink-0">
+      <div class="sync-badge hidden xl:flex items-center gap-space-xs px-space-sm py-space-xs rounded-lg bg-surface-container-low border border-white/10">
+        <span class="material-symbols-outlined text-secondary text-[16px] sync-icon-pulse" aria-hidden="true">sync</span>
+        <span class="font-label-sm text-label-sm text-on-surface-variant font-mono">
+          SYNC: {{ stats.query_latency_ms if stats is defined and stats.query_latency_ms is defined else 'SQLite WAL' }}{% if stats is defined and stats.query_latency_ms is defined %}ms{% endif %}
+        </span>
+      </div>
+
+      {% if is_student_role %}
+        <a href="{{ url_for('student_dashboard') }}#eligibilityCalculatorSection" class="obsidian-primary-btn hidden sm:inline-flex items-center gap-space-xs px-space-sm py-space-xs rounded-lg font-label-md text-label-md transition-all active:scale-95">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">calculate</span>
+          <span>Eligibility Check</span>
+        </a>
+      {% else %}
+        <a href="{{ url_for('attendance') }}" class="obsidian-primary-btn hidden sm:inline-flex items-center gap-space-xs px-space-sm py-space-xs rounded-lg font-label-md text-label-md transition-all active:scale-95">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">fact_check</span>
+          <span>{{ 'Quick Roll-call' if is_admin_role else 'Take Attendance' }}</span>
+        </a>
+      {% endif %}
+
+      <!-- Server-verified Role Badge -->
+      <div class="hidden md:inline-flex items-center gap-1.5 px-space-sm py-1.5 rounded-lg bg-surface-container-low border border-white/15 font-label-sm font-mono uppercase tracking-wider text-on-surface" title="Server-verified session role">
+        <span class="material-symbols-outlined text-[16px] text-secondary" aria-hidden="true">
+          {{ 'admin_panel_settings' if is_admin_role else ('co_present' if is_faculty_role else 'school') }}
+        </span>
+        <span>{{ 'Administrator' if is_admin_role else ('Faculty Member' if is_faculty_role else 'Student') }}</span>
+      </div>
+
+      <!-- Authenticated User Pill -->
+      <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface-container-low border border-white/15">
+        <span class="w-7 h-7 rounded-full obsidian-primary-btn inline-flex items-center justify-center text-xs font-bold uppercase shrink-0" aria-hidden="true">
+          {{ g.user.username[:1] if g.user and g.user.username else 'U' }}
+        </span>
+        <span class="hidden sm:inline font-label-md text-on-surface font-mono font-semibold">{{ g.user.username if g.user else 'user' }}</span>
+      </div>
+
+      <a
+        href="{{ url_for('auth.logout') }}"
+        aria-label="Sign Out"
+        title="Sign Out"
+        class="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-lg text-on-surface-variant hover:text-red-400 hover:bg-red-500/15 border border-transparent hover:border-red-500/30 transition-colors"
+      >
+        <span class="material-symbols-outlined text-[20px]" aria-hidden="true">logout</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Desktop Left Sidebar -->
+  <aside class="fixed left-0 top-16 bottom-0 w-64 hidden lg:flex flex-col justify-between py-space-md z-30">
+    <div class="flex-1 px-space-sm overflow-y-auto">
+      <div class="px-space-sm pb-space-xs font-label-sm text-label-sm obsidian-text-muted uppercase tracking-wider font-mono">
+        {{ 'Academic Operations' if is_admin_role else ('Teaching Workspace' if is_faculty_role else 'My Academics') }}
+      </div>
+      {{ render_portal_nav(request.endpoint, False) }}
+    </div>
+
+    <div class="px-space-md pt-space-sm">
+      <div class="obsidian-subcard p-space-sm rounded-lg">
+        <div class="flex items-center justify-between pb-space-xxs">
+          <span class="font-label-sm text-label-sm obsidian-text-muted font-mono">SESSION // SQLITE</span>
+          <span class="font-label-sm text-label-sm text-success flex items-center gap-1 font-mono">
+            <span class="w-1.5 h-1.5 rounded-full bg-success telemetry-radar-dot" aria-hidden="true"></span>ONLINE
+          </span>
+        </div>
+        <div class="font-body-sm text-body-sm font-mono truncate text-secondary">
+          User: {{ g.user.username if g.user else 'user' }} ({{ 'Admin' if is_admin_role else ('Faculty' if is_faculty_role else 'Student') }})
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mobile Top-Layer Navigation Drawer -->
+  <dialog id="mobile-nav-drawer" class="obsidian-drawer" aria-label="{{ 'Mobile Admin Navigation' if is_admin_role else ('Mobile Faculty Navigation' if is_faculty_role else 'Mobile Student Navigation') }}">
+    <div class="h-full flex flex-col justify-between py-space-md">
+      <div class="flex-1 px-space-sm overflow-y-auto">
+        <div class="flex items-center justify-between px-space-sm pb-space-sm mb-2 border-b border-white/10">
+          <span class="font-label-sm text-label-sm obsidian-text-muted uppercase tracking-wider font-mono">
+            {{ 'Admin Menu' if is_admin_role else ('Faculty Menu' if is_faculty_role else 'Student Menu') }}
+          </span>
+          <button
+            id="mobile-nav-close"
+            type="button"
+            autofocus
+            aria-label="Close navigation menu"
+            class="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-lg hover:bg-surface-container-high text-on-surface"
+          >
+            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+          </button>
+        </div>
+        {{ render_portal_nav(request.endpoint, True) }}
+      </div>
+      <div class="px-space-md pt-space-sm">
+        <div class="obsidian-subcard p-space-sm rounded-lg">
+          <div class="font-label-sm font-mono obsidian-text-muted">ROLE: {{ 'ADMINISTRATOR' if is_admin_role else ('FACULTY' if is_faculty_role else 'STUDENT') }}</div>
+          <div class="font-body-sm font-mono text-secondary truncate">{{ g.user.username if g.user else 'user' }}</div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Main Viewport Area -->
+  <div class="lg:pl-64 flex-1 flex flex-col">
+    <main class="w-full pt-16 flex-1">
+      <div class="px-4 sm:px-gutter py-space-lg flex flex-col gap-space-lg max-w-[1440px] mx-auto w-full">
+
+        <!-- Flask Flash Notifications -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flex flex-col gap-2" aria-live="polite">
+              {% for category, message in messages %}
+                {% if category in ['success'] %}
+                  {% set alert_cls = 'obsidian-chip-emerald' %}
+                  {% set icon_name = 'check_circle' %}
+                {% elif category in ['danger', 'error'] %}
+                  {% set alert_cls = 'obsidian-chip-red' %}
+                  {% set icon_name = 'error' %}
+                {% elif category in ['warning'] %}
+                  {% set alert_cls = 'obsidian-chip-amber' %}
+                  {% set icon_name = 'warning' %}
+                {% else %}
+                  {% set alert_cls = 'obsidian-chip-blue' %}
+                  {% set icon_name = 'info' %}
+                {% endif %}
+                <div role="alert" class="flash-alert flex items-center justify-between gap-3 px-4 py-3 rounded-xl border {{ alert_cls }} backdrop-blur-md">
+                  <div class="flex items-center gap-2.5 text-sm font-medium">
+                    <span class="material-symbols-outlined text-[20px] shrink-0" aria-hidden="true">{{ icon_name }}</span>
+                    <span>{{ message }}</span>
+                  </div>
+                  <button type="button" onclick="this.closest('.flash-alert').remove()" aria-label="Dismiss notification" class="inline-flex items-center justify-center min-w-[36px] min-h-[36px] rounded-lg hover:bg-white/10 transition-colors">
+                    <span class="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
+                  </button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full py-space-md mt-auto">
+      <div class="w-full px-4 sm:px-gutter flex flex-col md:flex-row items-center justify-between gap-space-sm font-label-sm text-label-sm obsidian-text-muted">
+        <div class="flex items-center gap-space-md flex-wrap font-mono">
+          {% if is_admin_role %}
+            <span>SQLite WAL &amp; Foreign Keys Enforced</span>
+            <span aria-hidden="true">•</span>
+            <span>Point-in-time Snapshot Recovery</span>
+            <span aria-hidden="true">•</span>
+            <span>Immutable Governance Trail Active</span>
+          {% elif is_faculty_role %}
+            <span>Real-Time Class Roll-Call</span>
+            <span aria-hidden="true">•</span>
+            <span>Pandas &amp; Cloud MapReduce Insights</span>
+            <span aria-hidden="true">•</span>
+            <span>75% Compliance Early-Warning</span>
+          {% else %}
+            <span>Personal Attendance Ledger</span>
+            <span aria-hidden="true">•</span>
+            <span>75% Exam Cutoff Simulator</span>
+            <span aria-hidden="true">•</span>
+            <span>35-Day Session Activity Heatmap</span>
+          {% endif %}
+        </div>
+        <div class="flex items-center gap-space-sm font-mono">
+          <span>© 2026 AttendX — Intelligent Attendance &amp; Analytics</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Toast Live Region -->
+  <div id="uiToast" role="status" aria-live="polite" class="hidden fixed bottom-20 right-6 z-50 px-4 py-2.5 rounded-xl obsidian-card text-sm font-medium shadow-xl items-center gap-2 border border-blue-400/40">
+    <span class="material-symbols-outlined text-[18px] text-secondary" aria-hidden="true">notifications_active</span>
+    <span id="uiToastMsg"></span>
+  </div>
+
+  <!-- Floating Dark / Light Mode Toggle Dock -->
+  <div class="fixed bottom-6 right-6 z-50 flex items-center shadow-lg" id="theme-toggle-dock">
+    <button
+      id="theme-toggle-btn"
+      type="button"
+      aria-label="Toggle color theme"
+      aria-pressed="true"
+      class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-full bg-surface-container-high border border-white/20 hover:border-white/40 text-on-surface transition-all duration-200 cursor-pointer shadow-xl backdrop-blur-md active:scale-95 min-h-[40px]"
+    >
+      <span class="material-symbols-outlined text-[16px] text-secondary transition-transform duration-300" id="theme-mode-icon" aria-hidden="true">dark_mode</span>
+      <span class="font-label-sm text-label-sm font-medium tracking-wide uppercase font-mono" id="theme-mode-label">Dark</span>
+      <div class="relative w-8 h-4 rounded-full bg-surface-container-low p-0.5 flex items-center border border-white/15" aria-hidden="true">
+        <div class="w-3 h-3 rounded-full bg-secondary transition-transform duration-300 transform translate-x-0" id="theme-toggle-dot"></div>
+      </div>
+    </button>
+  </div>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = "cloudattend-theme";
+      const btn = document.getElementById("theme-toggle-btn");
+      const lbl = document.getElementById("theme-mode-label");
+      const icon = document.getElementById("theme-mode-icon");
+      const dot = document.getElementById("theme-toggle-dot");
+      const metaScheme = document.querySelector('meta[name="color-scheme"]');
+
+      function syncThemeUI(isDark) {
+        document.documentElement.classList.toggle("dark", isDark);
+        if (metaScheme) metaScheme.content = isDark ? "dark" : "light";
+        if (btn) btn.setAttribute("aria-pressed", String(isDark));
+        if (lbl) lbl.textContent = isDark ? "Dark" : "Light";
+        if (icon) {
+          icon.textContent = isDark ? "dark_mode" : "light_mode";
+          icon.style.transform = isDark ? "rotate(0deg)" : "rotate(180deg)";
+        }
+        if (dot) {
+          dot.style.transform = isDark ? "translateX(0px)" : "translateX(16px)";
+        }
+        window.dispatchEvent(new Event("themeChanged"));
+      }
+
+      syncThemeUI(document.documentElement.classList.contains("dark"));
+
+      if (btn) {
+        btn.addEventListener("click", function () {
+          const nextDark = !document.documentElement.classList.contains("dark");
+          try {
+            localStorage.setItem(STORAGE_KEY, nextDark ? "dark" : "light");
+          } catch (err) {}
+          syncThemeUI(nextDark);
+        });
+      }
+
+      window.addEventListener("storage", function (event) {
+        if (event.key === STORAGE_KEY && (event.newValue === "dark" || event.newValue === "light")) {
+          syncThemeUI(event.newValue === "dark");
+        }
+      });
+
+      // Mobile Navigation Drawer using native <dialog>
+      const drawer = document.getElementById("mobile-nav-drawer");
+      const openBtn = document.getElementById("mobile-nav-open");
+      const closeBtn = document.getElementById("mobile-nav-close");
+
+      if (drawer && openBtn) {
+        openBtn.addEventListener("click", function () {
+          drawer.showModal();
+          openBtn.setAttribute("aria-expanded", "true");
+        });
+        if (closeBtn) {
+          closeBtn.addEventListener("click", function () {
+            drawer.close();
+          });
+        }
+        drawer.addEventListener("close", function () {
+          openBtn.setAttribute("aria-expanded", "false");
+        });
+        // Light-dismiss backdrop clicks on drawer
+        drawer.addEventListener("click", function (event) {
+          const rect = drawer.getBoundingClientRect();
+          if (event.clientX > rect.right || event.clientX < rect.left || event.clientY > rect.bottom || event.clientY < rect.top) {
+            drawer.close();
+          }
+        });
+      }
+
+      // Reusable accessible modal helper with Safari closedby fallback
+      window.setupObsidianDialog = function (dialogId) {
+        const dlg = document.getElementById(dialogId);
+        if (!dlg) return null;
+
+        dlg.addEventListener("close", function () {
+          dlg.returnValue = "";
+        });
+
+        if (dlg.getAttribute("closedby") === "any" && !("closedBy" in HTMLDialogElement.prototype)) {
+          let pressedOutside = false;
+          const isOutside = function (e) {
+            const r = dlg.getBoundingClientRect();
+            return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+          };
+          dlg.addEventListener("pointerdown", function (e) {
+            pressedOutside = isOutside(e);
+          });
+          dlg.addEventListener("pointerup", function (e) {
+            if (pressedOutside && isOutside(e)) {
+              dlg.close();
+            }
+          });
+        }
+        return dlg;
+      };
+
+      // Global toast notification helper
+      let toastTimer = null;
+      window.showToast = function (message) {
+        const toast = document.getElementById("uiToast");
+        const msgEl = document.getElementById("uiToastMsg");
+        if (!toast || !msgEl) return;
+        msgEl.textContent = message;
+        toast.classList.remove("hidden");
+        toast.classList.add("flex");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toast.classList.add("hidden");
+          toast.classList.remove("flex");
+        }, 3200);
+      };
+    })();
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

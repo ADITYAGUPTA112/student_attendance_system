@@ -1,159 +1,248 @@
-{% extends "base.html" %}
+{% extends "obsidian_admin_base.html" %}
 
-{% block title %}System Audit Log — CloudAttend{% endblock %}
+{% block title %}System Audit Log — AttendX{% endblock %}
 
 {% block content %}
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
-    <div>
-        <h1 class="h3 fw-bold mb-1">System Audit &amp; Traceability Log</h1>
-        <p class="text-muted small mb-0">Immutable record of administrative, authentication, and attendance events.</p>
+<!-- Header -->
+<div class="animate-entrance delay-1 flex flex-col md:flex-row md:items-end justify-between gap-space-md">
+  <div class="flex flex-col gap-space-xxs">
+    <div class="flex items-center gap-space-xs font-label-sm obsidian-text-muted font-mono tracking-wider">
+      <span>SYS</span>
+      <span aria-hidden="true">//</span>
+      <span>GOVERNANCE</span>
+      <span aria-hidden="true">//</span>
+      <span class="text-secondary font-semibold">TRACEABILITY LEDGER</span>
     </div>
-    <div>
-        <span class="badge bg-light text-secondary border px-3 py-2">
-            <i class="bi bi-shield-lock-fill text-warning me-1"></i> Admin Privileged View &bull; Immutable
-        </span>
-    </div>
+    <h1 class="font-headline-xl text-headline-xl-mobile sm:text-headline-xl obsidian-text-heading font-bold">
+      System Audit &amp; Traceability Log
+    </h1>
+    <p class="font-body-md obsidian-text-muted">
+      Immutable record of administrative, authentication, backup, and attendance events.
+    </p>
+  </div>
+
+  <div class="shrink-0">
+    <span class="obsidian-chip-amber inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-mono text-label-sm border">
+      <span class="material-symbols-outlined text-[16px]" aria-hidden="true">shield_lock</span>
+      <span>Admin Privileged View • Immutable</span>
+    </span>
+  </div>
 </div>
 
-<!-- Filter Controls -->
-<div class="card card-custom p-3 mb-4">
-    <form method="GET" action="{{ url_for('audit') }}" class="row g-2 align-items-center mb-2">
-        <div class="col-md-9 col-lg-10">
-            <div class="input-group">
-                <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-search"></i></span>
-                <input type="text" class="form-control border-start-0" name="q" value="{{ query or '' }}" placeholder="Filter by action (e.g. LOGIN, CREATE, MARK) or detail...">
-            </div>
-        </div>
-        <div class="col-md-3 col-lg-2 d-flex gap-2">
-            <button type="submit" class="btn btn-primary-navy w-100 fw-semibold rounded-3">Filter</button>
-            {% if query %}
-                <a href="{{ url_for('audit') }}" class="btn btn-outline-secondary rounded-3" title="Clear filter">
-                    <i class="bi bi-x-lg"></i>
-                </a>
-            {% endif %}
-        </div>
-    </form>
-
-    <!-- Instant Filter Chips -->
-    <div class="d-flex flex-wrap gap-1.5 pt-2 border-top align-items-center">
-        <span class="text-muted small fw-bold me-1">Quick Filter:</span>
-        <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2.5 small rounded-pill fw-semibold" onclick="filterAuditCategory('ALL')">All Records</button>
-        <button type="button" class="badge-audit badge-audit-mark border-0" style="cursor:pointer;" onclick="filterAuditCategory('MARK')">
-            <i class="bi bi-check2-square"></i> MARK_ATTENDANCE
-        </button>
-        <button type="button" class="badge-audit badge-audit-create border-0" style="cursor:pointer;" onclick="filterAuditCategory('CREATE')">
-            <i class="bi bi-plus-circle-fill"></i> CREATE / ENROLL
-        </button>
-        <button type="button" class="badge-audit badge-audit-backup border-0" style="cursor:pointer;" onclick="filterAuditCategory('BACKUP')">
-            <i class="bi bi-database-check"></i> BACKUP
-        </button>
-        <button type="button" class="badge-audit badge-audit-auth border-0" style="cursor:pointer;" onclick="filterAuditCategory('AUTH')">
-            <i class="bi bi-shield-check"></i> AUTH
-        </button>
+<!-- Search & Instant Filter Controls -->
+<div class="animate-entrance delay-2 obsidian-card p-space-md rounded-xl flex flex-col gap-3">
+  <form method="GET" action="{{ url_for('audit') }}" class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+    <div class="relative flex-1">
+      <label for="auditSearchInput" class="sr-only">Filter audit logs by action, actor, or detail</label>
+      <span class="material-symbols-outlined text-[20px] obsidian-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true">search</span>
+      <input
+        id="auditSearchInput"
+        type="text"
+        name="q"
+        value="{{ query or '' }}"
+        placeholder="Filter by action (e.g. LOGIN, CREATE, MARK) or detail..."
+        class="obsidian-input w-full rounded-lg pl-10 pr-4 py-2.5 text-sm min-h-[44px]"
+      />
     </div>
+    <div class="flex items-center gap-2 shrink-0">
+      <button type="submit" class="obsidian-primary-btn px-5 py-2.5 rounded-lg text-sm font-semibold min-h-[44px] flex-1 sm:flex-none">
+        Filter
+      </button>
+      {% if query %}
+        <a
+          href="{{ url_for('audit') }}"
+          title="Clear filter"
+          aria-label="Clear filter"
+          class="obsidian-subcard inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-lg obsidian-text-muted hover:text-secondary transition-colors"
+        >
+          <span class="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+        </a>
+      {% endif %}
+    </div>
+  </form>
+
+  <!-- Instant Category Filter Chips -->
+  <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-white/10" role="group" aria-label="Quick category filter">
+    <span class="font-mono text-label-sm obsidian-text-muted uppercase mr-1">Quick Filter:</span>
+    <button
+      type="button"
+      data-filter-cat="ALL"
+      aria-pressed="true"
+      onclick="filterAuditCategory('ALL', this)"
+      class="audit-chip obsidian-chip-blue inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-semibold border transition-all min-h-[34px]"
+    >
+      <span class="material-symbols-outlined text-[14px]" aria-hidden="true">list</span>
+      <span>All Records</span>
+    </button>
+    <button
+      type="button"
+      data-filter-cat="MARK"
+      aria-pressed="false"
+      onclick="filterAuditCategory('MARK', this)"
+      class="audit-chip obsidian-chip-emerald inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-semibold border transition-all min-h-[34px]"
+    >
+      <span class="material-symbols-outlined text-[14px]" aria-hidden="true">fact_check</span>
+      <span>MARK_ATTENDANCE</span>
+    </button>
+    <button
+      type="button"
+      data-filter-cat="CREATE"
+      aria-pressed="false"
+      onclick="filterAuditCategory('CREATE', this)"
+      class="audit-chip obsidian-chip-blue inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-semibold border transition-all min-h-[34px]"
+    >
+      <span class="material-symbols-outlined text-[14px]" aria-hidden="true">add_circle</span>
+      <span>CREATE / ENROLL</span>
+    </button>
+    <button
+      type="button"
+      data-filter-cat="BACKUP"
+      aria-pressed="false"
+      onclick="filterAuditCategory('BACKUP', this)"
+      class="audit-chip obsidian-chip-purple inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-semibold border transition-all min-h-[34px]"
+    >
+      <span class="material-symbols-outlined text-[14px]" aria-hidden="true">database</span>
+      <span>BACKUP</span>
+    </button>
+    <button
+      type="button"
+      data-filter-cat="AUTH"
+      aria-pressed="false"
+      onclick="filterAuditCategory('AUTH', this)"
+      class="audit-chip obsidian-chip-amber inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-semibold border transition-all min-h-[34px]"
+    >
+      <span class="material-symbols-outlined text-[14px]" aria-hidden="true">verified_user</span>
+      <span>AUTH</span>
+    </button>
+  </div>
 </div>
 
 <!-- Audit Trail Table -->
-<div class="card card-custom p-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="h5 fw-bold mb-0">
-            Audit Records
-            <span class="badge bg-light text-secondary border ms-1" id="visibleAuditCount">{{ logs|length }}</span>
-        </h2>
+<div class="animate-entrance delay-3 obsidian-card p-space-lg rounded-xl flex flex-col gap-space-md">
+  <div class="flex items-center justify-between gap-2">
+    <div class="flex items-center gap-2.5">
+      <h2 id="audit-table-heading" class="font-headline-sm text-headline-sm obsidian-text-heading font-semibold">
+        Audit Records
+      </h2>
+      <span id="visibleAuditCount" class="obsidian-subcard px-2.5 py-0.5 rounded-full font-mono text-label-sm text-secondary font-semibold">
+        {{ logs|length }}
+      </span>
     </div>
+    <span class="font-mono text-label-sm obsidian-text-muted">Latest 100 entries</span>
+  </div>
 
-    {% if logs %}
-        <div class="table-responsive">
-            <table class="table table-custom align-middle mb-0" id="auditTable">
-                <thead>
-                    <tr>
-                        <th style="width: 18%;">Timestamp</th>
-                        <th style="width: 15%;">Actor</th>
-                        <th style="width: 22%;">Action Category</th>
-                        <th style="width: 45%;">Event Details</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in logs %}
-                        {% set act = item.action | upper %}
-                        {% if 'MARK' in act %}
-                            {% set cat = 'MARK' %}
-                            {% set badge_class = 'badge-audit-mark' %}
-                            {% set badge_icon = 'bi-check2-square' %}
-                        {% elif 'CREATE' in act or 'ENROLL' in act %}
-                            {% set cat = 'CREATE' %}
-                            {% set badge_class = 'badge-audit-create' %}
-                            {% set badge_icon = 'bi-plus-circle-fill' %}
-                        {% elif 'BACKUP' in act or 'RESTORE' in act %}
-                            {% set cat = 'BACKUP' %}
-                            {% set badge_class = 'badge-audit-backup' %}
-                            {% set badge_icon = 'bi-database-check' %}
-                        {% elif 'LOGIN' in act or 'AUTH' in act or 'LOGOUT' in act %}
-                            {% set cat = 'AUTH' %}
-                            {% set badge_class = 'badge-audit-auth' %}
-                            {% set badge_icon = 'bi-shield-check' %}
-                        {% else %}
-                            {% set cat = 'OTHER' %}
-                            {% set badge_class = 'badge-audit-danger' %}
-                            {% set badge_icon = 'bi-activity' %}
-                        {% endif %}
-                        <tr class="audit-row" data-cat="{{ cat }}">
-                            <td class="text-nowrap small text-muted font-monospace">
-                                <i class="bi bi-clock me-1 text-primary"></i>
-                                {% if item.created_at.strftime is defined %}
-                                    {{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
-                                {% else %}
-                                    {{ item.created_at }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if item.username %}
-                                    <span class="badge bg-light text-dark border font-monospace">
-                                        <i class="bi bi-person me-1 text-primary"></i>{{ item.username }}
-                                    </span>
-                                {% else %}
-                                    <span class="badge bg-light text-muted border">System / Anonymous</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <span class="badge-audit {{ badge_class }}">
-                                    <i class="bi {{ badge_icon }}"></i> {{ item.action }}
-                                </span>
-                            </td>
-                            <td class="small text-dark">{{ item.detail }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <div class="empty-state py-5">
-            <i class="bi bi-shield-check"></i>
-            <p class="h6 text-muted mb-1">No audit log records found.</p>
-            <p class="small text-muted mb-0">System events will appear here as users interact with CloudAttend.</p>
-        </div>
-    {% endif %}
+  {% if logs %}
+    <div tabindex="0" role="region" aria-labelledby="audit-table-heading" class="table-wrapper table-responsive-cards border border-white/10">
+      <table id="auditTable" class="text-left text-sm">
+        <thead>
+          <tr class="font-mono text-label-sm uppercase tracking-wider">
+            <th class="px-4 py-3">Timestamp</th>
+            <th class="px-4 py-3">Actor</th>
+            <th class="px-4 py-3">Action Category</th>
+            <th class="px-4 py-3">Event Details</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/10">
+          {% for item in logs %}
+            {% set act = item.action | upper %}
+            {% if 'MARK' in act %}
+              {% set cat = 'MARK' %}
+              {% set badge_cls = 'obsidian-chip-emerald' %}
+              {% set badge_icon = 'fact_check' %}
+            {% elif 'CREATE' in act or 'ENROLL' in act %}
+              {% set cat = 'CREATE' %}
+              {% set badge_cls = 'obsidian-chip-blue' %}
+              {% set badge_icon = 'add_circle' %}
+            {% elif 'BACKUP' in act or 'RESTORE' in act %}
+              {% set cat = 'BACKUP' %}
+              {% set badge_cls = 'obsidian-chip-purple' %}
+              {% set badge_icon = 'database' %}
+            {% elif 'LOGIN' in act or 'AUTH' in act or 'LOGOUT' in act %}
+              {% set cat = 'AUTH' %}
+              {% set badge_cls = 'obsidian-chip-amber' %}
+              {% set badge_icon = 'verified_user' %}
+            {% else %}
+              {% set cat = 'OTHER' %}
+              {% set badge_cls = 'obsidian-chip-red' %}
+              {% set badge_icon = 'bolt' %}
+            {% endif %}
+
+            <tr class="audit-row transition-colors" data-cat="{{ cat }}">
+              <td data-label="Timestamp" class="px-4 py-3 whitespace-nowrap font-mono text-xs obsidian-text-muted">
+                <span class="inline-flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[15px] text-secondary" aria-hidden="true">schedule</span>
+                  <span>
+                    {% if item.created_at.strftime is defined %}
+                      {{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                    {% else %}
+                      {{ item.created_at }}
+                    {% endif %}
+                  </span>
+                </span>
+              </td>
+              <td data-label="Actor" class="px-4 py-3 whitespace-nowrap">
+                {% if item.username %}
+                  <span class="obsidian-subcard inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md font-mono text-xs obsidian-text-heading">
+                    <span class="material-symbols-outlined text-[14px] text-secondary" aria-hidden="true">person</span>
+                    <span>{{ item.username }}</span>
+                  </span>
+                {% else %}
+                  <span class="obsidian-subcard inline-flex items-center px-2.5 py-1 rounded-md font-mono text-xs obsidian-text-muted">
+                    System / Anonymous
+                  </span>
+                {% endif %}
+              </td>
+              <td data-label="Action Category" class="px-4 py-3 whitespace-nowrap">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border font-mono text-xs font-semibold {{ badge_cls }}">
+                  <span class="material-symbols-outlined text-[14px]" aria-hidden="true">{{ badge_icon }}</span>
+                  <span>{{ item.action }}</span>
+                </span>
+              </td>
+              <td data-label="Event Details" class="px-4 py-3 text-sm obsidian-text-heading">
+                {{ item.detail }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="obsidian-subcard rounded-xl p-10 text-center flex flex-col items-center gap-2">
+      <span class="material-symbols-outlined text-[40px] text-secondary" aria-hidden="true">policy</span>
+      <p class="font-label-lg obsidian-text-heading">No audit log records found.</p>
+      <p class="font-body-sm obsidian-text-muted">System events will appear here as users interact with AttendX.</p>
+    </div>
+  {% endif %}
 </div>
+{% endblock %}
 
 {% block scripts %}
 <script>
-function filterAuditCategory(cat) {
-    const rows = document.querySelectorAll('.audit-row');
+  function filterAuditCategory(cat, clickedBtn) {
+    const rows = document.querySelectorAll(".audit-row");
     let visible = 0;
-    rows.forEach(row => {
-        if (cat === 'ALL' || row.dataset.cat === cat) {
-            row.style.display = '';
-            visible++;
-        } else {
-            row.style.display = 'none';
-        }
+    rows.forEach(function (row) {
+      if (cat === "ALL" || row.dataset.cat === cat) {
+        row.style.display = "";
+        visible++;
+      } else {
+        row.style.display = "none";
+      }
     });
-    const countEl = document.getElementById('visibleAuditCount');
-    if (countEl) countEl.textContent = visible;
-    if (typeof showToast === 'function') {
-        showToast('Filtered audit records by: ' + cat);
+
+    const countEl = document.getElementById("visibleAuditCount");
+    if (countEl) countEl.textContent = String(visible);
+
+    document.querySelectorAll(".audit-chip").forEach(function (btn) {
+      const isSelected = btn.dataset.filterCat === cat;
+      btn.setAttribute("aria-pressed", String(isSelected));
+      btn.classList.toggle("ring-2", isSelected);
+      btn.classList.toggle("ring-blue-400/70", isSelected);
+    });
+
+    if (typeof showToast === "function") {
+      showToast("Filtered audit records by: " + cat);
     }
-}
+  }
 </script>
-{% endblock %}
 {% endblock %}
