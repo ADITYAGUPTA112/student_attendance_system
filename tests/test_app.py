@@ -23,8 +23,8 @@ def test_attendx_branding_and_local_logos(client):
     login_res = client.get("/login")
     assert login_res.status_code == 200
     assert b"AttendX" in login_res.data
-    assert b"attendx-icon.jpg" in login_res.data
-    assert b"attendx-wordmark.jpg" in login_res.data
+    assert b"attendx-icon.png" in login_res.data
+    assert b"attendx-wordmark.png" in login_res.data
     assert b"lh3.googleusercontent.com" not in login_res.data
     assert b"Academic Portal v2.4" not in login_res.data
 
@@ -32,8 +32,8 @@ def test_attendx_branding_and_local_logos(client):
     dash_res = client.get("/dashboard")
     assert dash_res.status_code == 200
     assert b"AttendX" in dash_res.data
-    assert b"attendx-icon.jpg" in dash_res.data
-    assert b"attendx-wordmark.jpg" in dash_res.data
+    assert b"attendx-icon.png" in dash_res.data
+    assert b"attendx-wordmark.png" in dash_res.data
     assert b"lh3.googleusercontent.com" not in dash_res.data
 
 

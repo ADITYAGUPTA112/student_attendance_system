@@ -70,8 +70,8 @@
     })();
   </script>
   <title>{% block title %}AttendX — {{ portal_short_name }}{% endblock %}</title>
-  <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='images/attendx-icon.jpg') }}"/>
-  <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/attendx-icon.jpg') }}"/>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/attendx-icon.png') }}"/>
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/attendx-icon.png') }}"/>
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
@@ -513,14 +513,25 @@
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
     }
 
-    html.dark .brand-wordmark-img {
-      mix-blend-mode: screen;
+    .brand-wordmark-shell {
+      background: transparent !important;
+      padding: 0 !important;
+      border: none !important;
+      box-shadow: none !important;
     }
 
-    html:not(.dark) .brand-wordmark-shell {
-      background: #03050a;
-      padding: 0.2rem 0.55rem;
-      border-radius: 0.65rem;
+    html.dark .brand-wordmark-dark {
+      display: inline-block !important;
+    }
+    html.dark .brand-wordmark-light {
+      display: none !important;
+    }
+
+    html:not(.dark) .brand-wordmark-dark {
+      display: none !important;
+    }
+    html:not(.dark) .brand-wordmark-light {
+      display: inline-block !important;
     }
 
     html:not(.dark) .obsidian-nav-active {
@@ -956,13 +967,13 @@
 
       <a href="{{ url_for('student_dashboard') if is_student_role else url_for('dashboard') }}" class="inline-flex items-center gap-2 min-w-0">
         <img
-          src="{{ url_for('static', filename='images/attendx-icon.jpg') }}"
+          src="{{ url_for('static', filename='images/attendx-icon.png') }}"
           alt=""
           width="1024"
           height="1024"
           fetchpriority="high"
           aria-hidden="true"
-          class="h-9 w-9 rounded-xl object-cover shrink-0"
+          class="h-9 w-9 object-contain shrink-0"
           onerror="this.style.display='none'; document.getElementById('header-logo-fallback').classList.remove('hidden');"
         />
         <span id="header-logo-fallback" class="hidden inline-flex items-center justify-center w-9 h-9 rounded-xl obsidian-primary-btn shrink-0">
@@ -970,12 +981,20 @@
         </span>
         <span class="brand-wordmark-shell hidden sm:inline-flex items-center shrink-0">
           <img
-            src="{{ url_for('static', filename='images/attendx-wordmark.jpg') }}"
+            src="{{ url_for('static', filename='images/attendx-wordmark.png') }}"
             alt="AttendX — Intelligent Attendance & Academic Analytics Platform"
             width="602"
             height="151"
             fetchpriority="high"
-            class="brand-wordmark-img h-7 w-auto object-contain"
+            class="brand-wordmark-img brand-wordmark-dark h-7 w-auto object-contain"
+          />
+          <img
+            src="{{ url_for('static', filename='images/attendx-wordmark-light.png') }}"
+            alt="AttendX — Intelligent Attendance & Academic Analytics Platform"
+            width="602"
+            height="151"
+            fetchpriority="high"
+            class="brand-wordmark-img brand-wordmark-light h-7 w-auto object-contain hidden"
           />
         </span>
         <span class="sm:hidden font-headline-sm text-headline-sm obsidian-text-heading tracking-tight font-bold truncate">AttendX</span>

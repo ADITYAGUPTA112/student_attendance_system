@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AttendX - Sign In</title>
   <!-- Browser Favicon -->
-  <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='images/attendx-icon.jpg') }}">
-  <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/attendx-icon.jpg') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/attendx-icon.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/attendx-icon.png') }}">
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts: Inter -->
@@ -271,22 +271,22 @@
       <!-- Pure AttendX Logo Only (no capsule, no borders, no extra text) -->
       <a href="{{ url_for('index') }}" class="inline-flex items-center gap-2.5 text-decoration-none">
         <img
-          src="{{ url_for('static', filename='images/attendx-icon.jpg') }}"
+          src="{{ url_for('static', filename='images/attendx-icon.png') }}"
           alt=""
           width="1024"
           height="1024"
           fetchpriority="high"
           aria-hidden="true"
-          class="h-10 w-10 rounded-xl object-cover shrink-0"
+          class="h-10 w-10 object-contain shrink-0"
         >
         <img
           id="brand-logo-img"
-          src="{{ url_for('static', filename='images/attendx-wordmark.jpg') }}"
+          src="{{ url_for('static', filename='images/attendx-wordmark.png') }}"
           alt="AttendX — Intelligent Attendance & Academic Analytics Platform"
           width="602"
           height="151"
           fetchpriority="high"
-          class="h-9 sm:h-10 w-auto object-contain mix-blend-screen"
+          class="h-9 sm:h-10 w-auto object-contain"
           onerror="this.style.display='none'; document.getElementById('brand-logo-fallback').classList.remove('hidden'); document.getElementById('brand-logo-fallback').classList.add('inline-flex');"
         >
         <span id="brand-logo-fallback" class="hidden items-center gap-1.5 text-white font-bold text-lg tracking-tight">
