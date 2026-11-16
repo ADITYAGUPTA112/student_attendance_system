@@ -23,6 +23,7 @@ pipeline {
         DATABASE_PATH       = 'instance/ci_test.db'
         DOCKER_IMAGE_NAME   = 'attendx-platform'
         DOCKER_TAG          = "${env.BUILD_NUMBER ?: 'latest'}"
+        PATH                = "C:\\Users\\ag683\\AppData\\Local\\Programs\\Python\\Python311;C:\\Users\\ag683\\AppData\\Local\\Programs\\Python\\Python311\\Scripts;C:\\Program Files\\Python311;C:\\Program Files\\Python311\\Scripts;${env.PATH}"
     }
 
     stages {
@@ -42,8 +43,24 @@ pipeline {
                         sh 'python3 --version || python --version'
                         sh 'git log -1 --oneline'
                     } else {
-                        bat 'python --version'
-                        bat 'git log -1 --oneline'
+                        bat '''
+                            @echo off
+                            set "PY_BIN=python"
+                            where python >nul 2>&1
+                            if %errorlevel% neq 0 (
+                                if exist "C:\\Users\\ag683\\AppData\\Local\\Programs\\Python\\Python311\\python.exe" (
+                                    set "PY_BIN=C:\\Users\\ag683\\AppData\\Local\\Programs\\Python\\Python311\\python.exe"
+                                ) else (
+                                    for /d %%U in (C:\\Users\\*) do (
+                                        for /d %%P in ("%%U\\AppData\\Local\\Programs\\Python\\Python*") do (
+                                            if exist "%%P\\python.exe" set "PY_BIN=%%P\\python.exe"
+                                        )
+                                    )
+                                )
+                            )
+                            "%PY_BIN%" --version
+                            git log -1 --oneline
+                        '''
                     }
                 }
             }
@@ -67,7 +84,21 @@ pipeline {
                         '''
                     } else {
                         bat '''
-                            if not exist %VENV_DIR% python -m venv %VENV_DIR%
+                            @echo off
+                            set "PY_BIN=python"
+                            where python >nul 2>&1
+                            if %errorlevel% neq 0 (
+                                if exist "C:\\Users\\ag683\\AppData\\Local\\Programs\\Python\\Python311\\python.exe" (
+                                    set "PY_BIN=C:\\Users\\ag683\\AppData\\Local\\Programs\\Python\\Python311\\python.exe"
+                                ) else (
+                                    for /d %%U in (C:\\Users\\*) do (
+                                        for /d %%P in ("%%U\\AppData\\Local\\Programs\\Python\\Python*") do (
+                                            if exist "%%P\\python.exe" set "PY_BIN=%%P\\python.exe"
+                                        )
+                                    )
+                                )
+                            )
+                            if not exist %VENV_DIR% "%PY_BIN%" -m venv %VENV_DIR%
                             call %VENV_DIR%\\Scripts\\activate.bat
                             python -m pip install --upgrade pip setuptools wheel
                             pip install -r requirements.txt
