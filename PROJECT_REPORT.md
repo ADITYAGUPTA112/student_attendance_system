@@ -150,6 +150,7 @@ AttendX is engineered around fundamental cloud service and deployment paradigms:
 
 1. **Infrastructure as Code (IaC) & PaaS**: By employing declarative configurations (`render.yaml`, `Dockerfile`), the application environment is provisioned deterministically without manual server configuration.
 2. **Stateless Compute**: The Flask web tier is architected to remain stateless. Session state is encrypted and signed cryptographically within client cookies (`session`), enabling the application tier to scale horizontally behind a reverse proxy.
+3. **Automated CI/CD Delivery Pipeline (Jenkins)**: Through a declarative `Jenkinsfile`, every code commit triggers automated virtualenv dependency resolution, static compilation checks, execution of the 58-test Pytest suite with JUnit XML reporting, container image packaging (`Dockerfile`), ephemeral container healthcheck smoke tests, and automated deployment webhooks to Render PaaS.
 
 ### 4.2 Distributed Data Processing: The MapReduce Model
 In traditional relational systems, running nested aggregation queries (e.g., computing student attendance rates grouped by course and semester across 500,000 records) can lead to full table scans and high database lock contention. 

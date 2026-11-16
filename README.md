@@ -158,6 +158,7 @@ student_attendance_system/
 ├── schema.sql                       # Relational DDL schema & table constraints
 ├── Dockerfile                       # Multi-stage production container definition
 ├── docker-compose.yml               # Multi-container orchestration & volume definition
+├── Jenkinsfile                      # Jenkins Declarative CI/CD pipeline definition
 ├── render.yaml                      # Declarative Cloud PaaS deployment blueprint
 ├── vercel.json                      # Serverless cloud configuration
 ├── requirements.txt                 # Pinned application dependencies
@@ -261,6 +262,17 @@ AttendX implements an automated Continuous Integration and Continuous Deployment
 3. **Continuous Deployment (CD)**:
    - Declarative deployment via `render.yaml` triggering zero-downtime rolling deploys upon Git push to `main`.
    - Healthcheck probing (`/health`) validating container readiness before traffic routing.
+
+### Jenkins Declarative Pipeline (`Jenkinsfile`)
+AttendX provides a production-ready declarative pipeline ([Jenkinsfile](file:///c:/Student_Attendance_System/Jenkinsfile)) executing across 7 automated stages:
+* **Stage 1 (Checkout & Verification)**: Scans scm, logs git metadata, verifies toolchain.
+* **Stage 2 (Setup Dependencies)**: Creates clean `.venv`, upgrades pip, installs `requirements.txt`.
+* **Stage 3 (Lint & Static Analysis)**: Bytecode compilation checks across core Python modules to block syntax regressions.
+* **Stage 4 (Pytest Suite)**: Executes all 58 automated tests, outputting JUnit XML to `reports/pytest-results.xml` for native Jenkins test trend dashboards.
+* **Stage 5 (Docker Build)**: Builds container image tagged with `attendx-platform:${BUILD_NUMBER}` and `latest`.
+* **Stage 6 (Smoke Test & Healthcheck)**: Spans an ephemeral container on port 5050, probes `curl http://localhost:5050/`, verifies startup, and cleans up.
+* **Stage 7 (Cloud Production Deployment)**: Dispatches Render cloud deploy webhook upon successful merges to `main`.
+* **Post-Execution Hooks**: Archives test results, cleans workspace, sends build status notifications.
 
 ---
 
