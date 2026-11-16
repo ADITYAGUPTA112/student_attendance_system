@@ -10,7 +10,6 @@ pipeline {
     options {
         timeout(time: 20, unit: 'MINUTES')
         timestamps()
-        ansiColor('xterm')
         disableConcurrentBuilds()
         buildDiscarder(logRotator(numToKeepStr: '15', artifactNumToKeepStr: '10'))
     }
@@ -125,7 +124,13 @@ pipeline {
             }
             post {
                 always {
-                    junit allowEmptyResults: true, testResults: 'reports/pytest-results.xml'
+                    script {
+                        try {
+                            junit allowEmptyResults: true, testResults: 'reports/pytest-results.xml'
+                        } catch (Exception e) {
+                            echo "JUnit plugin notice: ${e.message}"
+                        }
+                    }
                 }
             }
         }
